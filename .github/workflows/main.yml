@@ -1,0 +1,41 @@
+on:
+  push:
+    branches:
+      - 'dev'
+      - 'main'
+  workflow_dispatch:
+
+jobs:
+  run_pull:
+    name: run pull
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Checking out code'
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set develop dir
+        run: |
+          echo "DEPLOY_DIR=dev" >> $GITHUB_ENV
+          echo "PORT=3002" >> $GITHUB_ENV
+        if: github.ref == 'refs/heads/dev'
+
+      - name: Set prod dir
+        run: |
+          echo "DEPLOY_DIR=main" >> $GITHUB_ENV
+          echo "PORT=3001" >> $GITHUB_ENV
+        if: github.ref == 'refs/heads/main'
+
+      - name: install ssh keys
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          touch ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          echo "${{ secrets.KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+      - name: connect and pull
+        run: ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -tt ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} -p ${{ secrets.SSH_PORT }} "cd ${{ secrets.WORK_DIR }}-${{ env.DEPLOY_DIR }} && git checkout ${{ env.DEPLOY_DIR }} --force && git pull --force && docker build -t backend-${{ env.DEPLOY_DIR }} . && docker kill backend-${{ env.DEPLOY_DIR }} && docker rm backend-${{ env.DEPLOY_DIR }} && docker run --name backend-${{ env.DEPLOY_DIR }} -dp ${{ env.PORT }}:${{ env.PORT }} backend-${{ env.DEPLOY_DIR }} && docker update --restart unless-stopped backend-${{ env.DEPLOY_DIR }} && exit"
+      - name: cleanup
+        run: rm -rf ~/.ssh
