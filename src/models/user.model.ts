@@ -1,4 +1,5 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, hasMany, model, property} from '@loopback/repository';
+import {Instruction} from './instruction.model';
 
 export enum Language {
   CZ = 'CZ',
@@ -192,6 +193,9 @@ export class User extends Entity {
     },
   })
   link?: string | null;
+
+  @hasMany(() => Instruction, {keyTo: 'userId'})
+  instructions: Instruction[];
 
   constructor(data?: Partial<User>) {
     super(data);

@@ -8,9 +8,7 @@ export class StepRepository extends DefaultCrudRepository<
   typeof Step.prototype.id,
   StepRelations
 > {
-  constructor(
-    @inject('datasources.db') dataSource: DbDataSource,
-  ) {
+  constructor(@inject('datasources.db') dataSource: DbDataSource) {
     super(Step, dataSource);
   }
 }

@@ -8,9 +8,7 @@ export class UserLinkRepository extends DefaultCrudRepository<
   typeof UserLink.prototype.id,
   UserLinkRelations
 > {
-  constructor(
-    @inject('datasources.db') dataSource: DbDataSource,
-  ) {
+  constructor(@inject('datasources.db') dataSource: DbDataSource) {
     super(UserLink, dataSource);
   }
 }

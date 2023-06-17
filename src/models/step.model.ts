@@ -6,13 +6,11 @@ import {Entity, model, property} from '@loopback/repository';
 export class Step extends Entity {
   @property({
     id: true,
-    generaetd: true,
-    required: true,
+    generated: true,
     postgresql: {
       columnName: 'id',
-      dataType: 'integer',
       dataLength: null,
-      dataPrecision: null,
+      dataPrecision: 10,
       dataScale: 0,
       nullable: 'NO',
     },
@@ -33,18 +31,13 @@ export class Step extends Entity {
   })
   title: string;
 
-  @property.array({
-    type: 'array',
-    itemType: 'string',
+  @property.array(String, {
     required: true,
     postgresql: {
       columnName: 'description',
-      dataType: 'text[]',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'NO',
+      array: true,
     },
+    default: () => [],
   })
   description: string[];
 
@@ -61,6 +54,11 @@ export class Step extends Entity {
     },
   })
   link?: string | null;
+
+  @property({
+    type: 'number',
+  })
+  instructionId: number;
 
   constructor(data?: Partial<Step>) {
     super(data);

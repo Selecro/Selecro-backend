@@ -8,9 +8,7 @@ export class UserGroupRepository extends DefaultCrudRepository<
   typeof UserGroup.prototype.id,
   UserGroupRelations
 > {
-  constructor(
-    @inject('datasources.db') dataSource: DbDataSource,
-  ) {
+  constructor(@inject('datasources.db') dataSource: DbDataSource) {
     super(UserGroup, dataSource);
   }
 }

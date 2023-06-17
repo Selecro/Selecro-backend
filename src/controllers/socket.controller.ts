@@ -2,7 +2,7 @@ import {repository} from '@loopback/repository';
 import * as fs from 'fs';
 import * as https from 'https';
 import {Server as SocketIOServer} from 'socket.io';
-import {InstructionRepository, StepRepository} from '../repositories';
+import {InstructionRepository} from '../repositories';
 
 export class SocketController {
   private server: https.Server;
@@ -11,7 +11,6 @@ export class SocketController {
   constructor(
     @repository(InstructionRepository)
     private instructionRepository: InstructionRepository,
-    @repository(StepRepository) private stepRepository: StepRepository,
   ) { }
 
   async start(): Promise<void> {
@@ -35,11 +34,11 @@ export class SocketController {
         where: {
           private: false,
         },
-        /*include: [
+        include: [
           {
             relation: 'steps',
           },
-        ],*/
+        ],
       });
       socket.emit('message', data);
       socket.on('disconnect', () => { });

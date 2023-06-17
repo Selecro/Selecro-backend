@@ -1,4 +1,5 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, hasMany, model, property} from '@loopback/repository';
+import {Step} from './step.model';
 
 enum Difficulty {
   easy = 'easy',
@@ -13,12 +14,10 @@ export class Instruction extends Entity {
   @property({
     id: true,
     generated: true,
-    required: true,
     postgresql: {
       columnName: 'id',
-      dataType: 'integer',
       dataLength: null,
-      dataPrecision: null,
+      dataPrecision: 10,
       dataScale: 0,
       nullable: 'NO',
     },
@@ -29,7 +28,7 @@ export class Instruction extends Entity {
     type: 'string',
     required: true,
     postgresql: {
-      columnName: 'name',
+      columnName: 'title',
       dataType: 'text',
       dataLength: null,
       dataPrecision: null,
@@ -37,13 +36,13 @@ export class Instruction extends Entity {
       nullable: 'NO',
     },
   })
-  name: string;
+  title: string;
 
   @property({
     type: 'string',
     required: true,
     postgresql: {
-      columnName: 'type',
+      columnName: 'difficulty',
       dataType: 'text',
       dataLength: null,
       dataPrecision: null,
@@ -51,21 +50,21 @@ export class Instruction extends Entity {
       nullable: 'NO',
     },
   })
-  type: Difficulty;
+  difficulty: Difficulty;
 
   @property({
     type: 'string',
-    required: true,
+    required: false,
     postgresql: {
       columnName: 'link',
       dataType: 'text',
       dataLength: null,
       dataPrecision: null,
       dataScale: null,
-      nullable: 'NO',
+      nullable: 'YES',
     },
   })
-  link: string;
+  link?: string | null;
 
   @property({
     type: 'boolean',
@@ -94,6 +93,14 @@ export class Instruction extends Entity {
     valueGenerator: () => 'NOW()',
   })
   date: Date;
+
+  @property({
+    type: 'number',
+  })
+  userId: number;
+
+  @hasMany(() => Step, {keyTo: 'instructionId'})
+  steps: Step[];
 
   constructor(data?: Partial<Instruction>) {
     super(data);
