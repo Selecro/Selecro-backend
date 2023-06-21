@@ -26,11 +26,7 @@ export class SocketController {
     this.server = https.createServer(options);
     this.io = new SocketIOServer(this.server, {
       cors: {
-        origin: [
-          'https://selecro.cz:443',
-          'https://develop.selecro.cz:443',
-          'http://localhost:4200',
-        ],
+        origin: "*",
         methods: ['GET', 'POST'],
       },
     });
