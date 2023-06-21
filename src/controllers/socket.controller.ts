@@ -2,7 +2,6 @@ import {repository} from '@loopback/repository';
 import * as fs from 'fs';
 import * as https from 'https';
 import {Server as SocketIOServer} from 'socket.io';
-import {config} from '../datasources/sftp.datasource';
 import {InstructionRepository} from '../repositories';
 const Client = require('ssh2-sftp-client');
 const sftp = new Client();
@@ -32,7 +31,7 @@ export class SocketController {
         methods: ['GET', 'POST'],
       },
     });
-    this.io.on('connection', async socket => {
+    this.io.on('connection', async (socket) => {
       const data = await this.instructionRepository.find({
         where: {
           private: false,
@@ -43,29 +42,43 @@ export class SocketController {
           },
         ],
       });
-      data.forEach(async item => {
-        if (item.link !== "string") {
-          const sftpResponse = await sftp
-            .connect(config)
-            .then(async () => {
-              const x = await sftp.get('/instructions/' + item.link);
-              return x;
-            })
-            .then((response: string) => {
-              sftp.end();
-              return response;
-            })
-            .catch((err: any) => {
-              console.log(err);
-            });
-          item.link = sftpResponse;
+      //await sftp.connect(config);
+      for (const item of data) {
+        /*let x = '';
+        if (typeof item.link === 'string') {
+          x = await sftp.get('/instructions/' + item.link);
         }
-      });
+        item.link = x;*/
+        socket.emit('message', item);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+      //sftp.end();
+
+      /*const sftpResponse = await sftp
+        .connect(config)
+        .then(async () => {
+          data.forEach(async item0 => {
+            let x = "";
+            if (item0.link !== "string") {
+              x = await sftp.get('/instructions/' + item0.link);
+            }
+            console.log(x);
+
+          });
+        })
+        .then((response: string) => {
+          //sftp.end();
+        })
+        .catch((err: any) => {
+          console.log(err);
+        }
+        );
+
       for (const item of data) {
         socket.emit('message', item);
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
-      socket.on('disconnect', () => { });
+      socket.on('disconnect', () => { });*/
     });
     const port = 4000;
     this.server.listen(port, () => {
