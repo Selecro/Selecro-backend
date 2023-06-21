@@ -4,6 +4,8 @@ import {inject} from '@loopback/context';
 import {model, property, repository} from '@loopback/repository';
 import {
   HttpErrors,
+  Request,
+  Response,
   RestBindings,
   del,
   get,
@@ -14,7 +16,6 @@ import {
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import * as dotenv from 'dotenv';
-import {Request, Response} from 'express';
 import * as isEmail from 'isemail';
 import jwt from 'jsonwebtoken';
 import _ from 'lodash';
@@ -84,7 +85,7 @@ export class UserController {
     @inject('services.email')
     public emailService: EmailService,
     @repository(UserRepository) public userRepository: UserRepository,
-  ) {}
+  ) { }
 
   @post('/login', {
     responses: {
@@ -492,7 +493,7 @@ export class UserController {
     })
     request: Request,
     @inject(RestBindings.Http.RESPONSE) response: Response,
-  ): Promise<boolean> {
+  ): Promise<void> {
     const user = await this.userRepository.findById(this.user.id);
     const storage = multer.diskStorage({
       destination: function (_req, _file, cb) {
@@ -504,26 +505,46 @@ export class UserController {
       },
     });
     const upload = multer({storage: storage});
-    try {
-      upload.single('image')(request, response, function (_err: string) {});
-      try {
-        await sftp.connect(config);
-        await sftp.put(
-          './public/' + request.file?.filename,
-          'users/' + request.file?.filename,
-        );
-        await sftp.end();
-        await this.userRepository.updateById(user.id, {
-          link: request.file?.filename,
-        });
-        return true;
-      } catch (_err) {
-        throw new HttpErrors.UnprocessableEntity(
-          'Error in uploading file to SFTP',
-        );
+    if (user) {
+      if (user.link !== null) {
+        await sftp
+          .connect(config)
+          .then(() => sftp.delete('/users/' + user.link))
+          .then(() => sftp.end())
+          .catch(() => {
+            throw new HttpErrors.UnprocessableEntity(
+              'error in deleting old picture',
+            );
+          });
       }
-    } catch (_err) {
-      throw new HttpErrors.UnprocessableEntity('Error in uploading file');
+      upload.single('image')(request, response, err => {
+        if (err) {
+          new HttpErrors.UnprocessableEntity('Error in uploading file');
+        } else {
+          sftp
+            .connect(config)
+            .then(() =>
+              sftp.put(
+                './public/' + request.file?.filename,
+                'users/' + request.file?.filename,
+              ),
+            )
+            .then(() => sftp.end())
+            .then(() =>
+              this.userRepository.updateById(user.id, {
+                link: request.file?.filename,
+              }),
+            )
+            .then(() => {
+              return true;
+            })
+            .catch((_error: string) => {
+              throw new HttpErrors.UnprocessableEntity(
+                'Error in uploading file to SFTP',
+              );
+            });
+        }
+      });
     }
   }
 
@@ -538,20 +559,11 @@ export class UserController {
   async delUserProfilePicture(): Promise<Buffer> {
     const user = await this.userRepository.findById(this.user.id);
     if (user.link != null) {
-      const sftpResponse = await sftp
-        .connect(config)
-        .then(async () => {
-          await this.userRepository.updateById(user.id, {link: ''});
-          const x = await sftp.del('/users/' + user.link);
-          return x;
-        })
-        .then((response: string) => {
-          sftp.end();
-          return response;
-        })
-        .catch(() => {
-          throw new HttpErrors.UnprocessableEntity('error in del picture');
-        });
+      const sftpResponse = await sftp.connect(config).then(async () => {
+        const x = await sftp.delete('/users/' + user.link);
+        await this.userRepository.updateById(user.id, {link: null});
+        return x;
+      });
       return sftpResponse;
     } else {
       throw new HttpErrors.UnprocessableEntity(

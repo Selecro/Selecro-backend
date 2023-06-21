@@ -1,9 +1,11 @@
 import {repository} from '@loopback/repository';
+import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as https from 'https';
 import {Server as SocketIOServer} from 'socket.io';
-import {config} from '../datasources/sftp.datasource';
+import {config} from '../datasources';
 import {InstructionRepository} from '../repositories';
+dotenv.config();
 const Client = require('ssh2-sftp-client');
 const sftp = new Client();
 
@@ -32,6 +34,7 @@ export class SocketController {
         methods: ['GET', 'POST'],
       },
     });
+    await sftp.connect(config);
     this.io.on('connection', async socket => {
       const data = await this.instructionRepository.find({
         where: {
@@ -43,31 +46,22 @@ export class SocketController {
           },
         ],
       });
-      data.forEach(async item => {
-        if (item.link !== "string") {
-          const sftpResponse = await sftp
-            .connect(config)
-            .then(async () => {
-              const x = await sftp.get('/instructions/' + item.link);
-              return x;
-            })
-            .then((response: string) => {
-              sftp.end();
-              return response;
-            })
-            .catch((err: any) => {
-              console.log(err);
-            });
-          item.link = sftpResponse;
+      for (let item of data) {
+        try {
+          sftp.get('/instructions/' + item.link, './public/' + item.link + '.jpg');
+          for (let item2 of item.steps) {
+            if (item2.link !== "string") {
+              sftp.get('/instructions/' + item2.link, './public/' + item2.link + '.jpg');
+            }
+          }
         }
-      });
-      for (const item of data) {
+        catch (_e) {
+        }
         socket.emit('message', item);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
-      socket.on('disconnect', () => { });
     });
-    const port = 4000;
+    const port = Number(process.env.SOCKETPORT);
     this.server.listen(port, () => {
       console.log(`Server listening on port ${port}`);
     });
