@@ -1,9 +1,11 @@
 import {repository} from '@loopback/repository';
+import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as https from 'https';
 import {Server as SocketIOServer} from 'socket.io';
 import {config} from '../datasources';
 import {InstructionRepository} from '../repositories';
+dotenv.config();
 const Client = require('ssh2-sftp-client');
 const sftp = new Client();
 
@@ -59,7 +61,7 @@ export class SocketController {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     });
-    const port = 4000;
+    const port = Number(process.env.SOCKETPORT);
     this.server.listen(port, () => {
       console.log(`Server listening on port ${port}`);
     });
