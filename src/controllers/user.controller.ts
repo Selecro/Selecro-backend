@@ -505,30 +505,46 @@ export class UserController {
       },
     });
     const upload = multer({storage: storage});
-    try {
-      upload.single('image')(request, response, async (err) => {
+    if (user) {
+      if (user.link !== null) {
+        await sftp
+          .connect(config)
+          .then(() => sftp.delete('/users/' + user.link))
+          .then(() => sftp.end())
+          .catch(() => {
+            throw new HttpErrors.UnprocessableEntity(
+              'error in deleting old picture',
+            );
+          });
+      }
+      upload.single('image')(request, response, err => {
         if (err) {
-          console.log('Error in uploading file');
-          throw new HttpErrors.UnprocessableEntity('Error in uploading file');
+          new HttpErrors.UnprocessableEntity('Error in uploading file');
         } else {
-          try {
-            console.log('Connecting to SFTP');
-            await sftp.connect(config);
-            console.log('Uploading file to SFTP');
-            await sftp.put("./public/" + request.file?.filename, "users/" + request.file?.filename);
-            console.log('Closing connection to SFTP');
-            await sftp.end();
-            console.log('Updating database');
-            await this.userRepository.updateById(user.id, {link: request.file?.filename});
-          } catch (error) {
-            console.log('Error in uploading file to SFTP');
-            throw new HttpErrors.UnprocessableEntity('Error in uploading file to SFTP');
-          }
+          sftp
+            .connect(config)
+            .then(() =>
+              sftp.put(
+                './public/' + request.file?.filename,
+                'users/' + request.file?.filename,
+              ),
+            )
+            .then(() => sftp.end())
+            .then(() =>
+              this.userRepository.updateById(user.id, {
+                link: request.file?.filename,
+              }),
+            )
+            .then(() => {
+              return true;
+            })
+            .catch((_error: string) => {
+              throw new HttpErrors.UnprocessableEntity(
+                'Error in uploading file to SFTP',
+              );
+            });
         }
       });
-    } catch (_err) {
-      console.log('Error in uploading file.')
-      throw new HttpErrors.UnprocessableEntity('Error in uploading file');
     }
   }
 
@@ -543,14 +559,11 @@ export class UserController {
   async delUserProfilePicture(): Promise<Buffer> {
     const user = await this.userRepository.findById(this.user.id);
     if (user.link != null) {
-      const sftpResponse = await sftp
-        .connect(config)
-        .then(async () => {
-          const x = await sftp.delete('/users/' + user.link);
-          await this.userRepository.updateById(user.id, {link: null});
-          return x;
-        });
-      console.log('response from sftp', sftpResponse);
+      const sftpResponse = await sftp.connect(config).then(async () => {
+        const x = await sftp.delete('/users/' + user.link);
+        await this.userRepository.updateById(user.id, {link: null});
+        return x;
+      });
       return sftpResponse;
     } else {
       throw new HttpErrors.UnprocessableEntity(

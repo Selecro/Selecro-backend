@@ -3,8 +3,8 @@ import * as fs from 'fs';
 import * as https from 'https';
 import {Server as SocketIOServer} from 'socket.io';
 import {InstructionRepository} from '../repositories';
-const Client = require('ssh2-sftp-client');
-const sftp = new Client();
+//const Client = require('ssh2-sftp-client');
+//const sftp = new Client();
 
 export class SocketController {
   private server: https.Server;
@@ -13,7 +13,7 @@ export class SocketController {
   constructor(
     @repository(InstructionRepository)
     private instructionRepository: InstructionRepository,
-  ) { }
+  ) {}
 
   async start(): Promise<void> {
     const options = {
@@ -31,7 +31,7 @@ export class SocketController {
         methods: ['GET', 'POST'],
       },
     });
-    this.io.on('connection', async (socket) => {
+    this.io.on('connection', async socket => {
       const data = await this.instructionRepository.find({
         where: {
           private: false,
@@ -50,7 +50,7 @@ export class SocketController {
         }
         item.link = x;*/
         socket.emit('message', item);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
       //sftp.end();
 

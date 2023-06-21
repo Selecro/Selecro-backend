@@ -28,7 +28,7 @@ export class UserInstructionController {
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
     @repository(StepRepository) protected stepRepository: StepRepository,
-  ) { }
+  ) {}
 
   @get('/users/{id}/instructions', {
     responses: {
