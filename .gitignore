@@ -65,3 +65,4 @@ typings/
 
 *.crt
 *.key
+*.pem
