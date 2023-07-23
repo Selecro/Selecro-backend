@@ -1,6 +1,5 @@
 import {repository} from '@loopback/repository';
 import * as dotenv from 'dotenv';
-import * as fs from 'fs';
 import * as https from 'https';
 import path from 'path';
 import {Server as SocketIOServer} from 'socket.io';
@@ -20,6 +19,16 @@ export class SocketController {
   ) { }
 
   async start(): Promise<void> {
+    const fs = require('fs');
+
+    const filePath = '/etc/letsencrypt/live/backend.selecro.cz/privkey.pem';
+    fs.access(filePath, fs.constants.F_OK, (err: any) => {
+      if (err) {
+        console.log('The file does not exist.');
+      } else {
+        console.log('The file exists!');
+      }
+    });
     const options = {
       key: fs.readFileSync(path.join(String(process.env.CERT_PATH), String(process.env.PRIVATE_KEY_FILE)), 'utf-8'),
       cert: fs.readFileSync(path.join(String(process.env.CERT_PATH), String(process.env.CERT_FILE)), 'utf-8'),
