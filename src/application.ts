@@ -38,6 +38,16 @@ export class SelecroBackendApplication extends BootMixin(
 ) {
   constructor(options: ApplicationConfig = {}) {
     super(options);
+    const fs = require('fs');
+
+    const filePath = '/etc/letsencrypt/live/backend.selecro.cz/privkey.pem';
+    fs.access(filePath, fs.constants.F_OK, (err: any) => {
+      if (err) {
+        console.log('The file does not exist.');
+      } else {
+        console.log('The file exists!');
+      }
+    });
 
     // Add security spec
     this.addSecuritySpec();
