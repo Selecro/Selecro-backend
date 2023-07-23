@@ -10,17 +10,6 @@ export * from './application';
 
 export async function main(options: ApplicationConfig = {}) {
   const app = new SelecroBackendApplication(options);
-  const fs = require('fs');
-
-  const filePath = path.join(String(process.env.CERT_PATH), String(process.env.CERT_FILE)); // Replace with the actual file path
-
-  fs.stat(filePath, (err: any, stats: {mode: {toString: (arg0: number) => any;};}) => {
-    if (err) {
-      console.error('Error accessing file:', err);
-    } else {
-      console.log('File permissions (mode):', stats.mode.toString(8));
-    }
-  });
   await app.boot();
   await app.start();
 
