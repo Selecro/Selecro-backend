@@ -10,16 +10,6 @@ export * from './application';
 
 export async function main(options: ApplicationConfig = {}) {
   const app = new SelecroBackendApplication(options);
-  const fs = require('fs');
-
-  const filePath = '/etc/letsencrypt/live/backend.selecro.cz/privkey.pem';
-  fs.access(filePath, fs.constants.F_OK, (err: any) => {
-    if (err) {
-      console.log('The file does not exist.');
-    } else {
-      console.log('The file exists!');
-    }
-  });
   await app.boot();
   await app.start();
 
