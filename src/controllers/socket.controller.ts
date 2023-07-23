@@ -2,6 +2,7 @@ import {repository} from '@loopback/repository';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as https from 'https';
+import path from 'path';
 import {Server as SocketIOServer} from 'socket.io';
 import {config} from '../datasources';
 import {InstructionRepository} from '../repositories';
@@ -20,8 +21,8 @@ export class SocketController {
 
   async start(): Promise<void> {
     const options = {
-      key: fs.readFileSync('localhost.decrypt.key', 'utf8'),
-      cert: fs.readFileSync('localhost.crt', 'utf8'),
+      key: fs.readFileSync(path.join(String(process.env.CERT_PATH), String(process.env.PRIVATE_KEY_FILE)), 'utf-8'),
+      cert: fs.readFileSync(path.join(String(process.env.CERT_PATH), String(process.env.CERT_FILE)), 'utf-8'),
     };
     this.server = https.createServer(options);
     this.io = new SocketIOServer(this.server, {
