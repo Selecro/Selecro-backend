@@ -1,14 +1,14 @@
 import {bind, BindingScope} from '@loopback/core';
 import * as dotenv from 'dotenv';
+import * as fs from 'fs';
 import jwt from 'jsonwebtoken';
 import {EmailDataSource} from '../datasources';
 import {User} from '../models';
-const fs = require('fs');
 dotenv.config();
 
 @bind({scope: BindingScope.TRANSIENT})
 export class EmailService {
-  constructor() {}
+  constructor() { }
 
   public generateVerificationToken(userId: number): string {
     const secret = process.env.JWT_SECRET ?? '';

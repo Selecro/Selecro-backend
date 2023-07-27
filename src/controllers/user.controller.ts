@@ -85,7 +85,7 @@ export class UserController {
     @inject('services.email')
     public emailService: EmailService,
     @repository(UserRepository) public userRepository: UserRepository,
-  ) { }
+  ) {}
 
   @post('/login', {
     responses: {
