@@ -43,8 +43,17 @@ if (require.main === module) {
         setServersFromRequest: true,
       },
       protocol: 'https',
-      key: fs.readFileSync(path.join(String(process.env.CERT_PATH), String(process.env.PRIVATE_KEY_FILE)), 'utf-8'),
-      cert: fs.readFileSync(path.join(String(process.env.CERT_PATH), String(process.env.CERT_FILE)), 'utf-8'),
+      key: fs.readFileSync(
+        path.join(
+          String(process.env.CERT_PATH),
+          String(process.env.PRIVATE_KEY_FILE),
+        ),
+        'utf-8',
+      ),
+      cert: fs.readFileSync(
+        path.join(String(process.env.CERT_PATH), String(process.env.CERT_FILE)),
+        'utf-8',
+      ),
     },
   };
   main(config).catch(err => {
