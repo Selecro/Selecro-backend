@@ -1,6 +1,7 @@
 import {BindingKey} from '@loopback/core';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
+import path from 'path';
 import {ApplicationConfig, SelecroBackendApplication} from './application';
 import {SocketController} from './controllers';
 dotenv.config();
@@ -42,8 +43,8 @@ if (require.main === module) {
         setServersFromRequest: true,
       },
       protocol: 'https',
-      key: fs.readFileSync('localhost.decrypt.key'),
-      cert: fs.readFileSync('localhost.crt'),
+      key: fs.readFileSync(path.join(String(process.env.CERT_PATH), String(process.env.PRIVATE_KEY_FILE)), 'utf-8'),
+      cert: fs.readFileSync(path.join(String(process.env.CERT_PATH), String(process.env.CERT_FILE)), 'utf-8'),
     },
   };
   main(config).catch(err => {
