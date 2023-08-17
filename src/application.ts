@@ -1,8 +1,5 @@
 import {AuthenticationComponent} from '@loopback/authentication';
-import {
-  JWTAuthenticationComponent,
-  SECURITY_SCHEME_SPEC,
-} from '@loopback/authentication-jwt';
+import {JWTAuthenticationComponent} from '@loopback/authentication-jwt';
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
@@ -39,9 +36,6 @@ export class SelecroBackendApplication extends BootMixin(
   constructor(options: ApplicationConfig = {}) {
     super(options);
 
-    // Add security spec
-    this.addSecuritySpec();
-
     // Set up the custom sequence
     this.sequence(MySequence);
 
@@ -67,8 +61,13 @@ export class SelecroBackendApplication extends BootMixin(
     this.repository(GroupRepository);
     this.dataSource(DbDataSource);
 
-    // setup binding
-    this.setupBinding();
+    this.bind('services.jwt.service').toClass(JWTService);
+    this.bind('authentication.jwt.expiresIn').to('7h');
+    this.bind('authentication.jwt.secret').to(process.env.TOKEN);
+    this.bind('services.hasher').toClass(BcryptHasher);
+    this.bind('services.hasher.rounds').to(10);
+    this.bind('services.user.service').toClass(MyUserService);
+    this.bind('services.email').toClass(EmailService);
 
     this.projectRoot = __dirname;
     // Customize @loopback/boot Booter Conventions here
@@ -80,34 +79,5 @@ export class SelecroBackendApplication extends BootMixin(
         nested: true,
       },
     };
-  }
-
-  setupBinding(): void {
-    this.bind('services.jwt.service').toClass(JWTService);
-    this.bind('authentication.jwt.expiresIn').to('7h');
-    this.bind('authentication.jwt.secret').to(process.env.TOKEN);
-    this.bind('services.hasher').toClass(BcryptHasher);
-    this.bind('services.hasher.rounds').to(10);
-    this.bind('services.user.service').toClass(MyUserService);
-    this.bind('services.email').toClass(EmailService);
-  }
-
-  addSecuritySpec(): void {
-    this.api({
-      openapi: '3.0.0',
-      info: {
-        title: 'Selecro backend',
-        version: '1.0.0',
-      },
-      paths: {},
-      components: {securitySchemes: SECURITY_SCHEME_SPEC},
-      security: [
-        {
-          // secure all endpoints with 'jwt'
-          jwt: [],
-        },
-      ],
-      servers: [{url: '/'}],
-    });
   }
 }

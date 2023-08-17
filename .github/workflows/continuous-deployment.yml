@@ -40,7 +40,7 @@ jobs:
           ssh-keyscan -t rsa ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: connect and pull
+      - name: Connect and pull
         run: |
           ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
           -p ${{ secrets.SSH_PORT }} "cd ${{ secrets.WORK_DIR }}-${{ env.DEPLOY_DIR }} && \
@@ -52,5 +52,5 @@ jobs:
           -p ${{ env.SECOND_PORT }}:${{ env.SECOND_PORT }} backend-${{ env.DEPLOY_DIR }} && \
           docker update --restart unless-stopped backend-${{ env.DEPLOY_DIR }} && exit"
 
-      - name: cleanup
+      - name: Cleanup
         run: rm -rf ~/.ssh

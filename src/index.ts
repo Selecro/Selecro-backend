@@ -17,11 +17,13 @@ export async function main(options: ApplicationConfig = {}) {
   console.log(`Server is running at ${url}`);
   console.log(`Try ${url}/ping`);
 
+  ////
   app.bind('controllers.YourController').toClass(SocketController);
   const yourController = await app.get<SocketController>(
     BindingKey.create<SocketController>('controllers.YourController'),
   );
   await yourController.start();
+  ////
 
   return app;
 }
@@ -30,7 +32,7 @@ if (require.main === module) {
   // Run the application
   const config = {
     rest: {
-      port: Number(process.env.EXTPORT),
+      port: +(process.env.EXTPORT ?? 3000),
       host: process.env.HOST,
       // The `gracePeriodForClose` provides a graceful close for http/https
       // servers with keep-alive clients. The default value is `Infinity`

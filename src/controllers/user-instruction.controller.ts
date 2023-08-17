@@ -1,59 +1,48 @@
-import {
-  Count,
-  CountSchema,
-  Filter,
-  repository,
-  Where,
-} from '@loopback/repository';
+import {authenticate} from '@loopback/authentication';
+import {inject} from '@loopback/core';
+import {repository} from '@loopback/repository';
 import {
   del,
-  get,
   getModelSchemaRef,
-  getWhereSchemaFor,
+  HttpErrors,
   param,
   patch,
   post,
   requestBody,
 } from '@loopback/rest';
-import {Instruction, Step} from '../models';
+import {SecurityBindings, UserProfile} from '@loopback/security';
+import {Instruction} from '../models';
 import {
   InstructionRepository,
   StepRepository,
   UserRepository,
 } from '../repositories';
+import {JWTService} from '../services';
 
 export class UserInstructionController {
   constructor(
+    @inject('services.jwt.service')
+    public jwtService: JWTService,
     @repository(UserRepository) protected userRepository: UserRepository,
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
+    @inject(SecurityBindings.USER, {optional: true})
+    public user: UserProfile,
     @repository(StepRepository) protected stepRepository: StepRepository,
   ) {}
 
-  @get('/users/{id}/instructions', {
-    responses: {
-      '200': {
-        description: 'Array of User has many Instruction',
-        content: {
-          'application/json': {
-            schema: {type: 'array', items: getModelSchemaRef(Instruction)},
-          },
-        },
-      },
-    },
-  })
-  async find(
-    @param.path.number('id') id: number,
-    @param.query.object('filter') filter?: Filter<Instruction>,
-  ): Promise<Instruction[]> {
-    return this.userRepository.instructions(id).find(filter);
-  }
-
+  @authenticate('jwt')
   @post('/users/{id}/instructions', {
     responses: {
       '200': {
         description: 'User model instance',
-        content: {'application/json': {schema: getModelSchemaRef(Instruction)}},
+        content: {
+          'application/json': {
+            schema: getModelSchemaRef(Instruction, {
+              exclude: ['id', 'userId', 'date'],
+            }),
+          },
+        },
       },
     },
   })
@@ -63,33 +52,29 @@ export class UserInstructionController {
         'application/json': {
           schema: getModelSchemaRef(Instruction, {
             title: 'NewInstructionInUser',
-            exclude: ['id'],
+            exclude: ['id', 'userId', 'date'],
           }),
         },
       },
     })
-    instruction: Omit<Instruction, 'id'>,
-  ): Promise<Instruction> {
-    //return this.InstructionRepository.create(instruction);
-    const id = 10; // Provide the appropriate user ID
-
-    const user = await this.userRepository.findById(id);
-    if (!user) {
-      // Handle the case when the user does not exist
-      throw new Error('User not found');
+    instruction: Omit<Instruction, 'id' | 'userId' | 'date'>,
+  ): Promise<boolean> {
+    try {
+      await this.instructionRepository.create({
+        ...instruction,
+        userId: this.user.id,
+      });
+      return true;
+    } catch (_err) {
+      return false;
     }
-
-    const createdInstruction = new Instruction(instruction);
-    await this.instructionRepository.create(createdInstruction);
-
-    return createdInstruction;
   }
 
+  @authenticate('jwt')
   @patch('/users/{id}/instructions', {
     responses: {
       '200': {
-        description: 'User.Instruction PATCH success count',
-        content: {'application/json': {schema: CountSchema}},
+        description: 'Patch Instruction of User',
       },
     },
   })
@@ -98,65 +83,49 @@ export class UserInstructionController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Instruction, {partial: true}),
-        },
-      },
-    })
-    instruction: Partial<Instruction>,
-    @param.query.object('where', getWhereSchemaFor(Instruction))
-    where?: Where<Instruction>,
-  ): Promise<Count> {
-    return this.userRepository.instructions(id).patch(instruction, where);
-  }
-
-  @del('/users/{id}/instructions', {
-    responses: {
-      '200': {
-        description: 'User.Instruction DELETE success count',
-        content: {'application/json': {schema: CountSchema}},
-      },
-    },
-  })
-  async delete(
-    @param.path.number('id') id: number,
-    @param.query.object('where', getWhereSchemaFor(Instruction))
-    where?: Where<Instruction>,
-  ): Promise<Count> {
-    return this.userRepository.instructions(id).delete(where);
-  }
-
-  @post('/instructions/{id}/steps', {
-    responses: {
-      '200': {
-        description: 'Instruction model instance',
-        content: {'application/json': {schema: getModelSchemaRef(Step)}},
-      },
-    },
-  })
-  async create0(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Step, {
-            title: 'NewStepInInstruction',
-            exclude: ['id'],
+          schema: getModelSchemaRef(Instruction, {
+            partial: true,
+            exclude: ['id', 'userId', 'date'],
           }),
         },
       },
     })
-    step: Omit<Step, 'id'>,
-  ): Promise<Step> {
-    //return this.instructionRepository.steps(id).create(step);
-    const id = 1; // Provide the appropriate user ID
-
-    const instruction = await this.instructionRepository.findById(id);
-    if (!instruction) {
-      // Handle the case when the user does not exist
-      throw new Error('Instruction not found');
+    instruction: Partial<Instruction>,
+  ): Promise<boolean> {
+    try {
+      const instructionOriginal = await this.instructionRepository.findById(id);
+      this.validateInstructionOwnership(instructionOriginal);
+      await this.instructionRepository.updateById(id, instruction);
+      return true;
+    } catch (_err) {
+      return false;
     }
+  }
 
-    const createdstep = new Step(step);
-    await this.stepRepository.create(createdstep);
-    return createdstep;
+  @authenticate('jwt')
+  @del('/users/{id}/instructions', {
+    responses: {
+      '200': {
+        description: 'Delete Instruction of User',
+      },
+    },
+  })
+  async delete(@param.query.number('id') id: number): Promise<boolean> {
+    try {
+      const instruction = await this.instructionRepository.findById(id);
+      this.validateInstructionOwnership(instruction);
+      await this.instructionRepository.deleteById(id);
+      return true;
+    } catch (_err) {
+      return false;
+    }
+  }
+
+  private validateInstructionOwnership(instruction: Instruction): void {
+    if (Number(instruction.userId) !== Number(this.user.id)) {
+      throw new HttpErrors.Forbidden(
+        'You are not authorized to delete this instruction',
+      );
+    }
   }
 }

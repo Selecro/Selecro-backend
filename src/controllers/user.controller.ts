@@ -47,7 +47,12 @@ export class UserSingup {
     type: 'string',
     required: true,
   })
-  password: string;
+  password0: string;
+  @property({
+    type: 'string',
+    required: true,
+  })
+  password1: string;
   @property({
     type: 'string',
     required: true,
@@ -161,7 +166,9 @@ export class UserController {
     })
     userData: UserSingup,
   ): Promise<boolean> {
-    validateCredentials(_.pick(userData, ['email', 'password', 'username']));
+    validateCredentials(
+      _.pick(userData, ['email', 'password0', 'password1', 'username']),
+    );
     const existedemail = await this.userRepository.findOne({
       where: {email: userData.email},
     });
@@ -170,7 +177,7 @@ export class UserController {
     });
     if (!existedemail && !existedusername) {
       const user: User = new User(userData);
-      user.passwordHash = await this.hasher.hashPassword(userData.password);
+      user.passwordHash = await this.hasher.hashPassword(userData.password0);
       const savedUser = await this.userRepository.create(
         _.omit(user, 'password'),
       );
@@ -368,7 +375,7 @@ export class UserController {
   @authenticate('jwt')
   @put('/users/{id}', {
     responses: {
-      '204': {
+      '200': {
         description: 'User PUT success',
       },
     },
@@ -413,7 +420,7 @@ export class UserController {
   @authenticate('jwt')
   @del('/users/{id}', {
     responses: {
-      '204': {
+      '200': {
         description: 'User DELETE success',
       },
     },
@@ -463,7 +470,7 @@ export class UserController {
   @authenticate('jwt')
   @put('/users/{id}/profilePictureSet', {
     responses: {
-      200: {
+      '200': {
         content: {
           'application/json': {
             schema: {
