@@ -14,7 +14,7 @@ export class EmailService {
     const secret = process.env.JWT_SECRET ?? '';
     const token = jwt.sign({userId}, secret, {
       expiresIn: '1h',
-      algorithm: 'RS256',
+      algorithm: 'HS256',
     });
     return token;
   }
