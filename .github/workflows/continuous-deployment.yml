@@ -46,8 +46,8 @@ jobs:
           -p ${{ secrets.SSH_PORT }} "cd ${{ secrets.WORK_DIR }}-${{ env.DEPLOY_DIR }} && \
           git fetch --all && git checkout ${{ env.DEPLOY_DIR }} --force && \
           git pull --force && docker build -t backend-${{ env.DEPLOY_DIR }} . && \
-          docker stop backend-${{ env.DEPLOY_DIR }} || true && \
-          docker rm backend-${{ env.DEPLOY_DIR }} || true && \
+          docker stop backend-${{ env.DEPLOY_DIR }} && \
+          docker rm backend-${{ env.DEPLOY_DIR }} && \
           docker run --name backend-${{ env.DEPLOY_DIR }} -dp ${{ env.PORT }}:${{ env.PORT }} \
           -p ${{ env.SECOND_PORT }}:${{ env.SECOND_PORT }} backend-${{ env.DEPLOY_DIR }} && \
           docker update --restart unless-stopped backend-${{ env.DEPLOY_DIR }} && exit"
