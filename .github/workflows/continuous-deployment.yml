@@ -46,7 +46,7 @@ jobs:
           -p ${{ secrets.SSH_PORT }} "npm install -g npm@9.8.1 && cd ${{ secrets.WORK_DIR }}-${{ env.DEPLOY_DIR }} && \
           git fetch --all && git checkout ${{ env.DEPLOY_DIR }} --force && \
           git pull --force && docker build -t backend-${{ env.DEPLOY_DIR }} . && \
-          docker stop backend-${{ env.DEPLOY_DIR }} || true && \
+          docker kill backend-${{ env.DEPLOY_DIR }} || true && \
           docker rm backend-${{ env.DEPLOY_DIR }} || true && \
           docker run --name backend-${{ env.DEPLOY_DIR }} -dp ${{ env.PORT }}:${{ env.PORT }} \
           -p ${{ env.SECOND_PORT }}:${{ env.SECOND_PORT }} backend-${{ env.DEPLOY_DIR }} && \
