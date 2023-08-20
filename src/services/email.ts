@@ -8,19 +8,19 @@ dotenv.config();
 
 @bind({scope: BindingScope.TRANSIENT})
 export class EmailService {
-  constructor() {}
+  constructor() { }
 
-  public generateVerificationToken(userId: number): string {
+  public generateVerificationToken(userData: any): string {
     const secret = process.env.JWT_SECRET ?? '';
-    const token = jwt.sign({userId}, secret, {
+    const token = jwt.sign({userData}, secret, {
       expiresIn: '1h',
-      algorithm: 'RS256',
+      algorithm: 'HS256',
     });
     return token;
   }
 
   async sendRegistrationEmail(user: User): Promise<void> {
-    const token = this.generateVerificationToken(user.id);
+    const token = this.generateVerificationToken(user.username);
     const url = `https://selecro.cz/verification?token=${token}`;
     let body = fs.readFileSync(
       `./src/html/registration${user.language}.html`,

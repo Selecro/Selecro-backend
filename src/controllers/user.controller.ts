@@ -1,7 +1,7 @@
 import {authenticate} from '@loopback/authentication';
-import {JWTService} from '@loopback/authentication-jwt';
+import {Credentials, JWTService, UserCredentials} from '@loopback/authentication-jwt';
 import {inject} from '@loopback/context';
-import {model, property, repository} from '@loopback/repository';
+import {Filter, repository} from '@loopback/repository';
 import {
   HttpErrors,
   Request,
@@ -15,67 +15,19 @@ import {
   requestBody,
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
+import * as crypto from 'crypto';
 import * as dotenv from 'dotenv';
 import * as isEmail from 'isemail';
 import jwt from 'jsonwebtoken';
 import _ from 'lodash';
 import multer from 'multer';
-import {config} from '../datasources/sftp.datasource';
+import {config} from '../datasources';
 import {Language, User} from '../models';
 import {UserRepository} from '../repositories';
-import {EmailService} from '../services/email';
-import {BcryptHasher} from '../services/hash.password';
-import {MyUserService} from '../services/user-service';
-import {validateCredentials} from '../services/validator.service';
+import {BcryptHasher, EmailService, MyUserService, validateCredentials} from '../services';
 dotenv.config();
 const Client = require('ssh2-sftp-client');
 const sftp = new Client();
-
-@model()
-export class UserSingup {
-  @property({
-    type: 'string',
-    required: true,
-  })
-  email: string;
-  @property({
-    type: 'string',
-    required: true,
-  })
-  username: string;
-  @property({
-    type: 'string',
-    required: true,
-  })
-  password0: string;
-  @property({
-    type: 'string',
-    required: true,
-  })
-  password1: string;
-  @property({
-    type: 'string',
-    required: true,
-    jsonSchema: {
-      enum: Object.values(Language),
-    },
-  })
-  language: Language;
-}
-
-@model()
-export class Credentials {
-  @property({
-    type: 'string',
-    required: true,
-  })
-  email: string;
-  @property({
-    type: 'string',
-    required: true,
-  })
-  passwordHash: string;
-}
 
 export class UserController {
   constructor(
@@ -90,7 +42,7 @@ export class UserController {
     @inject('services.email')
     public emailService: EmailService,
     @repository(UserRepository) public userRepository: UserRepository,
-  ) {}
+  ) { }
 
   @post('/login', {
     responses: {
@@ -115,7 +67,14 @@ export class UserController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Credentials),
+          schema: {
+            type: 'object',
+            properties: {
+              email: {type: 'string'},
+              password: {type: 'string'},
+            },
+            required: ['email', 'password'],
+          },
         },
       },
     })
@@ -123,18 +82,14 @@ export class UserController {
   ): Promise<{token: string}> {
     const user = await this.userService.verifyCredentials(credentials);
     const userProfile = this.userService.convertToUserProfile(user);
-    const existedemail = await this.userRepository.findOne({
-      where: {email: user.email},
+    const existingUser = await this.userRepository.findOne({
+      where: {or: [{email: credentials.email}, {username: credentials.email}]},
     });
-    const existedusername = await this.userRepository.findOne({
-      where: {username: user.email},
-    });
-    if (existedemail?.emailVerified || existedusername?.emailVerified) {
-      const token = await this.jwtService.generateToken(userProfile);
-      return {token};
-    } else {
+    if (!existingUser?.emailVerified) {
       throw new HttpErrors.UnprocessableEntity('email is not verified');
     }
+    const token = await this.jwtService.generateToken(userProfile);
+    return {token};
   }
 
   @post('/signup', {
@@ -144,56 +99,61 @@ export class UserController {
         content: {
           'application/json': {
             schema: {
-              type: 'object',
-              properties: {
-                signup: {
-                  type: 'boolean',
-                },
-              },
+              type: 'boolean',
             },
           },
         },
       },
     },
   })
-  async signUp(
+  async signup(
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(UserSingup),
+          schema: {
+            type: 'object',
+            properties: {
+              email: {type: 'string'},
+              username: {type: 'string'},
+              password0: {type: 'string'},
+              password1: {type: 'string'},
+              language: {type: 'string', enum: Object.values(Language)},
+            },
+            required: ['email', 'username', 'password0', 'password1', 'language'],
+          },
         },
       },
     })
-    userData: UserSingup,
+    credentials: UserCredentials,
   ): Promise<boolean> {
     validateCredentials(
-      _.pick(userData, ['email', 'password0', 'password1', 'username']),
+      _.pick(credentials, ['email', 'password0', 'password1', 'username']),
     );
-    const existedemail = await this.userRepository.findOne({
-      where: {email: userData.email},
+    const existingUser = await this.userRepository.findOne({
+      where: {or: [{email: credentials.email}, {username: credentials.username}]},
     });
-    const existedusername = await this.userRepository.findOne({
-      where: {username: userData.username},
-    });
-    if (!existedemail && !existedusername) {
-      const user: User = new User(userData);
-      user.passwordHash = await this.hasher.hashPassword(userData.password0);
-      const savedUser = await this.userRepository.create(
-        _.omit(user, 'password'),
-      );
-      try {
-        await this.emailService.sendRegistrationEmail(savedUser);
-        return true;
-      } catch (_err) {
-        throw new HttpErrors.UnprocessableEntity('error sending email');
-      }
-    } else if (existedemail) {
-      throw new HttpErrors.UnprocessableEntity('email already exist');
-    } else if (existedusername) {
-      throw new HttpErrors.UnprocessableEntity('username already exist');
-    } else {
-      throw new HttpErrors.UnprocessableEntity('unexpected error');
+    if (existingUser) {
+      throw new HttpErrors.BadRequest('User with this email or username already exists.');
     }
+    const hashedPassword = await this.hasher.hashPassword(credentials.password0);
+    const dek = crypto.randomBytes(32);
+    const kekSalt = crypto.randomBytes(16).toString('base64');
+    const kek = crypto.pbkdf2Sync(hashedPassword, kekSalt, 100000, 32, 'sha512');
+    const initializationVector = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv('aes-256-cbc', kek, initializationVector);
+    const wrappedDEK = Buffer.concat([cipher.update(dek), cipher.final()]);
+    const newUser = new User({
+      email: credentials.email,
+      username: credentials.username,
+      passwordHash: hashedPassword,
+      wrappedDEK: wrappedDEK.toString('base64'),
+      kekSalt: kekSalt,
+      initializationVector: initializationVector.toString('base64'),
+      language: credentials.language,
+    });
+    await this.emailService.sendRegistrationEmail(newUser);
+    await this.userRepository.create(newUser);
+    return true;
   }
 
   @post('/verify-email', {
@@ -203,12 +163,7 @@ export class UserController {
         content: {
           'application/json': {
             schema: {
-              type: 'object',
-              properties: {
-                signup: {
-                  type: 'boolean',
-                },
-              },
+              type: 'boolean',
             },
           },
         },
@@ -216,37 +171,44 @@ export class UserController {
     },
   })
   async verifyEmail(
-    @requestBody()
-    request: {
-      token: string;
-    },
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              token: {type: 'string'},
+            },
+            required: ['token'],
+          },
+        },
+      },
+    })
+    token: string,
   ): Promise<boolean> {
     interface DecodedToken {
-      userId: number;
+      userData: Filter<User>;
       iat: number;
       exp: number;
     }
-    const {token} = request;
-    const secret = process.env.JWT_SECRET ?? '';
-    let decodedToken: DecodedToken;
     try {
-      decodedToken = jwt.verify(token, secret) as DecodedToken;
-    } catch (_err) {
-      throw new HttpErrors.UnprocessableEntity(
-        'Invalid or expired verification token',
-      );
-    }
-    const {userId} = decodedToken;
-    const user = await this.userRepository.findById(userId);
-    if (!user) {
-      throw new HttpErrors.UnprocessableEntity('User not found');
-    } else {
-      try {
-        await this.userRepository.updateById(user.id, {emailVerified: true});
-        return true;
-      } catch (_err) {
+      const secret = process.env.JWT_SECRET || '';
+      const decodedToken = jwt.verify(token, secret) as DecodedToken;
+      const {userData} = decodedToken;
+      const user = await this.userRepository.findOne(userData);
+      if (!user) {
+        throw new HttpErrors.UnprocessableEntity('User not found');
+      }
+      await this.userRepository.updateById(user.id, {emailVerified: true});
+      return true;
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        throw new HttpErrors.UnprocessableEntity('Verification token has expired');
+      } else if (error.name === 'JsonWebTokenError') {
+        throw new HttpErrors.UnprocessableEntity('Invalid verification token');
+      } else {
         throw new HttpErrors.UnprocessableEntity(
-          'Failed to update user email verification status',
+          'Failed to update user email verification status'
         );
       }
     }
@@ -259,12 +221,7 @@ export class UserController {
         content: {
           'application/json': {
             schema: {
-              type: 'object',
-              properties: {
-                send: {
-                  type: 'boolean',
-                },
-              },
+              type: 'boolean',
             },
           },
         },
@@ -272,7 +229,19 @@ export class UserController {
     },
   })
   async sendPasswordChange(
-    @requestBody()
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              email: {type: 'string'},
+            },
+            required: ['email'],
+          },
+        },
+      },
+    })
     request: {
       email: string;
     },
@@ -284,14 +253,9 @@ export class UserController {
     });
     if (!user) {
       throw new HttpErrors.UnprocessableEntity('email not recognized');
-    } else {
-      try {
-        await this.emailService.sendPasswordChange(user);
-        return true;
-      } catch (_err) {
-        throw new HttpErrors.UnprocessableEntity('error in email send');
-      }
     }
+    await this.emailService.sendPasswordChange(user);
+    return true;
   }
 
   @post('/password-change', {
@@ -301,12 +265,7 @@ export class UserController {
         content: {
           'application/json': {
             schema: {
-              type: 'object',
-              properties: {
-                change: {
-                  type: 'boolean',
-                },
-              },
+              type: 'boolean',
             },
           },
         },
@@ -314,50 +273,64 @@ export class UserController {
     },
   })
   async changePassword(
-    @requestBody()
-    request: {
-      token: string;
-      password0: string;
-      password1: string;
-    },
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              token: {type: 'string'},
+              password0: {type: 'string'},
+              password1: {type: 'string'},
+            },
+            required: ['token', 'password0', 'password1'],
+          },
+        },
+      },
+    })
+    request: {token: string, password0: string, password1: string}
   ): Promise<boolean> {
     interface DecodedToken {
-      userId: number;
+      userData: number;
       iat: number;
       exp: number;
     }
-    const {token} = request;
-    const secret = process.env.JWT_SECRET ?? '';
-    let decodedToken: DecodedToken;
     try {
-      decodedToken = jwt.verify(token, secret) as DecodedToken;
-    } catch (_err) {
-      throw new HttpErrors.UnprocessableEntity(
-        'Invalid or expired verification token',
-      );
-    }
-    const {userId} = decodedToken;
-    const user = await this.userRepository.findById(userId);
-    if (!user) {
-      throw new HttpErrors.UnprocessableEntity('User not found');
-    } else {
-      if (request.password0 === request.password1) {
-        try {
-          await this.emailService.sendSuccessfulyPasswordChange(user);
-          await this.userRepository.updateById(user.id, {
-            passwordHash: await this.hasher.hashPassword(request.password0),
-          });
-          return true;
-        } catch (_err) {
-          throw new HttpErrors.UnprocessableEntity(
-            'Failed to update user password',
-          );
-        }
+      const secret = process.env.JWT_SECRET || '';
+      const decodedToken = jwt.verify(request.token, secret) as DecodedToken;
+      const {userData} = decodedToken;
+      const user = await this.userRepository.findById(userData);
+      if (!user) {
+        throw new HttpErrors.UnprocessableEntity('User not found');
+      }
+      if (request.password0 !== request.password1) {
+        throw new HttpErrors.UnprocessableEntity('Passwords are not matching');
+      }
+      await this.emailService.sendSuccessfulyPasswordChange(user);
+      await this.userRepository.updateById(user.id, {
+        passwordHash: await this.hasher.hashPassword(request.password0),
+      });
+      return true;
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        throw new HttpErrors.UnprocessableEntity('Verification token has expired');
+      } else if (error.name === 'JsonWebTokenError') {
+        throw new HttpErrors.UnprocessableEntity('Invalid verification token');
       } else {
-        throw new HttpErrors.UnprocessableEntity('Password are not matching');
+        throw new HttpErrors.UnprocessableEntity(
+          'Failed to change password'
+        );
       }
     }
   }
+
+
+
+
+
+
+
+
 
   @authenticate('jwt')
   @get('/users/{id}', {

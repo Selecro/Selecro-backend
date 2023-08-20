@@ -22,10 +22,10 @@ import {
   UserRepository,
 } from './repositories';
 import {MySequence} from './sequence';
+import {MyUserService} from './services';
 import {EmailService} from './services/email';
 import {BcryptHasher} from './services/hash.password';
 import {JWTService} from './services/jwt-service';
-import {MyUserService} from './services/user-service';
 dotenv.config();
 
 export {ApplicationConfig};
