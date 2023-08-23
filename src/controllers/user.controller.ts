@@ -1,7 +1,11 @@
 import {authenticate} from '@loopback/authentication';
-import {Credentials, JWTService, UserCredentials} from '@loopback/authentication-jwt';
+import {
+  Credentials,
+  JWTService,
+  UserCredentials,
+} from '@loopback/authentication-jwt';
 import {inject} from '@loopback/context';
-import {Filter, repository} from '@loopback/repository';
+import {repository} from '@loopback/repository';
 import {
   HttpErrors,
   Request,
@@ -9,7 +13,7 @@ import {
   RestBindings,
   del,
   get,
-  getModelSchemaRef,
+  patch,
   post,
   put,
   requestBody,
@@ -24,7 +28,12 @@ import multer from 'multer';
 import {config} from '../datasources';
 import {Language, User} from '../models';
 import {UserRepository} from '../repositories';
-import {BcryptHasher, EmailService, MyUserService, validateCredentials} from '../services';
+import {
+  BcryptHasher,
+  EmailService,
+  MyUserService,
+  validateCredentials,
+} from '../services';
 dotenv.config();
 const Client = require('ssh2-sftp-client');
 const sftp = new Client();
@@ -42,7 +51,7 @@ export class UserController {
     @inject('services.email')
     public emailService: EmailService,
     @repository(UserRepository) public userRepository: UserRepository,
-  ) { }
+  ) {}
 
   @post('/login', {
     responses: {
@@ -119,7 +128,13 @@ export class UserController {
               password1: {type: 'string'},
               language: {type: 'string', enum: Object.values(Language)},
             },
-            required: ['email', 'username', 'password0', 'password1', 'language'],
+            required: [
+              'email',
+              'username',
+              'password0',
+              'password1',
+              'language',
+            ],
           },
         },
       },
@@ -130,17 +145,33 @@ export class UserController {
       _.pick(credentials, ['email', 'password0', 'password1', 'username']),
     );
     const existingUser = await this.userRepository.findOne({
-      where: {or: [{email: credentials.email}, {username: credentials.username}]},
+      where: {
+        or: [{email: credentials.email}, {username: credentials.username}],
+      },
     });
     if (existingUser) {
-      throw new HttpErrors.BadRequest('User with this email or username already exists.');
+      throw new HttpErrors.BadRequest(
+        'User with this email or username already exists.',
+      );
     }
-    const hashedPassword = await this.hasher.hashPassword(credentials.password0);
+    const hashedPassword = await this.hasher.hashPassword(
+      credentials.password0,
+    );
     const dek = crypto.randomBytes(32);
     const kekSalt = crypto.randomBytes(16).toString('base64');
-    const kek = crypto.pbkdf2Sync(hashedPassword, kekSalt, 100000, 32, 'sha512');
+    const kek = crypto.pbkdf2Sync(
+      credentials.password0,
+      kekSalt,
+      100000,
+      32,
+      'sha512',
+    );
     const initializationVector = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv('aes-256-cbc', kek, initializationVector);
+    const cipher = crypto.createCipheriv(
+      'aes-256-cbc',
+      kek,
+      initializationVector,
+    );
     const wrappedDEK = Buffer.concat([cipher.update(dek), cipher.final()]);
     const newUser = new User({
       email: credentials.email,
@@ -151,8 +182,8 @@ export class UserController {
       initializationVector: initializationVector.toString('base64'),
       language: credentials.language,
     });
-    await this.emailService.sendRegistrationEmail(newUser);
-    await this.userRepository.create(newUser);
+    const dbUser = await this.userRepository.create(newUser);
+    await this.emailService.sendRegistrationEmail(dbUser);
     return true;
   }
 
@@ -184,18 +215,21 @@ export class UserController {
         },
       },
     })
-    token: string,
+    request: {
+      token: string;
+    },
   ): Promise<boolean> {
     interface DecodedToken {
-      userData: Filter<User>;
+      userId: number;
       iat: number;
       exp: number;
     }
     try {
-      const secret = process.env.JWT_SECRET || '';
+      const {token} = request;
+      const secret = process.env.JWT_SECRET ?? '';
       const decodedToken = jwt.verify(token, secret) as DecodedToken;
-      const {userData} = decodedToken;
-      const user = await this.userRepository.findOne(userData);
+      const {userId} = decodedToken;
+      const user = await this.userRepository.findById(userId);
       if (!user) {
         throw new HttpErrors.UnprocessableEntity('User not found');
       }
@@ -203,12 +237,14 @@ export class UserController {
       return true;
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
-        throw new HttpErrors.UnprocessableEntity('Verification token has expired');
+        throw new HttpErrors.UnprocessableEntity(
+          'Verification token has expired',
+        );
       } else if (error.name === 'JsonWebTokenError') {
         throw new HttpErrors.UnprocessableEntity('Invalid verification token');
       } else {
         throw new HttpErrors.UnprocessableEntity(
-          'Failed to update user email verification status'
+          'Failed to update user email verification status',
         );
       }
     }
@@ -288,7 +324,11 @@ export class UserController {
         },
       },
     })
-    request: {token: string, password0: string, password1: string}
+    request: {
+      token: string;
+      password0: string;
+      password1: string;
+    },
   ): Promise<boolean> {
     interface DecodedToken {
       userData: number;
@@ -296,7 +336,7 @@ export class UserController {
       exp: number;
     }
     try {
-      const secret = process.env.JWT_SECRET || '';
+      const secret = process.env.JWT_SECRET ?? '';
       const decodedToken = jwt.verify(request.token, secret) as DecodedToken;
       const {userData} = decodedToken;
       const user = await this.userRepository.findById(userData);
@@ -313,98 +353,163 @@ export class UserController {
       return true;
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
-        throw new HttpErrors.UnprocessableEntity('Verification token has expired');
+        throw new HttpErrors.UnprocessableEntity(
+          'Verification token has expired',
+        );
       } else if (error.name === 'JsonWebTokenError') {
         throw new HttpErrors.UnprocessableEntity('Invalid verification token');
       } else {
-        throw new HttpErrors.UnprocessableEntity(
-          'Failed to change password'
-        );
+        throw new HttpErrors.UnprocessableEntity('Failed to change password');
       }
     }
   }
-
-
-
-
-
-
-
-
 
   @authenticate('jwt')
   @get('/users/{id}', {
     responses: {
       '200': {
         description: 'User model instance',
-        content: {'application/json': {schema: getModelSchemaRef(User)}},
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                email: {type: 'string'},
+                username: {type: 'string'},
+                language: {type: 'string'},
+                darkmode: {type: 'string'},
+                emailVerified: {type: 'string'},
+                date: {type: 'string'},
+                nick: {type: 'string'},
+                bio: {type: 'string'},
+                link: {type: 'string'},
+              },
+            },
+          },
+        },
       },
     },
   })
-  async findById(): Promise<User> {
-    return this.userRepository.findById(this.user.id);
+  async getUser(): Promise<
+    Omit<
+      User,
+      'id' | 'passwordHash' | 'wrappedDEK' | 'initializationVector' | 'kekSalt'
+    >
+  > {
+    const user = await this.userRepository.findById(this.user.id, {
+      fields: {
+        id: false,
+        passwordHash: false,
+        wrappedDEK: false,
+        initializationVector: false,
+        kekSalt: false,
+      },
+    });
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    return user;
   }
 
   @authenticate('jwt')
-  @put('/users/{id}', {
+  @patch('/users/{id}', {
     responses: {
       '200': {
-        description: 'User PUT success',
+        description: 'Update user',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
       },
     },
   })
-  async replaceById(
-    @requestBody()
-    user: User,
+  async patchUser(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              email: {type: 'string'},
+              username: {type: 'string'},
+              language: {type: 'string'},
+              darkmode: {type: 'string'},
+              nick: {type: 'string'},
+              bio: {type: 'string'},
+              link: {type: 'string'},
+            },
+          },
+        },
+      },
+    })
+    userPatch: Partial<User>,
   ): Promise<boolean> {
-    const dbuser = await this.userRepository.findById(this.user.id);
-    if (
-      dbuser.date.toString() === new Date(user.date).toString() &&
-      dbuser.id === user.id &&
-      dbuser.passwordHash === user.passwordHash &&
-      dbuser.emailVerified === user.emailVerified &&
-      dbuser.link === user.link
-    ) {
-      await this.userRepository.updateById(this.user.id, user);
-      return true;
-    } else if (dbuser.email !== user.email) {
-      if (!isEmail.validate(user.email)) {
-        throw new HttpErrors.UnprocessableEntity('invalid Email');
-      } else {
-        await this.emailService.sendResetEmail(dbuser, user.email);
-        await this.userRepository.updateById(user.id, {emailVerified: false});
-        return true;
-      }
-    } else if (dbuser.date.toString() !== new Date(user.date).toString()) {
-      throw new HttpErrors.UnprocessableEntity('cant change creation date');
-    } else if (dbuser.link !== user.link) {
-      throw new HttpErrors.UnprocessableEntity('cant change profile link');
-    } else if (dbuser.emailVerified !== user.emailVerified) {
-      throw new HttpErrors.UnprocessableEntity('email is not verified');
-    } else if (dbuser.id !== user.id) {
-      throw new HttpErrors.UnprocessableEntity('cant change id');
-    } else if (dbuser.passwordHash !== user.passwordHash) {
-      throw new HttpErrors.UnprocessableEntity('cant change password');
-    } else {
-      throw new HttpErrors.UnprocessableEntity('unexpected error');
+    const user = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
     }
+    if (userPatch.email && userPatch.email !== user.email) {
+      if (!isEmail.validate(userPatch.email)) {
+        throw new HttpErrors.UnprocessableEntity('invalid Email');
+      }
+      await this.emailService.sendResetEmail(user, userPatch.email);
+      await this.userRepository.updateById(this.user.id, {
+        emailVerified: false,
+      });
+    }
+    await this.userRepository.updateById(this.user.id, userPatch);
+    return true;
   }
 
   @authenticate('jwt')
   @del('/users/{id}', {
     responses: {
       '200': {
-        description: 'User DELETE success',
+        description: 'Delete user',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
       },
     },
   })
-  async deleteById(): Promise<boolean> {
-    try {
-      await this.userRepository.deleteById(this.user.id);
-      return true;
-    } catch (_err) {
-      throw new HttpErrors.UnprocessableEntity('error in delete');
+  async deleteUser(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              password: {type: 'string'},
+            },
+            required: ['password'],
+          },
+        },
+      },
+    })
+    request: {
+      password: string;
+    },
+  ): Promise<boolean> {
+    const user = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
     }
+    const passwordMatched = await this.hasher.comparePassword(
+      request.password,
+      user.passwordHash,
+    );
+    if (!passwordMatched) {
+      throw new HttpErrors.Unauthorized('password is not valid');
+    }
+    await this.userRepository.deleteById(this.user.id);
+    return true;
   }
 
   @authenticate('jwt')

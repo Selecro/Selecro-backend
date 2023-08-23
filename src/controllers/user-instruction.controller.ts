@@ -59,15 +59,11 @@ export class UserInstructionController {
     })
     instruction: Omit<Instruction, 'id' | 'userId' | 'date'>,
   ): Promise<boolean> {
-    try {
-      await this.instructionRepository.create({
-        ...instruction,
-        userId: this.user.id,
-      });
-      return true;
-    } catch (_err) {
-      return false;
-    }
+    await this.instructionRepository.create({
+      ...instruction,
+      userId: this.user.id,
+    });
+    return true;
   }
 
   @authenticate('jwt')
@@ -92,14 +88,13 @@ export class UserInstructionController {
     })
     instruction: Partial<Instruction>,
   ): Promise<boolean> {
-    try {
-      const instructionOriginal = await this.instructionRepository.findById(id);
-      this.validateInstructionOwnership(instructionOriginal);
-      await this.instructionRepository.updateById(id, instruction);
-      return true;
-    } catch (_err) {
-      return false;
+    const instructionOriginal = await this.instructionRepository.findById(id);
+    if (!instructionOriginal) {
+      throw new HttpErrors.NotFound('Instruction not found');
     }
+    this.validateInstructionOwnership(instructionOriginal);
+    await this.instructionRepository.updateById(id, instruction);
+    return true;
   }
 
   @authenticate('jwt')
@@ -111,20 +106,19 @@ export class UserInstructionController {
     },
   })
   async delete(@param.query.number('id') id: number): Promise<boolean> {
-    try {
-      const instruction = await this.instructionRepository.findById(id);
-      this.validateInstructionOwnership(instruction);
-      await this.instructionRepository.deleteById(id);
-      return true;
-    } catch (_err) {
-      return false;
+    const instruction = await this.instructionRepository.findById(id);
+    if (!instruction) {
+      throw new HttpErrors.NotFound('Instruction not found');
     }
+    this.validateInstructionOwnership(instruction);
+    await this.instructionRepository.deleteById(id);
+    return true;
   }
 
   private validateInstructionOwnership(instruction: Instruction): void {
     if (Number(instruction.userId) !== Number(this.user.id)) {
       throw new HttpErrors.Forbidden(
-        'You are not authorized to delete this instruction',
+        'You are not authorized to this instruction',
       );
     }
   }
