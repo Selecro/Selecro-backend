@@ -8,15 +8,11 @@ import {inject} from '@loopback/context';
 import {repository} from '@loopback/repository';
 import {
   HttpErrors,
-  Request,
-  Response,
-  RestBindings,
   del,
   get,
   patch,
   post,
-  put,
-  requestBody,
+  requestBody
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import * as crypto from 'crypto';
@@ -24,8 +20,6 @@ import * as dotenv from 'dotenv';
 import * as isEmail from 'isemail';
 import jwt from 'jsonwebtoken';
 import _ from 'lodash';
-import multer from 'multer';
-import {config} from '../datasources';
 import {Language, User} from '../models';
 import {UserRepository} from '../repositories';
 import {
@@ -36,8 +30,6 @@ import {
   validateCredentials,
 } from '../services';
 dotenv.config();
-const Client = require('ssh2-sftp-client');
-const sftp = new Client();
 
 export class UserController {
   constructor(
@@ -454,7 +446,6 @@ export class UserController {
               darkmode: {type: 'boolean'},
               nick: {type: 'string'},
               bio: {type: 'string'},
-              link: {type: 'string'},
             },
           },
         },
@@ -525,150 +516,5 @@ export class UserController {
     }
     await this.userRepository.deleteById(this.user.id);
     return true;
-  }
-
-  @authenticate('jwt')
-  @get('/users/{id}/profilePictureGet', {
-    responses: {
-      '200': {
-        description: 'User profile picture content',
-        content: {'image/jpeg': {}},
-      },
-    },
-  })
-  async getUserProfilePicture(): Promise<Buffer> {
-    const user = await this.userRepository.findById(this.user.id);
-    if (user.link) {
-      const sftpResponse = await sftp
-        .connect(config)
-        .then(async () => {
-          const x = await sftp.get('/users/' + user.link);
-          return x;
-        })
-        .then((response: string) => {
-          sftp.end();
-          return response;
-        })
-        .catch(() => {
-          throw new HttpErrors.UnprocessableEntity('error in get picture');
-        });
-      return sftpResponse;
-    } else {
-      throw new HttpErrors.UnprocessableEntity(
-        'user does not have profile picture',
-      );
-    }
-  }
-
-  @authenticate('jwt')
-  @put('/users/{id}/profilePictureSet', {
-    responses: {
-      '200': {
-        content: {
-          'application/json': {
-            schema: {
-              type: 'object',
-            },
-          },
-        },
-        description: 'Picture successfully uploaded',
-      },
-    },
-  })
-  async uploadImage(
-    @requestBody({
-      description: 'multipart/form-data for files/fields',
-      required: true,
-      content: {
-        'multipart/form-data': {
-          'x-parser': 'stream',
-          schema: {
-            type: 'object',
-            properties: {
-              file: {type: 'string', format: 'binary'},
-            },
-          },
-        },
-      },
-    })
-    request: Request,
-    @inject(RestBindings.Http.RESPONSE) response: Response,
-  ): Promise<void> {
-    const user = await this.userRepository.findById(this.user.id);
-    const storage = multer.diskStorage({
-      destination: function (_req, _file, cb) {
-        cb(null, './public');
-      },
-      filename: function (_req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, file.fieldname + '-' + uniqueSuffix);
-      },
-    });
-    const upload = multer({storage: storage});
-    if (user) {
-      if (user.link !== null) {
-        await sftp
-          .connect(config)
-          .then(() => sftp.delete('/users/' + user.link))
-          .then(() => sftp.end())
-          .catch(() => {
-            throw new HttpErrors.UnprocessableEntity(
-              'error in deleting old picture',
-            );
-          });
-      }
-      upload.single('image')(request, response, err => {
-        if (err) {
-          new HttpErrors.UnprocessableEntity('Error in uploading file');
-        } else {
-          sftp
-            .connect(config)
-            .then(() =>
-              sftp.put(
-                './public/' + request.file?.filename,
-                'users/' + request.file?.filename,
-              ),
-            )
-            .then(() => sftp.end())
-            .then(() =>
-              this.userRepository.updateById(user.id, {
-                link: request.file?.filename,
-              }),
-            )
-            .then(() => {
-              return true;
-            })
-            .catch((_error: string) => {
-              throw new HttpErrors.UnprocessableEntity(
-                'Error in uploading file to SFTP',
-              );
-            });
-        }
-      });
-    }
-  }
-
-  @authenticate('jwt')
-  @del('/users/{id}/profilePictureDel', {
-    responses: {
-      '200': {
-        description: 'User picture DELETE success',
-      },
-    },
-  })
-  async delUserProfilePicture(): Promise<Buffer> {
-    const user = await this.userRepository.findById(this.user.id);
-    if (user.link != null) {
-      const sftpResponse = await sftp.connect(config).then(async () => {
-        const x = await sftp.delete('/users/' + user.link);
-        await this.userRepository.updateById(user.id, {link: null});
-        return x;
-      });
-      return sftpResponse;
-    } else {
-      throw new HttpErrors.UnprocessableEntity(
-        'user does not have profile picture',
-      );
-    }
   }
 }

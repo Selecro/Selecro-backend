@@ -53,6 +53,7 @@ export class SelecroBackendApplication extends BootMixin(
     this.controller(PingController);
     this.controller(UserController);
     this.controller(SocketController);
+    this.controller(StepRepository);
     this.repository(UserRepository);
     this.repository(InstructionRepository);
     this.repository(StepRepository);
