@@ -32,6 +32,7 @@ import {
   BcryptHasher,
   EmailService,
   MyUserService,
+  VaultService,
   validateCredentials,
 } from '../services';
 dotenv.config();
@@ -50,6 +51,8 @@ export class UserController {
     public hasher: BcryptHasher,
     @inject('services.email')
     public emailService: EmailService,
+    @inject('services.vault')
+    public vaultService: VaultService,
     @repository(UserRepository) public userRepository: UserRepository,
   ) {}
 
@@ -181,6 +184,18 @@ export class UserController {
       kekSalt: kekSalt,
       initializationVector: initializationVector.toString('base64'),
       language: credentials.language,
+    });
+    const userKek = {
+      key: kek,
+    };
+    const userDek = {
+      key: dek,
+    };
+    await this.vaultService.write(credentials.username + '/userkek', {
+      data: userKek,
+    });
+    await this.vaultService.write(credentials.username + '/userdek', {
+      data: userDek,
     });
     const dbUser = await this.userRepository.create(newUser);
     await this.emailService.sendRegistrationEmail(dbUser);
