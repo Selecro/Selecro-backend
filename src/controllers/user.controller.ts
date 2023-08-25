@@ -186,10 +186,10 @@ export class UserController {
       language: credentials.language,
     });
     const userKek = {
-      key: kek,
+      key: kek.toString('base64'),
     };
     const userDek = {
-      key: dek,
+      key: dek.toString('base64'),
     };
     await this.vaultService.write(credentials.username + '/userkek', {
       data: userKek,
@@ -450,8 +450,8 @@ export class UserController {
             properties: {
               email: {type: 'string'},
               username: {type: 'string'},
-              language: {type: 'string'},
-              darkmode: {type: 'string'},
+              language: {$ref: '#/components/schemas/Language'},
+              darkmode: {type: 'boolean'},
               nick: {type: 'string'},
               bio: {type: 'string'},
               link: {type: 'string'},
@@ -460,22 +460,22 @@ export class UserController {
         },
       },
     })
-    userPatch: Partial<User>,
+    user: Partial<User>,
   ): Promise<boolean> {
-    const user = await this.userRepository.findById(this.user.id);
+    const userOriginal = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    if (userPatch.email && userPatch.email !== user.email) {
-      if (!isEmail.validate(userPatch.email)) {
+    if (user.email && user.email !== user.email) {
+      if (!isEmail.validate(user.email)) {
         throw new HttpErrors.UnprocessableEntity('invalid email');
       }
-      await this.emailService.sendResetEmail(user, userPatch.email);
+      await this.emailService.sendResetEmail(userOriginal, user.email);
       await this.userRepository.updateById(this.user.id, {
         emailVerified: false,
       });
     }
-    await this.userRepository.updateById(this.user.id, userPatch);
+    await this.userRepository.updateById(this.user.id, user);
     return true;
   }
 
