@@ -54,7 +54,7 @@ export class UserController {
     @inject('services.vault')
     public vaultService: VaultService,
     @repository(UserRepository) public userRepository: UserRepository,
-  ) {}
+  ) { }
 
   @post('/login', {
     responses: {
@@ -468,7 +468,7 @@ export class UserController {
     }
     if (userPatch.email && userPatch.email !== user.email) {
       if (!isEmail.validate(userPatch.email)) {
-        throw new HttpErrors.UnprocessableEntity('invalid Email');
+        throw new HttpErrors.UnprocessableEntity('invalid email');
       }
       await this.emailService.sendResetEmail(user, userPatch.email);
       await this.userRepository.updateById(this.user.id, {

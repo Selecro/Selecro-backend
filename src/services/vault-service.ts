@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 export class VaultService {
-  private readonly vaultEndpoint = 'http://192.168.0.4:8200';
+  private readonly vaultEndpoint = process.env.VAULT_URL ?? '';
   private readonly userpass = {
     username: process.env.VAULT_USERNAME ?? '',
     password: process.env.VAULT_PASSWORD ?? '',
