@@ -8,6 +8,9 @@ import {inject} from '@loopback/context';
 import {repository} from '@loopback/repository';
 import {
   HttpErrors,
+  Request,
+  Response,
+  RestBindings,
   del,
   get,
   patch,
@@ -26,6 +29,7 @@ import {
   BcryptHasher,
   EmailService,
   MyUserService,
+  PictureService,
   VaultService,
   validateCredentials,
 } from '../services';
@@ -43,6 +47,8 @@ export class UserController {
     public hasher: BcryptHasher,
     @inject('services.email')
     public emailService: EmailService,
+    @inject('services.picture')
+    public pictureService: PictureService,
     @inject('services.vault')
     public vaultService: VaultService,
     @repository(UserRepository) public userRepository: UserRepository,
@@ -400,7 +406,7 @@ export class UserController {
   async getUser(): Promise<
     Omit<
       User,
-      'id' | 'passwordHash' | 'wrappedDEK' | 'initializationVector' | 'kekSalt'
+      'id' | 'passwordHash' | 'wrappedDEK' | 'initializationVector' | 'kekSalt' | 'deleteHash'
     >
   > {
     const user = await this.userRepository.findById(this.user.id, {
@@ -410,6 +416,7 @@ export class UserController {
         wrappedDEK: false,
         initializationVector: false,
         kekSalt: false,
+        deleteHash: false,
       },
     });
     if (!user) {
@@ -515,6 +522,79 @@ export class UserController {
       throw new HttpErrors.Unauthorized('password is not valid');
     }
     await this.userRepository.deleteById(this.user.id);
+    return true;
+  }
+
+  @authenticate('jwt')
+  @post('/users/{id}/profile-picture', {
+    responses: {
+      '200': {
+        description: 'Update profile picture',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
+      },
+    },
+  })
+  async uploadProfilePicture(
+    @requestBody({
+      content: {
+        'multipart/form-data': {
+          'x-parser': 'stream',
+          schema: {
+            type: 'object',
+            properties: {
+              image: {type: 'string', format: 'binary'},
+            },
+            required: ['image'],
+          },
+        },
+      },
+    })
+    request: Request,
+    @inject(RestBindings.Http.RESPONSE) response: Response,
+  ): Promise<boolean> {
+    const user = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    if (user.deleteHash) {
+      await this.pictureService.deleteProfilePicture(user.deleteHash);
+    }
+    const data = await this.pictureService.saveProfilePicture(request, response);
+    await this.userRepository.updateById(this.user.id, {link: data.link, deleteHash: data.deletehash});
+    return true;
+  }
+
+  @authenticate('jwt')
+  @del('/users/{id}/profile-picture', {
+    responses: {
+      '200': {
+        description: 'Delete profile picture',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
+      },
+    },
+  })
+  async deleteProfilePicture(): Promise<boolean> {
+    const user = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    if (!user.deleteHash) {
+      throw new HttpErrors.NotFound('Users profile picture does not exist');
+    }
+    await this.pictureService.deleteProfilePicture(user.deleteHash);
+    await this.userRepository.updateById(this.user.id, {link: null, deleteHash: null});
     return true;
   }
 }

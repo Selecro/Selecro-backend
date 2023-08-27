@@ -208,6 +208,20 @@ export class User extends Entity {
   })
   link?: string | null;
 
+  @property({
+    type: 'any',
+    required: false,
+    postgresql: {
+      columnName: 'delete_hash',
+      dataType: 'text',
+      dataLength: null,
+      dataPrecision: null,
+      dataScale: null,
+      nullable: 'YES',
+    },
+  })
+  deleteHash?: string | null;
+
   @hasMany(() => Instruction, {keyTo: 'userId'})
   instructions: Instruction[];
 
