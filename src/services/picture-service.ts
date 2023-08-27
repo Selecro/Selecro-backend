@@ -13,7 +13,7 @@ export class PictureService {
 
   constructor() { }
 
-  async saveProfilePicture(request: Request, response: Response): Promise<{link: string, deletehash: string}> {
+  async savePicture(request: Request, response: Response): Promise<{link: string, deletehash: string}> {
     try {
       const file = await this.uploadImage(request, response);
       const imgurResponse = await fetch(
@@ -36,7 +36,7 @@ export class PictureService {
     }
   }
 
-  async deleteProfilePicture(deleteHash: string): Promise<boolean> {
+  async deletePicture(deleteHash: string): Promise<boolean> {
     try {
       const imgurResponse = await fetch(
         `https://api.imgur.com/3/image/${deleteHash}`,
@@ -57,61 +57,21 @@ export class PictureService {
     }
   }
 
-  /*async savePicture(request: Request, response: Response): Promise<void> {
-    try {
-      const response = await fetch(
-        `${this.vaultEndpoint}/v1/secret/data/selecro/${path}`,
-        {
-          method: 'POST',
-          headers: {
-            'X-Vault-Token': this.token,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        },
-      );
-      if (!response.ok) {
-        const responseBody = await response.json();
-        throw new Error(
-          `Write error: ${response.statusText}\nResponse data: ${JSON.stringify(
-            responseBody,
-          )}`,
-        );
-      }
-    } catch (error) {
-      throw new Error(`Write error: ${error.message}`);
-    }
-  }
-
-  async deletePicture(deleteHash: string): Promise<void> {
-    try {
-      const response = await fetch(
-        `${this.vaultEndpoint}/v1/secret/data/selecro/${path}`,
-        {
-          method: 'POST',
-          headers: {
-            'X-Vault-Token': this.token,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        },
-      );
-      if (!response.ok) {
-        const responseBody = await response.json();
-        throw new Error(
-          `Write error: ${response.statusText}\nResponse data: ${JSON.stringify(
-            responseBody,
-          )}`,
-        );
-      }
-    } catch (error) {
-      throw new Error(`Write error: ${error.message}`);
-    }
-  }*/
-
   private async uploadImage(request: Request, response: Response): Promise<Express.Multer.File> {
     const storage = multer.memoryStorage();
-    const upload = multer({storage}).single('image');
+    const upload = multer({
+      storage: storage,
+      limits: {
+        fileSize: 1024 * 1024,
+      },
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+          cb(null, true);
+        } else {
+          cb(new Error('Only image files are allowed'));
+        }
+      },
+    }).single('image');
     try {
       await new Promise<void>((resolve, reject) => {
         upload(request, response, (err: any) => {

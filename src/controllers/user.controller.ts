@@ -563,9 +563,9 @@ export class UserController {
       throw new HttpErrors.NotFound('User not found');
     }
     if (user.deleteHash) {
-      await this.pictureService.deleteProfilePicture(user.deleteHash);
+      await this.pictureService.deletePicture(user.deleteHash);
     }
-    const data = await this.pictureService.saveProfilePicture(request, response);
+    const data = await this.pictureService.savePicture(request, response);
     await this.userRepository.updateById(this.user.id, {link: data.link, deleteHash: data.deletehash});
     return true;
   }
@@ -593,7 +593,7 @@ export class UserController {
     if (!user.deleteHash) {
       throw new HttpErrors.NotFound('Users profile picture does not exist');
     }
-    await this.pictureService.deleteProfilePicture(user.deleteHash);
+    await this.pictureService.deletePicture(user.deleteHash);
     await this.userRepository.updateById(this.user.id, {link: null, deleteHash: null});
     return true;
   }

@@ -4,6 +4,9 @@ import {inject} from '@loopback/context';
 import {repository} from '@loopback/repository';
 import {
   HttpErrors,
+  Request,
+  Response,
+  RestBindings,
   del,
   getModelSchemaRef,
   param,
@@ -14,6 +17,7 @@ import {
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import {Instruction, Step} from '../models';
 import {InstructionRepository, StepRepository} from '../repositories';
+import {PictureService, VaultService} from '../services';
 
 export class InstructionStepController {
   constructor(
@@ -21,6 +25,10 @@ export class InstructionStepController {
     public jwtService: JWTService,
     @inject(SecurityBindings.USER, {optional: true})
     public user: UserProfile,
+    @inject('services.picture')
+    public pictureService: PictureService,
+    @inject('services.vault')
+    public vaultService: VaultService,
     @repository(UserRepository) public userRepository: UserRepository,
     @repository(InstructionRepository) public instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
@@ -115,7 +123,7 @@ export class InstructionStepController {
     }
     const stepOriginal = await this.stepRepository.findById(stepId);
     if (!stepOriginal) {
-      throw new HttpErrors.NotFound('Instruction not found');
+      throw new HttpErrors.NotFound('Step not found');
     }
     this.validateInstructionOwnership(instruction);
     this.validateStepOwnership(stepOriginal, instruction);
@@ -152,11 +160,109 @@ export class InstructionStepController {
     }
     const stepOriginal = await this.stepRepository.findById(stepId);
     if (!stepOriginal) {
-      throw new HttpErrors.NotFound('Instruction not found');
+      throw new HttpErrors.NotFound('Step not found');
     }
     this.validateInstructionOwnership(instruction);
     this.validateStepOwnership(stepOriginal, instruction);
     await this.stepRepository.deleteById(stepId);
+    return true;
+  }
+
+  @authenticate('jwt')
+  @post('/users/{id}/instructions/{instructionId}/steps/{stepId}', {
+    responses: {
+      '200': {
+        description: 'Upload picture',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
+      },
+    },
+  })
+  async uploadProfilePicture(
+    @param.path.number('stepId') stepId: number,
+    @param.path.number('instructionId') instructionId: number,
+    @requestBody({
+      content: {
+        'multipart/form-data': {
+          'x-parser': 'stream',
+          schema: {
+            type: 'object',
+            properties: {
+              image: {type: 'string', format: 'binary'},
+            },
+            required: ['image'],
+          },
+        },
+      },
+    })
+    request: Request,
+    @inject(RestBindings.Http.RESPONSE) response: Response,
+  ): Promise<boolean> {
+    const user = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    const instruction = await this.instructionRepository.findById(instructionId);
+    if (!instruction) {
+      throw new HttpErrors.NotFound('Instruction not found');
+    }
+    const step = await this.stepRepository.findById(stepId);
+    if (!step) {
+      throw new HttpErrors.NotFound('Step not found');
+    }
+    this.validateInstructionOwnership(instruction);
+    this.validateStepOwnership(step, instruction);
+    if (step.deleteHash) {
+      await this.pictureService.deletePicture(step.deleteHash);
+    }
+    const data = await this.pictureService.savePicture(request, response);
+    await this.stepRepository.updateById(stepId, {link: data.link, deleteHash: data.deletehash});
+    return true;
+  }
+
+  @authenticate('jwt')
+  @del('/users/{id}/instructions/{instructionId}/steps/{stepId}', {
+    responses: {
+      '200': {
+        description: 'Delete picture',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
+      },
+    },
+  })
+  async deleteProfilePicture(
+    @param.path.number('stepId') stepId: number,
+    @param.path.number('instructionId') instructionId: number,
+  ): Promise<boolean> {
+    const user = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    const instruction = await this.instructionRepository.findById(instructionId);
+    if (!instruction) {
+      throw new HttpErrors.NotFound('Instruction not found');
+    }
+    const step = await this.stepRepository.findById(stepId);
+    if (!step) {
+      throw new HttpErrors.NotFound('Step not found');
+    }
+    this.validateInstructionOwnership(instruction);
+    this.validateStepOwnership(step, instruction);
+    if (!step.deleteHash) {
+      throw new HttpErrors.NotFound('Step picture does not exist');
+    }
+    await this.pictureService.deletePicture(step.deleteHash);
+    await this.stepRepository.updateById(stepId, {link: null, deleteHash: null});
     return true;
   }
 
