@@ -24,7 +24,7 @@ import * as isEmail from 'isemail';
 import jwt from 'jsonwebtoken';
 import _ from 'lodash';
 import {Language, User} from '../models';
-import {UserRepository} from '../repositories';
+import {InstructionRepository, StepRepository, UserRepository} from '../repositories';
 import {
   BcryptHasher,
   EmailService,
@@ -51,7 +51,9 @@ export class UserController {
     public pictureService: PictureService,
     @inject('services.vault')
     public vaultService: VaultService,
-    @repository(UserRepository) public userRepository: UserRepository,
+    @repository(UserRepository) protected userRepository: UserRepository,
+    @repository(InstructionRepository) protected instructionRepository: InstructionRepository,
+    @repository(StepRepository) public stepRepository: StepRepository,
   ) { }
 
   @post('/login', {
@@ -522,6 +524,13 @@ export class UserController {
       throw new HttpErrors.Unauthorized('password is not valid');
     }
     await this.userRepository.deleteById(this.user.id);
+    const instructions = await this.instructionRepository.find({
+      fields: {userId: this.user.id},
+    });
+    await this.instructionRepository.deleteAll({userId: this.user.id});
+    for (let instruction of instructions) {
+      await this.stepRepository.deleteAll({instructionId: instruction.id});
+    }
     return true;
   }
 

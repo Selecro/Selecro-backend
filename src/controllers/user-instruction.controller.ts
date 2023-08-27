@@ -17,6 +17,7 @@ import {SecurityBindings, UserProfile} from '@loopback/security';
 import {Difficulty, Instruction} from '../models';
 import {
   InstructionRepository,
+  StepRepository,
   UserRepository
 } from '../repositories';
 import {JWTService, PictureService, VaultService} from '../services';
@@ -33,6 +34,7 @@ export class UserInstructionController {
     public vaultService: VaultService,
     @repository(UserRepository) protected userRepository: UserRepository,
     @repository(InstructionRepository) protected instructionRepository: InstructionRepository,
+    @repository(StepRepository) public stepRepository: StepRepository,
   ) { }
 
   @authenticate('jwt')
@@ -146,6 +148,7 @@ export class UserInstructionController {
     }
     this.validateInstructionOwnership(instruction);
     await this.instructionRepository.deleteById(instructionId);
+    await this.stepRepository.deleteAll({instructionId: instructionId});
     return true;
   }
 
