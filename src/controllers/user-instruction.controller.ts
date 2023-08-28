@@ -22,8 +22,6 @@ import {
 import {
   JWTService,
   PictureService,
-  TranslateService,
-  VaultService,
 } from '../services';
 
 export class UserInstructionController {
@@ -34,15 +32,11 @@ export class UserInstructionController {
     public user: UserProfile,
     @inject('services.picture')
     public pictureService: PictureService,
-    @inject('services.vault')
-    public vaultService: VaultService,
-    @inject('services.translate')
-    public translateService: TranslateService,
     @repository(UserRepository) protected userRepository: UserRepository,
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) {}
+  ) { }
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}', {
@@ -66,31 +60,27 @@ export class UserInstructionController {
           schema: {
             type: 'object',
             properties: {
-              title: {type: 'string'},
+              titleCz: {type: 'string'},
+              titleEn: {type: 'string'},
               difficulty: {enum: Object.values(Difficulty)},
               private: {type: 'boolean'},
             },
-            required: ['title', 'difficulty', 'private'],
+            required: ['titleCz', 'titleEn', 'difficulty', 'private'],
           },
         },
       },
     })
     instruction: Omit<
       Instruction,
-      'id' | 'userId' | 'date' | 'link' | 'deleteHash' | 'titleCz' | 'titleEn'
-    > & {title: string},
+      'id' | 'userId' | 'date' | 'link' | 'deleteHash'
+    >,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const translatedInstruction =
-      await this.translateService.translateInstructionCreate(
-        instruction,
-        user.language,
-      );
     await this.instructionRepository.create({
-      ...translatedInstruction,
+      ...instruction,
       userId: this.user.id,
     });
     return true;
@@ -119,7 +109,8 @@ export class UserInstructionController {
           schema: {
             type: 'object',
             properties: {
-              title: {type: 'string'},
+              titleCz: {type: 'string'},
+              titleEn: {type: 'string'},
               difficulty: {enum: Object.values(Difficulty)},
               private: {type: 'boolean'},
             },
@@ -127,7 +118,7 @@ export class UserInstructionController {
         },
       },
     })
-    instruction: Partial<Instruction> & {title: string},
+    instruction: Partial<Instruction>,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
@@ -140,14 +131,9 @@ export class UserInstructionController {
       throw new HttpErrors.NotFound('Instruction not found');
     }
     this.validateInstructionOwnership(instructionOriginal);
-    const translatedInstruction =
-      await this.translateService.translateInstructionPatch(
-        instruction,
-        user.language,
-      );
     await this.instructionRepository.updateById(
       instructionId,
-      translatedInstruction,
+      instruction,
     );
     return true;
   }

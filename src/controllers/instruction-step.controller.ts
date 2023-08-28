@@ -14,9 +14,9 @@ import {
   requestBody,
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
-import {Instruction, Language, Step} from '../models';
+import {Instruction, Step} from '../models';
 import {InstructionRepository, StepRepository} from '../repositories';
-import {PictureService, TranslateService, VaultService} from '../services';
+import {PictureService} from '../services';
 
 export class InstructionStepController {
   constructor(
@@ -26,15 +26,11 @@ export class InstructionStepController {
     public user: UserProfile,
     @inject('services.picture')
     public pictureService: PictureService,
-    @inject('services.vault')
-    public vaultService: VaultService,
-    @inject('services.translate')
-    public translateService: TranslateService,
     @repository(UserRepository) public userRepository: UserRepository,
     @repository(InstructionRepository)
     public instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) {}
+  ) { }
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}/steps/{stepId}', {
@@ -59,15 +55,22 @@ export class InstructionStepController {
           schema: {
             type: 'object',
             properties: {
-              title: {type: 'string'},
-              description: {
+              titleCz: {type: 'string'},
+              titleEn: {type: 'string'},
+              descriptionCz: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+              },
+              descriptionEn: {
                 type: 'array',
                 items: {
                   type: 'string',
                 },
               },
             },
-            required: ['title', 'description'],
+            required: ['titleCz', 'titleEn', 'descriptionCz', 'descriptionEn'],
           },
         },
       },
@@ -76,11 +79,7 @@ export class InstructionStepController {
       Step,
       | 'id'
       | 'instructionId'
-      | 'titleCz'
-      | 'titleEn'
-      | 'descriptionCz'
-      | 'descriptionEn'
-    > & {title: string; description: string[]},
+    >,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
@@ -93,13 +92,8 @@ export class InstructionStepController {
       throw new HttpErrors.NotFound('Instruction not found');
     }
     this.validateInstructionOwnership(instruction);
-    const translatedStep = await this.translateService.translateStepCreate(
-      step,
-      Language.CZ,
-    );
-    console.log(translatedStep);
     await this.stepRepository.create({
-      ...translatedStep,
+      ...step,
       instructionId: instructionId,
     });
     return true;
@@ -129,8 +123,15 @@ export class InstructionStepController {
           schema: {
             type: 'object',
             properties: {
-              title: {type: 'string'},
-              description: {
+              titleCz: {type: 'string'},
+              titleEn: {type: 'string'},
+              descriptionCz: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+              },
+              descriptionEn: {
                 type: 'array',
                 items: {
                   type: 'string',
@@ -141,7 +142,7 @@ export class InstructionStepController {
         },
       },
     })
-    step: Partial<Step> & {title: string; description: string[]},
+    step: Partial<Step>,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
@@ -159,11 +160,7 @@ export class InstructionStepController {
     }
     this.validateInstructionOwnership(instruction);
     this.validateStepOwnership(stepOriginal, instruction);
-    const translatedStep = await this.translateService.translateStepPatch(
-      step,
-      user.language,
-    );
-    await this.stepRepository.updateById(stepId, translatedStep);
+    await this.stepRepository.updateById(stepId, step);
     return true;
   }
 

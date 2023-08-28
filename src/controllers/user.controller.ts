@@ -18,7 +18,6 @@ import {
   requestBody,
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
-import * as crypto from 'crypto';
 import * as dotenv from 'dotenv';
 import * as isEmail from 'isemail';
 import jwt from 'jsonwebtoken';
@@ -34,7 +33,6 @@ import {
   EmailService,
   MyUserService,
   PictureService,
-  VaultService,
   validateCredentials,
 } from '../services';
 dotenv.config();
@@ -53,13 +51,11 @@ export class UserController {
     public emailService: EmailService,
     @inject('services.picture')
     public pictureService: PictureService,
-    @inject('services.vault')
-    public vaultService: VaultService,
     @repository(UserRepository) protected userRepository: UserRepository,
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) {}
+  ) { }
 
   @post('/login', {
     responses: {
@@ -135,6 +131,9 @@ export class UserController {
               password0: {type: 'string'},
               password1: {type: 'string'},
               language: {enum: Object.values(Language)},
+              wrappedDEK: {type: 'string'},
+              kekSalt: {type: 'string'},
+              initializationVector: {type: 'string'},
             },
             required: [
               'email',
@@ -142,6 +141,9 @@ export class UserController {
               'password0',
               'password1',
               'language',
+              'wrappedDEK',
+              'kekSalt',
+              'initializationVector',
             ],
           },
         },
@@ -165,42 +167,14 @@ export class UserController {
     const hashedPassword = await this.hasher.hashPassword(
       credentials.password0,
     );
-    const dek = crypto.randomBytes(32);
-    const kekSalt = crypto.randomBytes(16).toString('base64');
-    const kek = crypto.pbkdf2Sync(
-      credentials.password0,
-      kekSalt,
-      100000,
-      32,
-      'sha512',
-    );
-    const initializationVector = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv(
-      'aes-256-cbc',
-      kek,
-      initializationVector,
-    );
-    const wrappedDEK = Buffer.concat([cipher.update(dek), cipher.final()]);
     const newUser = new User({
       email: credentials.email,
       username: credentials.username,
       passwordHash: hashedPassword,
-      wrappedDEK: wrappedDEK.toString('base64'),
-      kekSalt: kekSalt,
-      initializationVector: initializationVector.toString('base64'),
+      wrappedDEK: credentials.wrappedDEK.toString('base64'),
+      kekSalt: credentials.kekSalt,
+      initializationVector: credentials.initializationVector.toString('base64'),
       language: credentials.language,
-    });
-    const userKek = {
-      key: kek.toString('base64'),
-    };
-    const userDek = {
-      key: dek.toString('base64'),
-    };
-    await this.vaultService.write(credentials.username + '/userkek', {
-      data: userKek,
-    });
-    await this.vaultService.write(credentials.username + '/userdek', {
-      data: userDek,
     });
     const dbUser = await this.userRepository.create(newUser);
     await this.emailService.sendRegistrationEmail(dbUser);
