@@ -33,6 +33,7 @@ import {
   EmailService,
   MyUserService,
   PictureService,
+  VaultService,
   validateCredentials,
 } from '../services';
 dotenv.config();
@@ -51,11 +52,13 @@ export class UserController {
     public emailService: EmailService,
     @inject('services.picture')
     public pictureService: PictureService,
+    @inject('services.vault')
+    public vaultService: VaultService,
     @repository(UserRepository) protected userRepository: UserRepository,
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) { }
+  ) {}
 
   @post('/login', {
     responses: {
@@ -92,7 +95,7 @@ export class UserController {
       },
     })
     credentials: Credentials,
-  ): Promise<{token: string}> {
+  ): Promise<{token: string; tokenKMS: string}> {
     const user = await this.userService.verifyCredentials(credentials);
     const userProfile = this.userService.convertToUserProfile(user);
     const existingUser = await this.userRepository.findOne({
@@ -102,7 +105,11 @@ export class UserController {
       throw new HttpErrors.UnprocessableEntity('email is not verified');
     }
     const token = await this.jwtService.generateToken(userProfile);
-    return {token};
+    const tokenKMS = await this.vaultService.authenticate(
+      existingUser.username,
+      credentials.password,
+    );
+    return {token, tokenKMS};
   }
 
   @post('/signup', {
@@ -150,7 +157,7 @@ export class UserController {
       },
     })
     credentials: UserCredentials,
-  ): Promise<boolean> {
+  ): Promise<string> {
     validateCredentials(
       _.pick(credentials, ['email', 'password0', 'password1', 'username']),
     );
@@ -167,6 +174,14 @@ export class UserController {
     const hashedPassword = await this.hasher.hashPassword(
       credentials.password0,
     );
+    await this.vaultService.createUser(
+      credentials.username,
+      credentials.password0,
+    );
+    const tokenKMS = await this.vaultService.authenticate(
+      credentials.username,
+      credentials.password0,
+    );
     const newUser = new User({
       email: credentials.email,
       username: credentials.username,
@@ -178,7 +193,7 @@ export class UserController {
     });
     const dbUser = await this.userRepository.create(newUser);
     await this.emailService.sendRegistrationEmail(dbUser);
-    return true;
+    return tokenKMS;
   }
 
   @post('/verify-email', {
@@ -377,6 +392,7 @@ export class UserController {
                 nick: {type: 'string'},
                 bio: {type: 'string'},
                 link: {type: 'string'},
+                wrappedDEK: {type: 'string'},
               },
             },
           },
@@ -387,19 +403,13 @@ export class UserController {
   async getUser(): Promise<
     Omit<
       User,
-      | 'id'
-      | 'passwordHash'
-      | 'wrappedDEK'
-      | 'initializationVector'
-      | 'kekSalt'
-      | 'deleteHash'
+      'id' | 'passwordHash' | 'initializationVector' | 'kekSalt' | 'deleteHash'
     >
   > {
     const user = await this.userRepository.findById(this.user.id, {
       fields: {
         id: false,
         passwordHash: false,
-        wrappedDEK: false,
         initializationVector: false,
         kekSalt: false,
         deleteHash: false,

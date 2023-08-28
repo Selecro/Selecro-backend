@@ -30,7 +30,7 @@ export class InstructionStepController {
     @repository(InstructionRepository)
     public instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}/steps/{stepId}', {
@@ -75,11 +75,7 @@ export class InstructionStepController {
         },
       },
     })
-    step: Omit<
-      Step,
-      | 'id'
-      | 'instructionId'
-    >,
+    step: Omit<Step, 'id' | 'instructionId'>,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {

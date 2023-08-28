@@ -19,10 +19,7 @@ import {
   StepRepository,
   UserRepository,
 } from '../repositories';
-import {
-  JWTService,
-  PictureService,
-} from '../services';
+import {JWTService, PictureService} from '../services';
 
 export class UserInstructionController {
   constructor(
@@ -36,7 +33,7 @@ export class UserInstructionController {
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}', {
@@ -131,10 +128,7 @@ export class UserInstructionController {
       throw new HttpErrors.NotFound('Instruction not found');
     }
     this.validateInstructionOwnership(instructionOriginal);
-    await this.instructionRepository.updateById(
-      instructionId,
-      instruction,
-    );
+    await this.instructionRepository.updateById(instructionId, instruction);
     return true;
   }
 
