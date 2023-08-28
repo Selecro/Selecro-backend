@@ -28,7 +28,7 @@ export class Instruction extends Entity {
     type: 'string',
     required: true,
     postgresql: {
-      columnName: 'title',
+      columnName: 'title_cz',
       dataType: 'text',
       dataLength: null,
       dataPrecision: null,
@@ -36,7 +36,21 @@ export class Instruction extends Entity {
       nullable: 'NO',
     },
   })
-  title: string;
+  titleCz: string;
+
+  @property({
+    type: 'string',
+    required: true,
+    postgresql: {
+      columnName: 'title_en',
+      dataType: 'text',
+      dataLength: null,
+      dataPrecision: null,
+      dataScale: null,
+      nullable: 'NO',
+    },
+  })
+  titleEn: string;
 
   @property({
     type: 'string',

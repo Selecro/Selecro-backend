@@ -16,7 +16,7 @@ export class VaultService {
 
   constructor() {
     this.checkAndUnsealIfNeeded().catch(error => {
-      throw new Error("Error during initialization:" + error);
+      throw new Error('Error during initialization:' + error);
     });
   }
 

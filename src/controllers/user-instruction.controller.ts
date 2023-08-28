@@ -7,20 +7,24 @@ import {
   Response,
   RestBindings,
   del,
-  getModelSchemaRef,
   param,
   patch,
   post,
-  requestBody
+  requestBody,
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import {Difficulty, Instruction} from '../models';
 import {
   InstructionRepository,
   StepRepository,
-  UserRepository
+  UserRepository,
 } from '../repositories';
-import {JWTService, PictureService, VaultService} from '../services';
+import {
+  JWTService,
+  PictureService,
+  TranslateService,
+  VaultService,
+} from '../services';
 
 export class UserInstructionController {
   constructor(
@@ -32,10 +36,13 @@ export class UserInstructionController {
     public pictureService: PictureService,
     @inject('services.vault')
     public vaultService: VaultService,
+    @inject('services.translate')
+    public translateService: TranslateService,
     @repository(UserRepository) protected userRepository: UserRepository,
-    @repository(InstructionRepository) protected instructionRepository: InstructionRepository,
+    @repository(InstructionRepository)
+    protected instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}', {
@@ -56,22 +63,35 @@ export class UserInstructionController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Instruction, {
-            title: 'NewInstructionInUser',
-            exclude: ['id', 'userId', 'date', 'link', 'deleteHash'],
-          }),
+          schema: {
+            type: 'object',
+            properties: {
+              title: {type: 'string'},
+              difficulty: {enum: Object.values(Difficulty)},
+              private: {type: 'boolean'},
+            },
+            required: ['title', 'difficulty', 'private'],
+          },
         },
       },
     })
-    instruction: Omit<Instruction, 'id' | 'userId' | 'date' | 'link' | 'deleteHash'>,
+    instruction: Omit<
+      Instruction,
+      'id' | 'userId' | 'date' | 'link' | 'deleteHash' | 'titleCz' | 'titleEn'
+    > & {title: string},
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
+    const translatedInstruction =
+      await this.translateService.translateInstructionCreate(
+        instruction,
+        user.language,
+      );
     await this.instructionRepository.create({
-      ...instruction,
-      userId: user.id,
+      ...translatedInstruction,
+      userId: this.user.id,
     });
     return true;
   }
@@ -100,25 +120,35 @@ export class UserInstructionController {
             type: 'object',
             properties: {
               title: {type: 'string'},
-              difficulty: {type: 'string', enum: Object.values(Difficulty)},
-              private: {typr: 'boolean'},
+              difficulty: {enum: Object.values(Difficulty)},
+              private: {type: 'boolean'},
             },
           },
         },
       },
     })
-    instruction: Partial<Instruction>,
+    instruction: Partial<Instruction> & {title: string},
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instructionOriginal = await this.instructionRepository.findById(instructionId);
+    const instructionOriginal = await this.instructionRepository.findById(
+      instructionId,
+    );
     if (!instructionOriginal) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
     this.validateInstructionOwnership(instructionOriginal);
-    await this.instructionRepository.updateById(instructionId, instruction);
+    const translatedInstruction =
+      await this.translateService.translateInstructionPatch(
+        instruction,
+        user.language,
+      );
+    await this.instructionRepository.updateById(
+      instructionId,
+      translatedInstruction,
+    );
     return true;
   }
 
@@ -137,23 +167,48 @@ export class UserInstructionController {
       },
     },
   })
-  async delete(@param.query.number('instructionId') instructionId: number): Promise<boolean> {
+  async delete(
+    @param.query.number('instructionId') instructionId: number,
+  ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instruction = await this.instructionRepository.findById(instructionId);
+    if (user.deleteHash) {
+      await this.pictureService.deletePicture(user.deleteHash);
+    }
+    const instruction = await this.instructionRepository.findById(
+      instructionId,
+    );
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
     this.validateInstructionOwnership(instruction);
+    if (instruction.deleteHash) {
+      await this.pictureService.deletePicture(instruction.deleteHash);
+    }
     await this.instructionRepository.deleteById(instructionId);
+    const stepHashes = await this.stepRepository.find({
+      where: {
+        and: [
+          {
+            deleteHash: {neq: ''},
+            instructionId: instructionId,
+          },
+        ],
+      },
+      fields: {deleteHash: true},
+    });
+    const hashes = stepHashes.map(step => step.deleteHash);
+    for (const hash in hashes) {
+      await this.pictureService.deletePicture(hash);
+    }
     await this.stepRepository.deleteAll({instructionId: instructionId});
     return true;
   }
 
   @authenticate('jwt')
-  @post('/users/{id}/instructions/{instructionId}', {
+  @post('/users/{id}/instructions/{instructionId}/picture', {
     responses: {
       '200': {
         description: 'Upload picture',
@@ -167,7 +222,7 @@ export class UserInstructionController {
       },
     },
   })
-  async uploadProfilePicture(
+  async uploadPicture(
     @param.path.number('instructionId') instructionId: number,
     @requestBody({
       content: {
@@ -190,7 +245,9 @@ export class UserInstructionController {
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instruction = await this.instructionRepository.findById(instructionId);
+    const instruction = await this.instructionRepository.findById(
+      instructionId,
+    );
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
@@ -199,12 +256,15 @@ export class UserInstructionController {
       await this.pictureService.deletePicture(instruction.deleteHash);
     }
     const data = await this.pictureService.savePicture(request, response);
-    await this.instructionRepository.updateById(instructionId, {link: data.link, deleteHash: data.deletehash});
+    await this.instructionRepository.updateById(instructionId, {
+      link: data.link,
+      deleteHash: data.deletehash,
+    });
     return true;
   }
 
   @authenticate('jwt')
-  @del('/users/{id}/instructions/{instructionId}', {
+  @del('/users/{id}/instructions/{instructionId}/picture', {
     responses: {
       '200': {
         description: 'Delete picture',
@@ -218,12 +278,16 @@ export class UserInstructionController {
       },
     },
   })
-  async deleteProfilePicture(@param.path.number('instructionId') instructionId: number): Promise<boolean> {
+  async deletePicture(
+    @param.path.number('instructionId') instructionId: number,
+  ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instruction = await this.instructionRepository.findById(instructionId);
+    const instruction = await this.instructionRepository.findById(
+      instructionId,
+    );
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
@@ -232,7 +296,10 @@ export class UserInstructionController {
       throw new HttpErrors.NotFound('Instruction picture does not exist');
     }
     await this.pictureService.deletePicture(instruction.deleteHash);
-    await this.instructionRepository.updateById(instructionId, {link: null, deleteHash: null});
+    await this.instructionRepository.updateById(instructionId, {
+      link: null,
+      deleteHash: null,
+    });
     return true;
   }
 

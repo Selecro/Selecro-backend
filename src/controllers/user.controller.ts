@@ -15,7 +15,7 @@ import {
   get,
   patch,
   post,
-  requestBody
+  requestBody,
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import * as crypto from 'crypto';
@@ -24,7 +24,11 @@ import * as isEmail from 'isemail';
 import jwt from 'jsonwebtoken';
 import _ from 'lodash';
 import {Language, User} from '../models';
-import {InstructionRepository, StepRepository, UserRepository} from '../repositories';
+import {
+  InstructionRepository,
+  StepRepository,
+  UserRepository,
+} from '../repositories';
 import {
   BcryptHasher,
   EmailService,
@@ -52,9 +56,10 @@ export class UserController {
     @inject('services.vault')
     public vaultService: VaultService,
     @repository(UserRepository) protected userRepository: UserRepository,
-    @repository(InstructionRepository) protected instructionRepository: InstructionRepository,
+    @repository(InstructionRepository)
+    protected instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) { }
+  ) {}
 
   @post('/login', {
     responses: {
@@ -129,7 +134,7 @@ export class UserController {
               username: {type: 'string'},
               password0: {type: 'string'},
               password1: {type: 'string'},
-              language: {type: 'string', enum: Object.values(Language)},
+              language: {enum: Object.values(Language)},
             },
             required: [
               'email',
@@ -391,7 +396,7 @@ export class UserController {
               properties: {
                 email: {type: 'string'},
                 username: {type: 'string'},
-                language: {type: 'string'},
+                language: {enum: Object.values(Language)},
                 darkmode: {type: 'string'},
                 emailVerified: {type: 'string'},
                 date: {type: 'string'},
@@ -408,7 +413,12 @@ export class UserController {
   async getUser(): Promise<
     Omit<
       User,
-      'id' | 'passwordHash' | 'wrappedDEK' | 'initializationVector' | 'kekSalt' | 'deleteHash'
+      | 'id'
+      | 'passwordHash'
+      | 'wrappedDEK'
+      | 'initializationVector'
+      | 'kekSalt'
+      | 'deleteHash'
     >
   > {
     const user = await this.userRepository.findById(this.user.id, {
@@ -451,7 +461,7 @@ export class UserController {
             properties: {
               email: {type: 'string'},
               username: {type: 'string'},
-              language: {$ref: '#/components/schemas/Language'},
+              language: {enum: Object.values(Language)},
               darkmode: {type: 'boolean'},
               nick: {type: 'string'},
               bio: {type: 'string'},
@@ -523,12 +533,54 @@ export class UserController {
     if (!passwordMatched) {
       throw new HttpErrors.Unauthorized('password is not valid');
     }
+    if (user.deleteHash) {
+      await this.pictureService.deletePicture(user.deleteHash);
+    }
     await this.userRepository.deleteById(this.user.id);
+    const instructionHashes = await this.instructionRepository.find({
+      where: {
+        and: [
+          {
+            deleteHash: {neq: ''},
+            userId: this.user.id,
+          },
+        ],
+      },
+    });
+    const userInstructionHashes = instructionHashes.map(
+      instruction => instruction.deleteHash,
+    );
+    for (const hash in userInstructionHashes) {
+      await this.pictureService.deletePicture(hash);
+    }
+    console.log(userInstructionHashes);
+    const InstructionIDs = instructionHashes.map(
+      instructions => instructions.id,
+    );
+    console.log(InstructionIDs);
+    for (const InstructionID of InstructionIDs) {
+      const deleteHashs = await this.stepRepository.find({
+        where: {
+          and: [
+            {
+              deleteHash: {neq: ''},
+              instructionId: InstructionID,
+            },
+          ],
+        },
+        fields: {deleteHash: true},
+      });
+      const hashes = deleteHashs.map(step => step.deleteHash);
+      console.log(hashes);
+      for (const hash in hashes) {
+        await this.pictureService.deletePicture(hash);
+      }
+    }
     const instructions = await this.instructionRepository.find({
       fields: {userId: this.user.id},
     });
     await this.instructionRepository.deleteAll({userId: this.user.id});
-    for (let instruction of instructions) {
+    for (const instruction of instructions) {
       await this.stepRepository.deleteAll({instructionId: instruction.id});
     }
     return true;
@@ -575,7 +627,10 @@ export class UserController {
       await this.pictureService.deletePicture(user.deleteHash);
     }
     const data = await this.pictureService.savePicture(request, response);
-    await this.userRepository.updateById(this.user.id, {link: data.link, deleteHash: data.deletehash});
+    await this.userRepository.updateById(user.id, {
+      link: data.link,
+      deleteHash: data.deletehash,
+    });
     return true;
   }
 
@@ -603,7 +658,10 @@ export class UserController {
       throw new HttpErrors.NotFound('Users profile picture does not exist');
     }
     await this.pictureService.deletePicture(user.deleteHash);
-    await this.userRepository.updateById(this.user.id, {link: null, deleteHash: null});
+    await this.userRepository.updateById(user.id, {
+      link: null,
+      deleteHash: null,
+    });
     return true;
   }
 }

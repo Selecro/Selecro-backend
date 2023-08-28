@@ -21,7 +21,7 @@ export class Step extends Entity {
     type: 'string',
     required: true,
     postgresql: {
-      columnName: 'title',
+      columnName: 'title_cz',
       dataType: 'text',
       dataLength: null,
       dataPrecision: null,
@@ -29,17 +29,41 @@ export class Step extends Entity {
       nullable: 'NO',
     },
   })
-  title: string;
+  titleCz: string;
+
+  @property({
+    type: 'string',
+    required: true,
+    postgresql: {
+      columnName: 'title_en',
+      dataType: 'text',
+      dataLength: null,
+      dataPrecision: null,
+      dataScale: null,
+      nullable: 'NO',
+    },
+  })
+  titleEn: string;
 
   @property.array(String, {
     required: true,
     postgresql: {
-      columnName: 'description',
+      columnName: 'description_cz',
       array: true,
     },
     default: () => [],
   })
-  description: string[];
+  descriptionCz: string[];
+
+  @property.array(String, {
+    required: true,
+    postgresql: {
+      columnName: 'description_en',
+      array: true,
+    },
+    default: () => [],
+  })
+  descriptionEn: string[];
 
   @property({
     type: 'string',

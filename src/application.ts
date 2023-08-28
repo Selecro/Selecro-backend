@@ -22,7 +22,12 @@ import {
   UserRepository,
 } from './repositories';
 import {MySequence} from './sequence';
-import {MyUserService, PictureService, VaultService} from './services';
+import {
+  MyUserService,
+  PictureService,
+  TranslateService,
+  VaultService,
+} from './services';
 import {EmailService} from './services/email';
 import {BcryptHasher} from './services/hash.password';
 import {JWTService} from './services/jwt-service';
@@ -71,6 +76,7 @@ export class SelecroBackendApplication extends BootMixin(
     this.bind('services.email').toClass(EmailService);
     this.bind('services.vault').toClass(VaultService);
     this.bind('services.picture').toClass(PictureService);
+    this.bind('services.translate').toClass(TranslateService);
 
     this.projectRoot = __dirname;
     // Customize @loopback/boot Booter Conventions here

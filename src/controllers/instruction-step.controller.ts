@@ -8,16 +8,15 @@ import {
   Response,
   RestBindings,
   del,
-  getModelSchemaRef,
   param,
   patch,
   post,
-  requestBody
+  requestBody,
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
-import {Instruction, Step} from '../models';
+import {Instruction, Language, Step} from '../models';
 import {InstructionRepository, StepRepository} from '../repositories';
-import {PictureService, VaultService} from '../services';
+import {PictureService, TranslateService, VaultService} from '../services';
 
 export class InstructionStepController {
   constructor(
@@ -29,10 +28,13 @@ export class InstructionStepController {
     public pictureService: PictureService,
     @inject('services.vault')
     public vaultService: VaultService,
+    @inject('services.translate')
+    public translateService: TranslateService,
     @repository(UserRepository) public userRepository: UserRepository,
-    @repository(InstructionRepository) public instructionRepository: InstructionRepository,
+    @repository(InstructionRepository)
+    public instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}/steps/{stepId}', {
@@ -54,26 +56,50 @@ export class InstructionStepController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Step, {
-            title: 'Create Step',
-            exclude: ['id', 'instructionId'],
-          }),
+          schema: {
+            type: 'object',
+            properties: {
+              title: {type: 'string'},
+              description: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+              },
+            },
+            required: ['title', 'description'],
+          },
         },
       },
     })
-    step: Omit<Step, 'id' | 'instructionId'>,
+    step: Omit<
+      Step,
+      | 'id'
+      | 'instructionId'
+      | 'titleCz'
+      | 'titleEn'
+      | 'descriptionCz'
+      | 'descriptionEn'
+    > & {title: string; description: string[]},
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instruction = await this.instructionRepository.findById(instructionId);
+    const instruction = await this.instructionRepository.findById(
+      instructionId,
+    );
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
     this.validateInstructionOwnership(instruction);
+    const translatedStep = await this.translateService.translateStepCreate(
+      step,
+      Language.CZ,
+    );
+    console.log(translatedStep);
     await this.stepRepository.create({
-      ...step,
+      ...translatedStep,
       instructionId: instructionId,
     });
     return true;
@@ -104,20 +130,26 @@ export class InstructionStepController {
             type: 'object',
             properties: {
               title: {type: 'string'},
-              description: {type: 'string'},
-              link: {type: 'string'},
+              description: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+              },
             },
           },
         },
       },
     })
-    step: Partial<Step>,
+    step: Partial<Step> & {title: string; description: string[]},
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instruction = await this.instructionRepository.findById(instructionId);
+    const instruction = await this.instructionRepository.findById(
+      instructionId,
+    );
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
@@ -127,7 +159,11 @@ export class InstructionStepController {
     }
     this.validateInstructionOwnership(instruction);
     this.validateStepOwnership(stepOriginal, instruction);
-    await this.stepRepository.updateById(stepId, step);
+    const translatedStep = await this.translateService.translateStepPatch(
+      step,
+      user.language,
+    );
+    await this.stepRepository.updateById(stepId, translatedStep);
     return true;
   }
 
@@ -154,7 +190,9 @@ export class InstructionStepController {
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instruction = await this.instructionRepository.findById(instructionId);
+    const instruction = await this.instructionRepository.findById(
+      instructionId,
+    );
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
@@ -164,12 +202,15 @@ export class InstructionStepController {
     }
     this.validateInstructionOwnership(instruction);
     this.validateStepOwnership(stepOriginal, instruction);
+    if (stepOriginal.deleteHash) {
+      await this.pictureService.deletePicture(stepOriginal.deleteHash);
+    }
     await this.stepRepository.deleteById(stepId);
     return true;
   }
 
   @authenticate('jwt')
-  @post('/users/{id}/instructions/{instructionId}/steps/{stepId}', {
+  @post('/users/{id}/instructions/{instructionId}/steps/{stepId}/picture', {
     responses: {
       '200': {
         description: 'Upload picture',
@@ -183,7 +224,7 @@ export class InstructionStepController {
       },
     },
   })
-  async uploadProfilePicture(
+  async uploadPicture(
     @param.path.number('stepId') stepId: number,
     @param.path.number('instructionId') instructionId: number,
     @requestBody({
@@ -207,7 +248,9 @@ export class InstructionStepController {
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instruction = await this.instructionRepository.findById(instructionId);
+    const instruction = await this.instructionRepository.findById(
+      instructionId,
+    );
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
@@ -221,12 +264,15 @@ export class InstructionStepController {
       await this.pictureService.deletePicture(step.deleteHash);
     }
     const data = await this.pictureService.savePicture(request, response);
-    await this.stepRepository.updateById(stepId, {link: data.link, deleteHash: data.deletehash});
+    await this.stepRepository.updateById(stepId, {
+      link: data.link,
+      deleteHash: data.deletehash,
+    });
     return true;
   }
 
   @authenticate('jwt')
-  @del('/users/{id}/instructions/{instructionId}/steps/{stepId}', {
+  @del('/users/{id}/instructions/{instructionId}/steps/{stepId}/picture', {
     responses: {
       '200': {
         description: 'Delete picture',
@@ -240,7 +286,7 @@ export class InstructionStepController {
       },
     },
   })
-  async deleteProfilePicture(
+  async deletePicture(
     @param.path.number('stepId') stepId: number,
     @param.path.number('instructionId') instructionId: number,
   ): Promise<boolean> {
@@ -248,7 +294,9 @@ export class InstructionStepController {
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instruction = await this.instructionRepository.findById(instructionId);
+    const instruction = await this.instructionRepository.findById(
+      instructionId,
+    );
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
@@ -262,7 +310,10 @@ export class InstructionStepController {
       throw new HttpErrors.NotFound('Step picture does not exist');
     }
     await this.pictureService.deletePicture(step.deleteHash);
-    await this.stepRepository.updateById(stepId, {link: null, deleteHash: null});
+    await this.stepRepository.updateById(stepId, {
+      link: null,
+      deleteHash: null,
+    });
     return true;
   }
 
