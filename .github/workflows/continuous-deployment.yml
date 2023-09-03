@@ -53,7 +53,10 @@ jobs:
 
       - name: Connect to OpenVPN
         run: |
-          sudo openvpn --config ~/openvpn-config.ovpn
+          sudo openvpn --config ~/openvpn-config.ovpn &
+
+      - name: Wait for VPN Connection
+        run: sleep 20
 
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
