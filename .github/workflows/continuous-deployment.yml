@@ -50,11 +50,10 @@ jobs:
       - name: Configure OpenVPN
         run: |
           echo "${{ secrets.OPENVPN_CONFIG }}" > ~/openvpn-config.ovpn
-          echo "${{ secrets.OPENVPN_CLIENT_PASSWORD }}" > ~/client-password.txt
 
       - name: Connect to OpenVPN
         run: |
-          sudo openvpn --config ~/openvpn-config.ovpn --auth-user-pass ~/client-password.txt
+          sudo openvpn --config ~/openvpn-config.ovpn
 
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
