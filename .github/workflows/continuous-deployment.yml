@@ -22,12 +22,12 @@ jobs:
         run: |
           if [ "${{ github.ref }}" = "refs/heads/dev" ]; then
             echo "PORT=3002" >> $GITHUB_ENV
-            echo "IMAGE=backedn-dev" >> $GITHUB_ENV
+            echo "IMAGE=backend-dev" >> $GITHUB_ENV
             echo "VAULT_PORT=8202" >> $GITHUB_ENV
             echo "SQLDATABASE=selecro_dev" >> $GITHUB_ENV
           elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
             echo "PORT=3001" >> $GITHUB_ENV
-            echo "IMAGE=backedn-main" >> $GITHUB_ENV
+            echo "IMAGE=backend-main" >> $GITHUB_ENV
             echo "VAULT_PORT=8201" >> $GITHUB_ENV
             echo "SQLDATABASE=selecro_main" >> $GITHUB_ENV
           else
@@ -89,7 +89,7 @@ jobs:
             -e ROOT_VAULT="${{ secrets.ROOT_VAULT }}" \
             --name ${{ env.IMAGE }} -dp ${{ env.PORT }}:${{ env.PORT }} \
             ${{ env.IMAGE }} && \
-            docker update --restart unless-stopped ${{ env.IMAGE }}"
+            docker update --restart unless-stopped ${{ env.IMAGE }} && exit
 
       - name: Cleanup
         run: rm -rf ~/.ssh
