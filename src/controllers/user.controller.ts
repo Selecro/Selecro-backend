@@ -31,8 +31,8 @@ import {
 import {
   BcryptHasher,
   EmailService,
+  ImgurService,
   MyUserService,
-  PictureService,
   VaultService,
   validateCredentials,
 } from '../services';
@@ -50,15 +50,15 @@ export class UserController {
     public hasher: BcryptHasher,
     @inject('services.email')
     public emailService: EmailService,
-    @inject('services.picture')
-    public pictureService: PictureService,
+    @inject('services.imgur')
+    public imgurService: ImgurService,
     @inject('services.vault')
     public vaultService: VaultService,
     @repository(UserRepository) protected userRepository: UserRepository,
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) {}
+  ) { }
 
   @post('/login', {
     responses: {
@@ -106,7 +106,7 @@ export class UserController {
     }
     const token = await this.jwtService.generateToken(userProfile);
     const tokenKMS = await this.vaultService.authenticate(
-      existingUser.username,
+      String(existingUser.id),
       credentials.password,
     );
     return {token, tokenKMS};
@@ -175,11 +175,11 @@ export class UserController {
       credentials.password0,
     );
     await this.vaultService.createUser(
-      credentials.username,
+      String(credentials.id),
       credentials.password0,
     );
     const tokenKMS = await this.vaultService.authenticate(
-      credentials.username,
+      String(credentials.id),
       credentials.password0,
     );
     const newUser = new User({
@@ -356,6 +356,7 @@ export class UserController {
         throw new HttpErrors.UnprocessableEntity('Passwords are not matching');
       }
       await this.emailService.sendSuccessfulyPasswordChange(user);
+      await this.vaultService.updatePassword(String(user.id), request.password0);
       await this.userRepository.updateById(user.id, {
         passwordHash: await this.hasher.hashPassword(request.password0),
       });
@@ -517,8 +518,9 @@ export class UserController {
     if (!passwordMatched) {
       throw new HttpErrors.Unauthorized('password is not valid');
     }
+    await this.vaultService.deleteUser(String(user.id));
     if (user.deleteHash) {
-      await this.pictureService.deletePicture(user.deleteHash);
+      await this.imgurService.deleteImage(user.deleteHash);
     }
     await this.userRepository.deleteById(this.user.id);
     const instructionHashes = await this.instructionRepository.find({
@@ -535,13 +537,11 @@ export class UserController {
       instruction => instruction.deleteHash,
     );
     for (const hash in userInstructionHashes) {
-      await this.pictureService.deletePicture(hash);
+      await this.imgurService.deleteImage(hash);
     }
-    console.log(userInstructionHashes);
     const InstructionIDs = instructionHashes.map(
       instructions => instructions.id,
     );
-    console.log(InstructionIDs);
     for (const InstructionID of InstructionIDs) {
       const deleteHashs = await this.stepRepository.find({
         where: {
@@ -555,9 +555,8 @@ export class UserController {
         fields: {deleteHash: true},
       });
       const hashes = deleteHashs.map(step => step.deleteHash);
-      console.log(hashes);
       for (const hash in hashes) {
-        await this.pictureService.deletePicture(hash);
+        await this.imgurService.deleteImage(hash);
       }
     }
     const instructions = await this.instructionRepository.find({
@@ -608,9 +607,9 @@ export class UserController {
       throw new HttpErrors.NotFound('User not found');
     }
     if (user.deleteHash) {
-      await this.pictureService.deletePicture(user.deleteHash);
+      await this.imgurService.deleteImage(user.deleteHash);
     }
-    const data = await this.pictureService.savePicture(request, response);
+    const data = await this.imgurService.savePicture(request, response);
     await this.userRepository.updateById(user.id, {
       link: data.link,
       deleteHash: data.deletehash,
@@ -641,7 +640,7 @@ export class UserController {
     if (!user.deleteHash) {
       throw new HttpErrors.NotFound('Users profile picture does not exist');
     }
-    await this.pictureService.deletePicture(user.deleteHash);
+    await this.imgurService.deleteImage(user.deleteHash);
     await this.userRepository.updateById(user.id, {
       link: null,
       deleteHash: null,

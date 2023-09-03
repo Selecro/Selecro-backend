@@ -21,36 +21,98 @@ jobs:
       - name: Set deployment variables
         run: |
           if [ "${{ github.ref }}" = "refs/heads/dev" ]; then
-            echo "DEPLOY_DIR=dev" >> $GITHUB_ENV
             echo "PORT=3002" >> $GITHUB_ENV
-            echo "SECOND_PORT=4002" >> $GITHUB_ENV
+            echo "IMAGE=backedn-dev" >> $GITHUB_ENV
+            echo "VAULT_PORT=8202" >> $GITHUB_ENV
+            echo "SQLDATABASE=selecro_dev" >> $GITHUB_ENV
           elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            echo "DEPLOY_DIR=main" >> $GITHUB_ENV
             echo "PORT=3001" >> $GITHUB_ENV
-            echo "SECOND_PORT=4001" >> $GITHUB_ENV
+            echo "IMAGE=backedn-main" >> $GITHUB_ENV
+            echo "VAULT_PORT=8201" >> $GITHUB_ENV
+            echo "SQLDATABASE=selecro_main" >> $GITHUB_ENV
           else
             echo "Invalid branch for deployment" && exit 1
           fi
 
-      - name: Install SSH keys
+      - name: Build Docker Image
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -t rsa ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
+          docker build -t ${{ env.IMAGE }} .
 
-      - name: Connect and pull
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Install OpenVPN
+        run: sudo apt-get update && sudo apt-get install openvpn -y
+
+      - name: Configure OpenVPN
         run: |
-          ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-          -p ${{ secrets.SSH_PORT }} "cd ${{ secrets.WORK_DIR }}-${{ env.DEPLOY_DIR }} && \
-          git fetch --all && git checkout ${{ env.DEPLOY_DIR }} --force && \
-          git pull --force && docker build -t backend-${{ env.DEPLOY_DIR }} . && \
-          docker stop backend-${{ env.DEPLOY_DIR }} || true && \
-          docker rm backend-${{ env.DEPLOY_DIR }} || true && \
-          docker run --name backend-${{ env.DEPLOY_DIR }} -dp ${{ env.PORT }}:${{ env.PORT }} \
-          -p ${{ env.SECOND_PORT }}:${{ env.SECOND_PORT }} backend-${{ env.DEPLOY_DIR }} && \
-          docker update --restart unless-stopped backend-${{ env.DEPLOY_DIR }} && exit"
+          echo "${{ secrets.OPENVPN_CONFIG }}" > ~/openvpn-config.ovpn
+          echo "${{ secrets.OPENVPN_CLIENT_PASSWORD }}" > ~/client-password.txt
+
+      - name: Connect to OpenVPN
+        run: |
+          sudo openvpn --config ~/openvpn-config.ovpn --auth-user-pass ~/client-password.txt
+
+      - name: Set environment variables
+        env:
+          HOST: ${{ secrets.HOST }}
+          SQLHOST: ${{ secrets.SQLHOST }}
+          SQLPORT: ${{ secrets.SQLPORT }}
+          SQLUSER: ${{ secrets.SQLUSER }}
+          SQLPASSWORD: ${{ secrets.SQLPASSWORD }}
+          SQLDATABASE: ${{ env.SQLDATABASE }}
+          TOKEN: ${{ secrets.TOKEN }}
+          EXTPORT: ${{ secrets.EXTPORT }}
+          EMAILHOST: ${{ secrets.EMAILHOST }}
+          EMAILPORT: ${{ secrets.EMAILPORT }}
+          EMAILUSER: ${{ secrets.EMAILUSER }}
+          EMAILPASSWORD: ${{ secrets.EMAILPASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          SFTPHOST: ${{ secrets.SFTPHOST }}
+          SOCKETPORT: ${{ secrets.SOCKETPORT }}
+          UNSEAL_KEY_1: ${{ secrets.UNSEAL_KEY_1 }}
+          UNSEAL_KEY_2: ${{ secrets.UNSEAL_KEY_2 }}
+          VAULT_URL: ${{ secrets.VAULT_URL }}
+          CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          ROOT_VAULT: ${{ secrets.ROOT_VAULT }}
+
+      - name: SSH into Your Server and Deploy
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker login && \
+            docker stop ${{ env.IMAGE }} || true && \
+            docker rm ${{ env.IMAGE }} || true && \
+            docker run -d \
+            -e HOST="${HOST}" \
+            -e SQLHOST="${SQLHOST}" \
+            -e SQLPORT="${SQLPORT}" \
+            -e SQLUSER="${SQLUSER}" \
+            -e SQLPASSWORD="${SQLPASSWORD}" \
+            -e SQLDATABASE="${SQLDATABASE}" \
+            -e TOKEN="${TOKEN}" \
+            -e EXTPORT="${EXTPORT}" \
+            -e EMAILHOST="${EMAILHOST}" \
+            -e EMAILPORT="${EMAILPORT}" \
+            -e EMAILUSER="${EMAILUSER}" \
+            -e EMAILPASSWORD="${EMAILPASSWORD}" \
+            -e JWT_SECRET="${JWT_SECRET}" \
+            -e SFTPHOST="${SFTPHOST}" \
+            -e SOCKETPORT="${SOCKETPORT}" \
+            -e UNSEAL_KEY_1="${UNSEAL_KEY_1}" \
+            -e UNSEAL_KEY_2="${UNSEAL_KEY_2}" \
+            -e VAULT_URL="${VAULT_URL}" \
+            -e CLIENT_ID="${CLIENT_ID}" \
+            -e ROOT_VAULT="${ROOT_VAULT}" \
+            --name ${{ env.IMAGE }} -dp ${{ env.PORT }}:${{ env.PORT }} \
+            ${{ env.IMAGE }} && \
+            docker update --restart unless-stopped ${{ env.IMAGE }} && exit"
 
       - name: Cleanup
         run: rm -rf ~/.ssh

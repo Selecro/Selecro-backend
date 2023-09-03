@@ -19,7 +19,7 @@ import {
   StepRepository,
   UserRepository,
 } from '../repositories';
-import {JWTService, PictureService} from '../services';
+import {ImgurService, JWTService} from '../services';
 
 export class UserInstructionController {
   constructor(
@@ -27,13 +27,13 @@ export class UserInstructionController {
     public jwtService: JWTService,
     @inject(SecurityBindings.USER, {optional: true})
     public user: UserProfile,
-    @inject('services.picture')
-    public pictureService: PictureService,
+    @inject('services.imgur')
+    public imgurService: ImgurService,
     @repository(UserRepository) protected userRepository: UserRepository,
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) {}
+  ) { }
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}', {
@@ -155,7 +155,7 @@ export class UserInstructionController {
       throw new HttpErrors.NotFound('User not found');
     }
     if (user.deleteHash) {
-      await this.pictureService.deletePicture(user.deleteHash);
+      await this.imgurService.deleteImage(user.deleteHash);
     }
     const instruction = await this.instructionRepository.findById(
       instructionId,
@@ -165,7 +165,7 @@ export class UserInstructionController {
     }
     this.validateInstructionOwnership(instruction);
     if (instruction.deleteHash) {
-      await this.pictureService.deletePicture(instruction.deleteHash);
+      await this.imgurService.deleteImage(instruction.deleteHash);
     }
     await this.instructionRepository.deleteById(instructionId);
     const stepHashes = await this.stepRepository.find({
@@ -181,7 +181,7 @@ export class UserInstructionController {
     });
     const hashes = stepHashes.map(step => step.deleteHash);
     for (const hash in hashes) {
-      await this.pictureService.deletePicture(hash);
+      await this.imgurService.deleteImage(hash);
     }
     await this.stepRepository.deleteAll({instructionId: instructionId});
     return true;
@@ -233,9 +233,9 @@ export class UserInstructionController {
     }
     this.validateInstructionOwnership(instruction);
     if (instruction.deleteHash) {
-      await this.pictureService.deletePicture(instruction.deleteHash);
+      await this.imgurService.deleteImage(instruction.deleteHash);
     }
-    const data = await this.pictureService.savePicture(request, response);
+    const data = await this.imgurService.savePicture(request, response);
     await this.instructionRepository.updateById(instructionId, {
       link: data.link,
       deleteHash: data.deletehash,
@@ -258,7 +258,7 @@ export class UserInstructionController {
       },
     },
   })
-  async deletePicture(
+  async deleteImage(
     @param.path.number('instructionId') instructionId: number,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
@@ -275,7 +275,7 @@ export class UserInstructionController {
     if (!instruction.deleteHash) {
       throw new HttpErrors.NotFound('Instruction picture does not exist');
     }
-    await this.pictureService.deletePicture(instruction.deleteHash);
+    await this.imgurService.deleteImage(instruction.deleteHash);
     await this.instructionRepository.updateById(instructionId, {
       link: null,
       deleteHash: null,

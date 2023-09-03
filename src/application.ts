@@ -11,7 +11,7 @@ import {
 import {ServiceMixin} from '@loopback/service-proxy';
 import * as dotenv from 'dotenv';
 import path from 'path';
-import {PingController, SocketController, UserController} from './controllers';
+import {PingController, UserController} from './controllers';
 import {DbDataSource} from './datasources';
 import {
   GroupRepository,
@@ -22,7 +22,7 @@ import {
   UserRepository,
 } from './repositories';
 import {MySequence} from './sequence';
-import {MyUserService, PictureService, VaultService} from './services';
+import {ImgurService, MyUserService, VaultService} from './services';
 import {EmailService} from './services/email';
 import {BcryptHasher} from './services/hash.password';
 import {JWTService} from './services/jwt-service';
@@ -49,10 +49,8 @@ export class SelecroBackendApplication extends BootMixin(
     this.component(RestExplorerComponent);
     this.component(AuthenticationComponent);
     this.component(JWTAuthenticationComponent);
-    this.controller(SocketController);
     this.controller(PingController);
     this.controller(UserController);
-    this.controller(SocketController);
     this.controller(StepRepository);
     this.repository(UserRepository);
     this.repository(InstructionRepository);
@@ -63,13 +61,13 @@ export class SelecroBackendApplication extends BootMixin(
     this.dataSource(DbDataSource);
 
     this.bind('services.jwt.service').toClass(JWTService);
-    this.bind('authentication.jwt.expiresIn').to('7h');
+    this.bind('authentication.jwt.expiresIn').to('32d');
     this.bind('authentication.jwt.secret').to(process.env.TOKEN);
     this.bind('services.hasher').toClass(BcryptHasher);
     this.bind('services.hasher.rounds').to(10);
     this.bind('services.user.service').toClass(MyUserService);
     this.bind('services.email').toClass(EmailService);
-    this.bind('services.picture').toClass(PictureService);
+    this.bind('services.imgur').toClass(ImgurService);
     this.bind('services.vault').toClass(VaultService);
 
     this.projectRoot = __dirname;

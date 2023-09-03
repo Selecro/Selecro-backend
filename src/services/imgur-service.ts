@@ -4,10 +4,10 @@ import * as dotenv from 'dotenv';
 import multer from 'multer';
 dotenv.config();
 
-export class PictureService {
+export class ImgurService {
   private readonly clientId = process.env.CLIENT_ID ?? '';
 
-  constructor() {}
+  constructor() { }
 
   async savePicture(
     request: Request,
@@ -32,7 +32,7 @@ export class PictureService {
     }
   }
 
-  async deletePicture(deleteHash: string): Promise<boolean> {
+  async deleteImage(deleteHash: string): Promise<boolean> {
     try {
       const imgurResponse = await fetch(
         `https://api.imgur.com/3/image/${deleteHash}`,

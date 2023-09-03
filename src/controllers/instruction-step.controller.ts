@@ -16,7 +16,7 @@ import {
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import {Instruction, Step} from '../models';
 import {InstructionRepository, StepRepository} from '../repositories';
-import {PictureService} from '../services';
+import {ImgurService} from '../services';
 
 export class InstructionStepController {
   constructor(
@@ -24,13 +24,13 @@ export class InstructionStepController {
     public jwtService: JWTService,
     @inject(SecurityBindings.USER, {optional: true})
     public user: UserProfile,
-    @inject('services.picture')
-    public pictureService: PictureService,
+    @inject('services.imgur')
+    public imgurService: ImgurService,
     @repository(UserRepository) public userRepository: UserRepository,
     @repository(InstructionRepository)
     public instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) {}
+  ) { }
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}/steps/{stepId}', {
@@ -196,7 +196,7 @@ export class InstructionStepController {
     this.validateInstructionOwnership(instruction);
     this.validateStepOwnership(stepOriginal, instruction);
     if (stepOriginal.deleteHash) {
-      await this.pictureService.deletePicture(stepOriginal.deleteHash);
+      await this.imgurService.deleteImage(stepOriginal.deleteHash);
     }
     await this.stepRepository.deleteById(stepId);
     return true;
@@ -254,9 +254,9 @@ export class InstructionStepController {
     this.validateInstructionOwnership(instruction);
     this.validateStepOwnership(step, instruction);
     if (step.deleteHash) {
-      await this.pictureService.deletePicture(step.deleteHash);
+      await this.imgurService.deleteImage(step.deleteHash);
     }
-    const data = await this.pictureService.savePicture(request, response);
+    const data = await this.imgurService.savePicture(request, response);
     await this.stepRepository.updateById(stepId, {
       link: data.link,
       deleteHash: data.deletehash,
@@ -279,7 +279,7 @@ export class InstructionStepController {
       },
     },
   })
-  async deletePicture(
+  async deleteImage(
     @param.path.number('stepId') stepId: number,
     @param.path.number('instructionId') instructionId: number,
   ): Promise<boolean> {
@@ -302,7 +302,7 @@ export class InstructionStepController {
     if (!step.deleteHash) {
       throw new HttpErrors.NotFound('Step picture does not exist');
     }
-    await this.pictureService.deletePicture(step.deleteHash);
+    await this.imgurService.deleteImage(step.deleteHash);
     await this.stepRepository.updateById(stepId, {
       link: null,
       deleteHash: null,

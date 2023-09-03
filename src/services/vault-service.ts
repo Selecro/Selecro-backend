@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 export class VaultService {
-  private readonly vaultEndpoint = process.env.VAULT_URL ?? '';
+  private readonly vaultEndpoint = process.env.VAULT_URL ?? '' + process.env.VAULT_PORT ?? '';
   private readonly unsealKeys: string[] = [
     process.env.UNSEAL_KEY_1 ?? '',
     process.env.UNSEAL_KEY_2 ?? '',
@@ -61,13 +61,13 @@ export class VaultService {
     }
   }
 
-  async authenticate(password: string, username: string): Promise<string> {
+  async authenticate(password: string, id: string): Promise<string> {
     try {
       const data = {
         password: password,
       };
       const response = await fetch(
-        `${this.vaultEndpoint}/v1/auth/userpass/login/${username}`,
+        `${this.vaultEndpoint}/v1/auth/userpass/login/${id}`,
         {
           method: 'POST',
           headers: {
@@ -88,20 +88,66 @@ export class VaultService {
     }
   }
 
-  async createUser(password: string, username: string): Promise<void> {
+  async createUser(password: string, id: string): Promise<void> {
     try {
       const data = {
         password: password,
         policies: ['selecro-main'],
       };
       const response = await fetch(
-        `${this.vaultEndpoint}/v1/auth/userpass/users/${username}`,
+        `${this.vaultEndpoint}/v1/auth/userpass/users/${id}`,
         {
           method: 'POST',
           headers: {
             'X-Vault-Token': this.rootToken,
           },
           body: JSON.stringify(data),
+        },
+      );
+      if (!response.ok) {
+        throw new Error(
+          `Authentication error: Unable to authenticate with the provided credentials.`,
+        );
+      }
+    } catch (error) {
+      throw new Error(`Authentication error: ${error.message}`);
+    }
+  }
+
+  async updatePassword(password: string, id: string): Promise<void> {
+    try {
+      const data = {
+        password: password
+      };
+      const response = await fetch(
+        `${this.vaultEndpoint}/v1/auth/userpass/users/${id}/password`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Vault-Token': this.rootToken,
+          },
+          body: JSON.stringify(data),
+        },
+      );
+      if (!response.ok) {
+        throw new Error(
+          `Authentication error: Unable to authenticate with the provided credentials.`,
+        );
+      }
+    } catch (error) {
+      throw new Error(`Authentication error: ${error.message}`);
+    }
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    try {
+      const response = await fetch(
+        `${this.vaultEndpoint}/v1/auth/userpass/users/${id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'X-Vault-Token': this.rootToken,
+          },
         },
       );
       if (!response.ok) {
