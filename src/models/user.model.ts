@@ -69,6 +69,48 @@ export class User extends Entity {
     type: 'string',
     required: true,
     postgresql: {
+      columnName: 'wrapped_dek',
+      dataType: 'text',
+      dataLength: null,
+      dataPrecision: null,
+      dataScale: null,
+      nullable: 'NO',
+    },
+  })
+  wrappedDEK: string;
+
+  @property({
+    type: 'string',
+    required: true,
+    postgresql: {
+      columnName: 'initialization_vector',
+      dataType: 'text',
+      dataLength: null,
+      dataPrecision: null,
+      dataScale: null,
+      nullable: 'NO',
+    },
+  })
+  initializationVector: string;
+
+  @property({
+    type: 'string',
+    required: true,
+    postgresql: {
+      columnName: 'kek_salt',
+      dataType: 'text',
+      dataLength: null,
+      dataPrecision: null,
+      dataScale: null,
+      nullable: 'NO',
+    },
+  })
+  kekSalt: string;
+
+  @property({
+    type: 'string',
+    required: true,
+    postgresql: {
       columnName: 'language',
       dataType: 'text',
       dataLength: null,
@@ -128,34 +170,6 @@ export class User extends Entity {
     type: 'any',
     required: false,
     postgresql: {
-      columnName: 'name',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'YES',
-    },
-  })
-  name?: string | null;
-
-  @property({
-    type: 'any',
-    required: false,
-    postgresql: {
-      columnName: 'surname',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'YES',
-    },
-  })
-  surname?: string | null;
-
-  @property({
-    type: 'any',
-    required: false,
-    postgresql: {
       columnName: 'nick',
       dataType: 'text',
       dataLength: null,
@@ -193,6 +207,20 @@ export class User extends Entity {
     },
   })
   link?: string | null;
+
+  @property({
+    type: 'any',
+    required: false,
+    postgresql: {
+      columnName: 'delete_hash',
+      dataType: 'text',
+      dataLength: null,
+      dataPrecision: null,
+      dataScale: null,
+      nullable: 'YES',
+    },
+  })
+  deleteHash?: string | null;
 
   @hasMany(() => Instruction, {keyTo: 'userId'})
   instructions: Instruction[];

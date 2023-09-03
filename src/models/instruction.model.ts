@@ -1,7 +1,7 @@
 import {Entity, hasMany, model, property} from '@loopback/repository';
 import {Step} from './step.model';
 
-enum Difficulty {
+export enum Difficulty {
   easy = 'easy',
   medium = 'medium',
   hard = 'hard',
@@ -28,7 +28,7 @@ export class Instruction extends Entity {
     type: 'string',
     required: true,
     postgresql: {
-      columnName: 'title',
+      columnName: 'title_cz',
       dataType: 'text',
       dataLength: null,
       dataPrecision: null,
@@ -36,7 +36,21 @@ export class Instruction extends Entity {
       nullable: 'NO',
     },
   })
-  title: string;
+  titleCz: string;
+
+  @property({
+    type: 'string',
+    required: true,
+    postgresql: {
+      columnName: 'title_en',
+      dataType: 'text',
+      dataLength: null,
+      dataPrecision: null,
+      dataScale: null,
+      nullable: 'NO',
+    },
+  })
+  titleEn: string;
 
   @property({
     type: 'string',
@@ -65,6 +79,20 @@ export class Instruction extends Entity {
     },
   })
   link?: string | null;
+
+  @property({
+    type: 'any',
+    required: false,
+    postgresql: {
+      columnName: 'delete_hash',
+      dataType: 'text',
+      dataLength: null,
+      dataPrecision: null,
+      dataScale: null,
+      nullable: 'YES',
+    },
+  })
+  deleteHash?: string | null;
 
   @property({
     type: 'boolean',

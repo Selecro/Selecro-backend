@@ -8,7 +8,7 @@ dotenv.config();
 
 @bind({scope: BindingScope.TRANSIENT})
 export class EmailService {
-  constructor() { }
+  constructor() {}
 
   public generateVerificationToken(userId: number): string {
     const secret = process.env.JWT_SECRET ?? '';

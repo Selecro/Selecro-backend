@@ -1,59 +1,52 @@
+import {authenticate} from '@loopback/authentication';
+import {inject} from '@loopback/core';
+import {repository} from '@loopback/repository';
 import {
-  Count,
-  CountSchema,
-  Filter,
-  repository,
-  Where,
-} from '@loopback/repository';
-import {
+  HttpErrors,
+  Request,
+  Response,
+  RestBindings,
   del,
-  get,
-  getModelSchemaRef,
-  getWhereSchemaFor,
   param,
   patch,
   post,
   requestBody,
 } from '@loopback/rest';
-import {Instruction, Step} from '../models';
+import {SecurityBindings, UserProfile} from '@loopback/security';
+import {Difficulty, Instruction} from '../models';
 import {
   InstructionRepository,
   StepRepository,
   UserRepository,
 } from '../repositories';
+import {ImgurService, JWTService} from '../services';
 
 export class UserInstructionController {
   constructor(
+    @inject('services.jwt.service')
+    public jwtService: JWTService,
+    @inject(SecurityBindings.USER, {optional: true})
+    public user: UserProfile,
+    @inject('services.imgur')
+    public imgurService: ImgurService,
     @repository(UserRepository) protected userRepository: UserRepository,
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
-    @repository(StepRepository) protected stepRepository: StepRepository,
-  ) {}
+    @repository(StepRepository) public stepRepository: StepRepository,
+  ) { }
 
-  @get('/users/{id}/instructions', {
+  @authenticate('jwt')
+  @post('/users/{id}/instructions/{instructionId}', {
     responses: {
       '200': {
-        description: 'Array of User has many Instruction',
+        description: 'Create Instruction',
         content: {
           'application/json': {
-            schema: {type: 'array', items: getModelSchemaRef(Instruction)},
+            schema: {
+              type: 'boolean',
+            },
           },
         },
-      },
-    },
-  })
-  async find(
-    @param.path.number('id') id: number,
-    @param.query.object('filter') filter?: Filter<Instruction>,
-  ): Promise<Instruction[]> {
-    return this.userRepository.instructions(id).find(filter);
-  }
-
-  @post('/users/{id}/instructions', {
-    responses: {
-      '200': {
-        description: 'User model instance',
-        content: {'application/json': {schema: getModelSchemaRef(Instruction)}},
       },
     },
   })
@@ -61,102 +54,240 @@ export class UserInstructionController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Instruction, {
-            title: 'NewInstructionInUser',
-            exclude: ['id'],
-          }),
+          schema: {
+            type: 'object',
+            properties: {
+              titleCz: {type: 'string'},
+              titleEn: {type: 'string'},
+              difficulty: {enum: Object.values(Difficulty)},
+              private: {type: 'boolean'},
+            },
+            required: ['titleCz', 'titleEn', 'difficulty', 'private'],
+          },
         },
       },
     })
-    instruction: Omit<Instruction, 'id'>,
-  ): Promise<Instruction> {
-    //return this.InstructionRepository.create(instruction);
-    const id = 10; // Provide the appropriate user ID
-
-    const user = await this.userRepository.findById(id);
+    instruction: Omit<
+      Instruction,
+      'id' | 'userId' | 'date' | 'link' | 'deleteHash'
+    >,
+  ): Promise<boolean> {
+    const user = await this.userRepository.findById(this.user.id);
     if (!user) {
-      // Handle the case when the user does not exist
-      throw new Error('User not found');
+      throw new HttpErrors.NotFound('User not found');
     }
-
-    const createdInstruction = new Instruction(instruction);
-    await this.instructionRepository.create(createdInstruction);
-
-    return createdInstruction;
+    await this.instructionRepository.create({
+      ...instruction,
+      userId: this.user.id,
+    });
+    return true;
   }
 
-  @patch('/users/{id}/instructions', {
+  @authenticate('jwt')
+  @patch('/users/{id}/instructions/{instructionId}', {
     responses: {
       '200': {
-        description: 'User.Instruction PATCH success count',
-        content: {'application/json': {schema: CountSchema}},
+        description: 'Update Instruction',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
       },
     },
   })
   async patch(
-    @param.path.number('id') id: number,
+    @param.path.number('instructionId') instructionId: number,
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Instruction, {partial: true}),
+          schema: {
+            type: 'object',
+            properties: {
+              titleCz: {type: 'string'},
+              titleEn: {type: 'string'},
+              difficulty: {enum: Object.values(Difficulty)},
+              private: {type: 'boolean'},
+            },
+          },
         },
       },
     })
     instruction: Partial<Instruction>,
-    @param.query.object('where', getWhereSchemaFor(Instruction))
-    where?: Where<Instruction>,
-  ): Promise<Count> {
-    return this.userRepository.instructions(id).patch(instruction, where);
+  ): Promise<boolean> {
+    const user = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    const instructionOriginal = await this.instructionRepository.findById(
+      instructionId,
+    );
+    if (!instructionOriginal) {
+      throw new HttpErrors.NotFound('Instruction not found');
+    }
+    this.validateInstructionOwnership(instructionOriginal);
+    await this.instructionRepository.updateById(instructionId, instruction);
+    return true;
   }
 
-  @del('/users/{id}/instructions', {
+  @authenticate('jwt')
+  @del('/users/{id}/instructions/{instructionId}', {
     responses: {
       '200': {
-        description: 'User.Instruction DELETE success count',
-        content: {'application/json': {schema: CountSchema}},
+        description: 'Delete Instruction',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
       },
     },
   })
   async delete(
-    @param.path.number('id') id: number,
-    @param.query.object('where', getWhereSchemaFor(Instruction))
-    where?: Where<Instruction>,
-  ): Promise<Count> {
-    return this.userRepository.instructions(id).delete(where);
+    @param.query.number('instructionId') instructionId: number,
+  ): Promise<boolean> {
+    const user = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    if (user.deleteHash) {
+      await this.imgurService.deleteImage(user.deleteHash);
+    }
+    const instruction = await this.instructionRepository.findById(
+      instructionId,
+    );
+    if (!instruction) {
+      throw new HttpErrors.NotFound('Instruction not found');
+    }
+    this.validateInstructionOwnership(instruction);
+    if (instruction.deleteHash) {
+      await this.imgurService.deleteImage(instruction.deleteHash);
+    }
+    await this.instructionRepository.deleteById(instructionId);
+    const stepHashes = await this.stepRepository.find({
+      where: {
+        and: [
+          {
+            deleteHash: {neq: ''},
+            instructionId: instructionId,
+          },
+        ],
+      },
+      fields: {deleteHash: true},
+    });
+    const hashes = stepHashes.map(step => step.deleteHash);
+    for (const hash in hashes) {
+      await this.imgurService.deleteImage(hash);
+    }
+    await this.stepRepository.deleteAll({instructionId: instructionId});
+    return true;
   }
 
-  @post('/instructions/{id}/steps', {
+  @authenticate('jwt')
+  @post('/users/{id}/instructions/{instructionId}/picture', {
     responses: {
       '200': {
-        description: 'Instruction model instance',
-        content: {'application/json': {schema: getModelSchemaRef(Step)}},
+        description: 'Upload picture',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
       },
     },
   })
-  async create0(
+  async uploadPicture(
+    @param.path.number('instructionId') instructionId: number,
     @requestBody({
       content: {
-        'application/json': {
-          schema: getModelSchemaRef(Step, {
-            title: 'NewStepInInstruction',
-            exclude: ['id'],
-          }),
+        'multipart/form-data': {
+          'x-parser': 'stream',
+          schema: {
+            type: 'object',
+            properties: {
+              image: {type: 'string', format: 'binary'},
+            },
+            required: ['image'],
+          },
         },
       },
     })
-    step: Omit<Step, 'id'>,
-  ): Promise<Step> {
-    //return this.instructionRepository.steps(id).create(step);
-    const id = 1; // Provide the appropriate user ID
-
-    const instruction = await this.instructionRepository.findById(id);
-    if (!instruction) {
-      // Handle the case when the user does not exist
-      throw new Error('Instruction not found');
+    request: Request,
+    @inject(RestBindings.Http.RESPONSE) response: Response,
+  ): Promise<boolean> {
+    const user = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
     }
+    const instruction = await this.instructionRepository.findById(
+      instructionId,
+    );
+    if (!instruction) {
+      throw new HttpErrors.NotFound('Instruction not found');
+    }
+    this.validateInstructionOwnership(instruction);
+    if (instruction.deleteHash) {
+      await this.imgurService.deleteImage(instruction.deleteHash);
+    }
+    const data = await this.imgurService.savePicture(request, response);
+    await this.instructionRepository.updateById(instructionId, {
+      link: data.link,
+      deleteHash: data.deletehash,
+    });
+    return true;
+  }
 
-    const createdstep = new Step(step);
-    await this.stepRepository.create(createdstep);
-    return createdstep;
+  @authenticate('jwt')
+  @del('/users/{id}/instructions/{instructionId}/picture', {
+    responses: {
+      '200': {
+        description: 'Delete picture',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
+      },
+    },
+  })
+  async deleteImage(
+    @param.path.number('instructionId') instructionId: number,
+  ): Promise<boolean> {
+    const user = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    const instruction = await this.instructionRepository.findById(
+      instructionId,
+    );
+    if (!instruction) {
+      throw new HttpErrors.NotFound('Instruction not found');
+    }
+    this.validateInstructionOwnership(instruction);
+    if (!instruction.deleteHash) {
+      throw new HttpErrors.NotFound('Instruction picture does not exist');
+    }
+    await this.imgurService.deleteImage(instruction.deleteHash);
+    await this.instructionRepository.updateById(instructionId, {
+      link: null,
+      deleteHash: null,
+    });
+    return true;
+  }
+
+  private validateInstructionOwnership(instruction: Instruction): void {
+    if (Number(instruction.userId) !== Number(this.user.id)) {
+      throw new HttpErrors.Forbidden(
+        'You are not authorized to this instruction',
+      );
+    }
   }
 }
