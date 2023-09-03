@@ -66,7 +66,7 @@ jobs:
             docker login && \
             docker stop ${{ env.IMAGE }} || true && \
             docker rm ${{ env.IMAGE }} || true && \
-            docker run -d \
+            docker run \
             -e HOST="${{ secrets.HOST }}" \
             -e SQLHOST="${{ secrets.SQLHOST }}" \
             -e SQLPORT="${{ secrets.SQLPORT }}" \
@@ -86,7 +86,7 @@ jobs:
             -e ROOT_VAULT="${{ secrets.ROOT_VAULT }}" \
             --name ${{ env.IMAGE }} -dp ${{ env.PORT }}:${{ env.PORT }} \
             ${{ env.IMAGE }} && \
-            docker update --restart unless-stopped ${{ env.IMAGE }} && exit"
+            docker update --restart unless-stopped ${{ env.IMAGE }}"
 
       - name: Cleanup
         run: rm -rf ~/.ssh
