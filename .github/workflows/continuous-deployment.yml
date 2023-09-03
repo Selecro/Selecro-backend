@@ -56,29 +56,6 @@ jobs:
         run: |
           sudo openvpn --config ~/openvpn-config.ovpn --auth-user-pass ~/client-password.txt
 
-      - name: Set environment variables
-        env:
-          HOST: ${{ secrets.HOST }}
-          SQLHOST: ${{ secrets.SQLHOST }}
-          SQLPORT: ${{ secrets.SQLPORT }}
-          SQLUSER: ${{ secrets.SQLUSER }}
-          SQLPASSWORD: ${{ secrets.SQLPASSWORD }}
-          SQLDATABASE: ${{ env.SQLDATABASE }}
-          TOKEN: ${{ secrets.TOKEN }}
-          EXTPORT: ${{ secrets.EXTPORT }}
-          EMAILHOST: ${{ secrets.EMAILHOST }}
-          EMAILPORT: ${{ secrets.EMAILPORT }}
-          EMAILUSER: ${{ secrets.EMAILUSER }}
-          EMAILPASSWORD: ${{ secrets.EMAILPASSWORD }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          SFTPHOST: ${{ secrets.SFTPHOST }}
-          SOCKETPORT: ${{ secrets.SOCKETPORT }}
-          UNSEAL_KEY_1: ${{ secrets.UNSEAL_KEY_1 }}
-          UNSEAL_KEY_2: ${{ secrets.UNSEAL_KEY_2 }}
-          VAULT_URL: ${{ secrets.VAULT_URL }}
-          CLIENT_ID: ${{ secrets.CLIENT_ID }}
-          ROOT_VAULT: ${{ secrets.ROOT_VAULT }}
-
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -90,26 +67,23 @@ jobs:
             docker stop ${{ env.IMAGE }} || true && \
             docker rm ${{ env.IMAGE }} || true && \
             docker run -d \
-            -e HOST="${HOST}" \
-            -e SQLHOST="${SQLHOST}" \
-            -e SQLPORT="${SQLPORT}" \
-            -e SQLUSER="${SQLUSER}" \
-            -e SQLPASSWORD="${SQLPASSWORD}" \
-            -e SQLDATABASE="${SQLDATABASE}" \
-            -e TOKEN="${TOKEN}" \
-            -e EXTPORT="${EXTPORT}" \
-            -e EMAILHOST="${EMAILHOST}" \
-            -e EMAILPORT="${EMAILPORT}" \
-            -e EMAILUSER="${EMAILUSER}" \
-            -e EMAILPASSWORD="${EMAILPASSWORD}" \
-            -e JWT_SECRET="${JWT_SECRET}" \
-            -e SFTPHOST="${SFTPHOST}" \
-            -e SOCKETPORT="${SOCKETPORT}" \
-            -e UNSEAL_KEY_1="${UNSEAL_KEY_1}" \
-            -e UNSEAL_KEY_2="${UNSEAL_KEY_2}" \
-            -e VAULT_URL="${VAULT_URL}" \
-            -e CLIENT_ID="${CLIENT_ID}" \
-            -e ROOT_VAULT="${ROOT_VAULT}" \
+            -e HOST="${{ secrets.HOST }}" \
+            -e SQLHOST="${{ secrets.SQLHOST }}" \
+            -e SQLPORT="${{ secrets.SQLPORT }}" \
+            -e SQLUSER="${{ secrets.SQLUSER }}" \
+            -e SQLPASSWORD="${{ secrets.SQLPASSWORD }}" \
+            -e SQLDATABASE="${{ env.SQLDATABASE }}" \
+            -e TOKEN="${{ secrets.TOKEN }}" \
+            -e EMAILHOST="${{ secrets.EMAILHOST }}" \
+            -e EMAILPORT="${{ secrets.EMAILPORT }}" \
+            -e EMAILUSER="${{ secrets.EMAILUSER }}" \
+            -e EMAILPASSWORD="${{ secrets.EMAILPASSWORD }}" \
+            -e JWT_SECRET="$${{ secrets.JWT_SECRET }}" \
+            -e UNSEAL_KEY_1="${{ secrets.UNSEAL_KEY_1 }}" \
+            -e UNSEAL_KEY_2="${{ secrets.UNSEAL_KEY_2 }}" \
+            -e VAULT_URL="${{ secrets.VAULT_URL }}" \
+            -e CLIENT_ID="${{ secrets.CLIENT_ID }}" \
+            -e ROOT_VAULT="${{ secrets.ROOT_VAULT }}" \
             --name ${{ env.IMAGE }} -dp ${{ env.PORT }}:${{ env.PORT }} \
             ${{ env.IMAGE }} && \
             docker update --restart unless-stopped ${{ env.IMAGE }} && exit"
