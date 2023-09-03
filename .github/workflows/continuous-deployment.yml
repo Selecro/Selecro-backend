@@ -54,7 +54,7 @@ jobs:
 
       - name: Connect to OpenVPN
         run: |
-          sudo openvpn --config ~/openvpn-config.ovpn --auth-user-pass ~/client-password.txt
+          sudo openvpn --proto tcp --config ~/openvpn-config.ovpn --auth-user-pass ~/client-password.txt
 
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
