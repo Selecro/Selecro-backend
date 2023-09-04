@@ -42,7 +42,7 @@ jobs:
 
       - name: Get the short SHA hash of the commit
         run: |
-          echo "::set-env name=SHORT_SHA::$(git rev-parse --short HEAD)"
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       - name: Build and push Docker image
         run: |
