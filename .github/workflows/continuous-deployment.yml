@@ -74,7 +74,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             docker login && \
-            docker pull selecro/${{ env.IMAGE }}:${{ env.SHORT_SHA }} && \
+            docker pull selecro/${{ env.IMAGE }} && \
             docker ps -a | grep ${{ env.IMAGE }} && docker stop ${{ env.IMAGE }} || true && \
             docker ps -a | grep ${{ env.IMAGE }} && docker rm ${{ env.IMAGE }} || true && \
             docker run \
@@ -96,7 +96,7 @@ jobs:
             -e CLIENT_ID="${{ secrets.CLIENT_ID }}" \
             -e ROOT_VAULT="${{ secrets.ROOT_VAULT }}" \
             --name ${{ env.IMAGE }} -dp ${{ env.PORT }}:${{ env.PORT }} \
-            ${{ env.IMAGE }} && \
+            selecro/${{ env.IMAGE }} && \
             docker update --restart unless-stopped ${{ env.IMAGE }} && exit
 
       - name: Cleanup
