@@ -74,9 +74,9 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             docker login && \
-            docker pull selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }}
-            docker stop ${{ env.IMAGE }} || true && \
-            docker rm ${{ env.IMAGE }} || true && \
+            docker pull selecro/${{ env.IMAGE }}:${{ env.SHORT_SHA }} && \
+            docker ps -a | grep ${{ env.IMAGE }} && docker stop ${{ env.IMAGE }} || true && \
+            docker ps -a | grep ${{ env.IMAGE }} && docker rm ${{ env.IMAGE }} || true && \
             docker run \
             -e HOST="${{ secrets.HOST }}" \
             -e SQLHOST="${{ secrets.SQLHOST }}" \
