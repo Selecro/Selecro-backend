@@ -55,7 +55,7 @@
     "@loopback/repository": "^6.0.0",
     "@loopback/rest": "^13.1.0",
     "@loopback/rest-explorer": "^6.0.0",
-    "@loopback/service-proxy": "^6.1.0",
+    "@loopback/service-proxy": "^6.1.2",
     "dotenv": "^16.3.1",
     "isemail": "^3.2.0",
     "jsonwebtoken": "^9.0.0",
