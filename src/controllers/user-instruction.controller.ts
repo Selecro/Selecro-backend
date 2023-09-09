@@ -159,12 +159,12 @@ export class UserInstructionController {
   async delete(
     @param.query.number('instructionId') instructionId: number,
   ): Promise<boolean> {
-    const user = await this.userRepository.findById(this.user.id);
-    if (!user) {
+    const userOriginal = await this.userRepository.findById(this.user.id);
+    if (!userOriginal) {
       throw new HttpErrors.NotFound('User not found');
     }
-    if (user.deleteHash) {
-      await this.imgurService.deleteImage(user.deleteHash);
+    if (userOriginal.deleteHash) {
+      await this.imgurService.deleteImage(userOriginal.deleteHash);
     }
     const instruction = await this.instructionRepository.findById(
       instructionId,
@@ -193,6 +193,11 @@ export class UserInstructionController {
       await this.imgurService.deleteImage(hash);
     }
     await this.stepRepository.deleteAll({instructionId: instructionId});
+    const users = await this.userRepository.find();
+    for (const user of users) {
+      user.favorites = user.favorites?.filter(favorite => favorite !== instructionId);
+      await this.userRepository.updateById(user.id, user);
+    }
     return true;
   }
 

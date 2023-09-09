@@ -520,20 +520,20 @@ export class UserController {
       password: string;
     },
   ): Promise<boolean> {
-    const user = await this.userRepository.findById(this.user.id);
-    if (!user) {
+    const userOriginal = await this.userRepository.findById(this.user.id);
+    if (!userOriginal) {
       throw new HttpErrors.NotFound('User not found');
     }
     const passwordMatched = await this.hasher.comparePassword(
       request.password,
-      user.passwordHash,
+      userOriginal.passwordHash,
     );
     if (!passwordMatched) {
       throw new HttpErrors.Unauthorized('password is not valid');
     }
-    await this.vaultService.deleteUser(String(user.id));
-    if (user.deleteHash) {
-      await this.imgurService.deleteImage(user.deleteHash);
+    await this.vaultService.deleteUser(String(userOriginal.id));
+    if (userOriginal.deleteHash) {
+      await this.imgurService.deleteImage(userOriginal.deleteHash);
     }
     await this.userRepository.deleteById(this.user.id);
     const instructionHashes = await this.instructionRepository.find({
@@ -578,6 +578,11 @@ export class UserController {
     await this.instructionRepository.deleteAll({userId: this.user.id});
     for (const instruction of instructions) {
       await this.stepRepository.deleteAll({instructionId: instruction.id});
+      const users = await this.userRepository.find();
+      for (const user of users) {
+        user.favorites = user.favorites?.filter(favorite => favorite !== instruction.id);
+        await this.userRepository.updateById(user.id, user);
+      }
     }
     return true;
   }
