@@ -28,6 +28,7 @@ import {Instruction, InstructionRelations, Language, User} from '../models';
 import {
   InstructionRepository,
   StepRepository,
+  UserLinkRepository,
   UserRepository,
 } from '../repositories';
 import {
@@ -60,6 +61,8 @@ export class UserController {
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
+    @repository(UserLinkRepository)
+    public userLinkRepository: UserLinkRepository,
   ) { }
 
   @post('/login', {
@@ -358,7 +361,10 @@ export class UserController {
         throw new HttpErrors.UnprocessableEntity('Passwords are not matching');
       }
       await this.emailService.sendSuccessfulyPasswordChange(user);
-      await this.vaultService.updatePassword(String(user.id), request.password0);
+      await this.vaultService.updatePassword(
+        String(user.id),
+        request.password0,
+      );
       await this.userRepository.updateById(user.id, {
         passwordHash: await this.hasher.hashPassword(request.password0),
       });
@@ -537,6 +543,18 @@ export class UserController {
       await this.imgurService.deleteImage(userOriginal.deleteHash);
     }
     await this.userRepository.deleteById(this.user.id);
+    const userLinksToDelete = await this.userLinkRepository.find({
+      where: {
+        or: [
+          {followerId: this.user.id},
+          {followeeId: this.user.id},
+        ],
+      },
+    });
+    const userLinksToKeep = userLinksToDelete.filter(userLink => userLink.id !== this.user.id);
+    for (const userLink of userLinksToKeep) {
+      await this.userLinkRepository.deleteById(userLink.id);
+    }
     const instructionHashes = await this.instructionRepository.find({
       where: {
         and: [
@@ -581,7 +599,9 @@ export class UserController {
       await this.stepRepository.deleteAll({instructionId: instruction.id});
       const users = await this.userRepository.find();
       for (const user of users) {
-        user.favorites = user.favorites?.filter(favorite => favorite !== instruction.id);
+        user.favorites = user.favorites?.filter(
+          favorite => favorite !== instruction.id,
+        );
         await this.userRepository.updateById(user.id, user);
       }
     }
@@ -673,7 +693,7 @@ export class UserController {
         description: 'Get public instructions',
         content: {
           'application/json': {
-            schema: getModelSchemaRef(Instruction)
+            schema: getModelSchemaRef(Instruction),
           },
         },
       },
@@ -693,7 +713,7 @@ export class UserController {
         },
       ],
       limit,
-      skip: offset
+      skip: offset,
     });
     return data;
   }
@@ -719,12 +739,13 @@ export class UserController {
   async getUsers(
     @param.query.number('limit') limit: number = 10,
     @param.query.number('offset') offset: number = 0,
-  ): Promise<{username: string; link: string | null | undefined;}[]> {
+  ): Promise<{id: number; username: string; link: string | null | undefined}[]> {
     const users = await this.userRepository.find({
       limit,
       skip: offset,
     });
     const usernamesAndLinks = users.map(user => ({
+      id: user.id,
       username: user.username,
       link: user.link,
     }));

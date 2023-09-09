@@ -35,7 +35,7 @@ export class UserInstructionController {
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}', {
@@ -123,9 +123,8 @@ export class UserInstructionController {
     if (!userOriginal) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instructionOriginal = await this.instructionRepository.findById(
-      instructionId,
-    );
+    const instructionOriginal =
+      await this.instructionRepository.findById(instructionId);
     if (!instructionOriginal) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
@@ -133,7 +132,9 @@ export class UserInstructionController {
     if (instruction.private) {
       const users = await this.userRepository.find();
       for (const user of users) {
-        user.favorites = user.favorites?.filter(favorite => favorite !== instructionId);
+        user.favorites = user.favorites?.filter(
+          favorite => favorite !== instructionId,
+        );
         await this.userRepository.updateById(user.id, user);
       }
     }
@@ -166,9 +167,8 @@ export class UserInstructionController {
     if (userOriginal.deleteHash) {
       await this.imgurService.deleteImage(userOriginal.deleteHash);
     }
-    const instruction = await this.instructionRepository.findById(
-      instructionId,
-    );
+    const instruction =
+      await this.instructionRepository.findById(instructionId);
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
@@ -195,7 +195,9 @@ export class UserInstructionController {
     await this.stepRepository.deleteAll({instructionId: instructionId});
     const users = await this.userRepository.find();
     for (const user of users) {
-      user.favorites = user.favorites?.filter(favorite => favorite !== instructionId);
+      user.favorites = user.favorites?.filter(
+        favorite => favorite !== instructionId,
+      );
       await this.userRepository.updateById(user.id, user);
     }
     return true;
@@ -208,13 +210,15 @@ export class UserInstructionController {
         description: 'Get users instructions',
         content: {
           'application/json': {
-            schema: getModelSchemaRef(Instruction)
+            schema: getModelSchemaRef(Instruction),
           },
         },
       },
     },
   })
-  async getUsersInstructions(): Promise<(Instruction & InstructionRelations)[]> {
+  async getUsersInstructions(): Promise<
+    (Instruction & InstructionRelations)[]
+  > {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
@@ -270,9 +274,8 @@ export class UserInstructionController {
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instruction = await this.instructionRepository.findById(
-      instructionId,
-    );
+    const instruction =
+      await this.instructionRepository.findById(instructionId);
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
@@ -310,9 +313,8 @@ export class UserInstructionController {
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instruction = await this.instructionRepository.findById(
-      instructionId,
-    );
+    const instruction =
+      await this.instructionRepository.findById(instructionId);
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }

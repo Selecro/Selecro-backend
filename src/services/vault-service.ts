@@ -3,7 +3,8 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 export class VaultService {
-  private readonly vaultEndpoint = process.env.VAULT_URL ?? '' + process.env.VAULT_PORT ?? '';
+  private readonly vaultEndpoint =
+    process.env.VAULT_URL ?? '' + process.env.VAULT_PORT ?? '';
   private readonly unsealKeys: string[] = [
     process.env.UNSEAL_KEY_1 ?? '',
     process.env.UNSEAL_KEY_2 ?? '',
@@ -117,7 +118,7 @@ export class VaultService {
   async updatePassword(password: string, id: string): Promise<void> {
     try {
       const data = {
-        password: password
+        password: password,
       };
       const response = await fetch(
         `${this.vaultEndpoint}/v1/auth/userpass/users/${id}/password`,

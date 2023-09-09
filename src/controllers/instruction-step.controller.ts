@@ -32,7 +32,7 @@ export class InstructionStepController {
     @repository(InstructionRepository)
     public instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}/steps/{stepId}', {
@@ -83,9 +83,8 @@ export class InstructionStepController {
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instruction = await this.instructionRepository.findById(
-      instructionId,
-    );
+    const instruction =
+      await this.instructionRepository.findById(instructionId);
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
@@ -146,9 +145,8 @@ export class InstructionStepController {
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instruction = await this.instructionRepository.findById(
-      instructionId,
-    );
+    const instruction =
+      await this.instructionRepository.findById(instructionId);
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
@@ -185,9 +183,8 @@ export class InstructionStepController {
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instruction = await this.instructionRepository.findById(
-      instructionId,
-    );
+    const instruction =
+      await this.instructionRepository.findById(instructionId);
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
@@ -211,7 +208,7 @@ export class InstructionStepController {
         description: 'Get steps instruction',
         content: {
           'application/json': {
-            schema: getModelSchemaRef(Step)
+            schema: getModelSchemaRef(Step),
           },
         },
       },
@@ -224,9 +221,11 @@ export class InstructionStepController {
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instruction = await this.instructionRepository.findById(
-      instructionId,
-    );
+    const instruction =
+      await this.instructionRepository.findById(instructionId);
+    if (!instruction) {
+      throw new HttpErrors.NotFound('Instruction not found');
+    }
     const data = await this.stepRepository.find();
     return data;
   }
@@ -270,9 +269,8 @@ export class InstructionStepController {
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instruction = await this.instructionRepository.findById(
-      instructionId,
-    );
+    const instruction =
+      await this.instructionRepository.findById(instructionId);
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
@@ -316,9 +314,8 @@ export class InstructionStepController {
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instruction = await this.instructionRepository.findById(
-      instructionId,
-    );
+    const instruction =
+      await this.instructionRepository.findById(instructionId);
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
