@@ -7,12 +7,10 @@ export class UserLink extends Entity {
   @property({
     id: true,
     generated: true,
-    required: true,
     postgresql: {
       columnName: 'id',
-      dataType: 'integer',
       dataLength: null,
-      dataPrecision: null,
+      dataPrecision: 10,
       dataScale: 0,
       nullable: 'NO',
     },
@@ -27,7 +25,7 @@ export class UserLink extends Entity {
       dataType: 'integer',
       dataLength: null,
       dataPrecision: null,
-      dataScale: 0,
+      dataScale: null,
       nullable: 'NO',
     },
   })
@@ -41,7 +39,7 @@ export class UserLink extends Entity {
       dataType: 'integer',
       dataLength: null,
       dataPrecision: null,
-      dataScale: 0,
+      dataScale: null,
       nullable: 'NO',
     },
   })
