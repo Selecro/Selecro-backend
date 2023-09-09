@@ -63,7 +63,7 @@ export class UserController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserLinkRepository)
     public userLinkRepository: UserLinkRepository,
-  ) { }
+  ) {}
 
   @post('/login', {
     responses: {
@@ -545,13 +545,12 @@ export class UserController {
     await this.userRepository.deleteById(this.user.id);
     const userLinksToDelete = await this.userLinkRepository.find({
       where: {
-        or: [
-          {followerId: this.user.id},
-          {followeeId: this.user.id},
-        ],
+        or: [{followerId: this.user.id}, {followeeId: this.user.id}],
       },
     });
-    const userLinksToKeep = userLinksToDelete.filter(userLink => userLink.id !== this.user.id);
+    const userLinksToKeep = userLinksToDelete.filter(
+      userLink => userLink.id !== this.user.id,
+    );
     for (const userLink of userLinksToKeep) {
       await this.userLinkRepository.deleteById(userLink.id);
     }
@@ -727,6 +726,7 @@ export class UserController {
             schema: {
               type: 'object',
               properties: {
+                id: {type: 'number'},
                 username: {type: 'string'},
                 link: {type: 'string'},
               },
@@ -739,7 +739,9 @@ export class UserController {
   async getUsers(
     @param.query.number('limit') limit: number = 10,
     @param.query.number('offset') offset: number = 0,
-  ): Promise<{id: number; username: string; link: string | null | undefined}[]> {
+  ): Promise<
+    {id: number; username: string; link: string | null | undefined}[]
+  > {
     const users = await this.userRepository.find({
       limit,
       skip: offset,

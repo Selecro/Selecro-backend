@@ -15,13 +15,15 @@ import {
   requestBody,
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
+import * as dotenv from 'dotenv';
 import {Difficulty, Instruction, InstructionRelations} from '../models';
 import {
   InstructionRepository,
   StepRepository,
   UserRepository,
 } from '../repositories';
-import {ImgurService, JWTService} from '../services';
+import {BcryptHasher, ImgurService, JWTService} from '../services';
+dotenv.config();
 
 export class UserInstructionController {
   constructor(
@@ -29,6 +31,8 @@ export class UserInstructionController {
     public jwtService: JWTService,
     @inject(SecurityBindings.USER, {optional: true})
     public user: UserProfile,
+    @inject('services.hasher')
+    public hasher: BcryptHasher,
     @inject('services.imgur')
     public imgurService: ImgurService,
     @repository(UserRepository) protected userRepository: UserRepository,
@@ -71,7 +75,7 @@ export class UserInstructionController {
     })
     instruction: Omit<
       Instruction,
-      'id' | 'userId' | 'date' | 'link' | 'deleteHash'
+      'id' | 'userId' | 'date' | 'link' | 'deleteHash' | 'premium'
     >,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
@@ -326,6 +330,55 @@ export class UserInstructionController {
     await this.instructionRepository.updateById(instructionId, {
       link: null,
       deleteHash: null,
+    });
+    return true;
+  }
+
+  @authenticate('jwt')
+  @patch('/users/{id}/instructions/{instructionId}', {
+    responses: {
+      '200': {
+        description: 'Set premium Instruction',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
+      },
+    },
+  })
+  async setPremium(
+    @param.path.number('instructionId') instructionId: number,
+    @requestBody()
+    request: {
+      premium: boolean;
+      key: string;
+    },
+  ): Promise<boolean> {
+    const instructionKey = process.env.INSTRUCTION_KEY ?? '';
+    const keyMatch = await this.hasher.comparePassword(
+      request.key,
+      instructionKey,
+    );
+    if (!keyMatch) {
+      throw new HttpErrors.Unauthorized('Invalid password');
+    }
+    const userOriginal = await this.userRepository.findById(this.user.id);
+    if (!userOriginal) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    const instructionOriginal =
+      await this.instructionRepository.findById(instructionId);
+    if (!instructionOriginal) {
+      throw new HttpErrors.NotFound('Instruction not found');
+    }
+    if (instructionOriginal.private) {
+      throw new HttpErrors.NotFound('Private Instruction can not be premium');
+    }
+    await this.instructionRepository.updateById(instructionId, {
+      premium: request.premium,
     });
     return true;
   }

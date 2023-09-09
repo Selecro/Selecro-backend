@@ -16,7 +16,7 @@ export class UserLinkController {
     @repository(UserRepository) public userRepository: UserRepository,
     @repository(UserLinkRepository)
     public userLinkRepository: UserLinkRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}//follow/{followeeId}')
@@ -34,7 +34,7 @@ export class UserLinkController {
     await this.userLinkRepository.create({
       followerId: this.user.id,
       followeeId: followeeId,
-    })
+    });
     return true;
   }
 

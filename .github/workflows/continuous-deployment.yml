@@ -95,6 +95,7 @@ jobs:
             -e VAULT_URL="${{ secrets.VAULT_URL }}" \
             -e CLIENT_ID="${{ secrets.CLIENT_ID }}" \
             -e ROOT_VAULT="${{ secrets.ROOT_VAULT }}" \
+            -e INSTRUCTION_KEY="${{ secrets.INSTRUCTION_KEY }}" \
             --name ${{ env.IMAGE }} -dp ${{ env.PORT }}:${{ env.PORT }} \
             selecro/${{ env.IMAGE }} && \
             docker update --restart unless-stopped ${{ env.IMAGE }} && exit

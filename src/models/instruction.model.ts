@@ -110,6 +110,21 @@ export class Instruction extends Entity {
   private: boolean;
 
   @property({
+    type: 'boolean',
+    required: true,
+    postgresql: {
+      columnName: 'premium',
+      dataType: 'boolean',
+      dataLength: null,
+      dataPrecision: null,
+      dataScale: null,
+      nullable: 'NO',
+      default: false,
+    },
+  })
+  premium: boolean;
+
+  @property({
     type: 'date',
     required: true,
     postgresql: {
