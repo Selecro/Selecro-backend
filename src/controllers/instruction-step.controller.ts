@@ -8,13 +8,15 @@ import {
   Response,
   RestBindings,
   del,
+  get,
+  getModelSchemaRef,
   param,
   patch,
   post,
   requestBody,
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
-import {Instruction, Step} from '../models';
+import {Instruction, Step, StepRelations} from '../models';
 import {InstructionRepository, StepRepository} from '../repositories';
 import {ImgurService} from '../services';
 
@@ -200,6 +202,33 @@ export class InstructionStepController {
     }
     await this.stepRepository.deleteById(stepId);
     return true;
+  }
+
+  @authenticate('jwt')
+  @get('/users/{id}/instructions/{instructionId}/instruction-steps', {
+    responses: {
+      '200': {
+        description: 'Get steps instruction',
+        content: {
+          'application/json': {
+            schema: getModelSchemaRef(Step)
+          },
+        },
+      },
+    },
+  })
+  async getPublicInstructions(
+    @param.path.number('instructionId') instructionId: number,
+  ): Promise<(Step & StepRelations)[]> {
+    const user = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    const instruction = await this.instructionRepository.findById(
+      instructionId,
+    );
+    const data = await this.stepRepository.find();
+    return data;
   }
 
   @authenticate('jwt')

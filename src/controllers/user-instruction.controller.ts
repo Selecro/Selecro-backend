@@ -7,13 +7,15 @@ import {
   Response,
   RestBindings,
   del,
+  get,
+  getModelSchemaRef,
   param,
   patch,
   post,
   requestBody,
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
-import {Difficulty, Instruction} from '../models';
+import {Difficulty, Instruction, InstructionRelations} from '../models';
 import {
   InstructionRepository,
   StepRepository,
@@ -117,8 +119,8 @@ export class UserInstructionController {
     })
     instruction: Partial<Instruction>,
   ): Promise<boolean> {
-    const user = await this.userRepository.findById(this.user.id);
-    if (!user) {
+    const userOriginal = await this.userRepository.findById(this.user.id);
+    if (!userOriginal) {
       throw new HttpErrors.NotFound('User not found');
     }
     const instructionOriginal = await this.instructionRepository.findById(
@@ -128,6 +130,13 @@ export class UserInstructionController {
       throw new HttpErrors.NotFound('Instruction not found');
     }
     this.validateInstructionOwnership(instructionOriginal);
+    if (instruction.private) {
+      const users = await this.userRepository.find();
+      for (const user of users) {
+        user.favorites = user.favorites?.filter(favorite => favorite !== instructionId);
+        await this.userRepository.updateById(user.id, user);
+      }
+    }
     await this.instructionRepository.updateById(instructionId, instruction);
     return true;
   }
@@ -185,6 +194,37 @@ export class UserInstructionController {
     }
     await this.stepRepository.deleteAll({instructionId: instructionId});
     return true;
+  }
+
+  @authenticate('jwt')
+  @get('/users/{id}/user-instructions', {
+    responses: {
+      '200': {
+        description: 'Get users instructions',
+        content: {
+          'application/json': {
+            schema: getModelSchemaRef(Instruction)
+          },
+        },
+      },
+    },
+  })
+  async getUsersInstructions(): Promise<(Instruction & InstructionRelations)[]> {
+    const user = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    const data = await this.instructionRepository.find({
+      where: {
+        userId: this.user.id,
+      },
+      include: [
+        {
+          relation: 'steps',
+        },
+      ],
+    });
+    return data;
   }
 
   @authenticate('jwt')

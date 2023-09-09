@@ -222,6 +222,16 @@ export class User extends Entity {
   })
   deleteHash?: string | null;
 
+  @property.array(Number, {
+    required: false,
+    postgresql: {
+      columnName: 'favorites',
+      array: true,
+    },
+    default: () => [],
+  })
+  favorites?: number[];
+
   @hasMany(() => Instruction, {keyTo: 'userId'})
   instructions: Instruction[];
 

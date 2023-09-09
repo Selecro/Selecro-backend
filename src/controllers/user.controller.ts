@@ -13,6 +13,7 @@ import {
   RestBindings,
   del,
   get,
+  getModelSchemaRef,
   patch,
   post,
   requestBody,
@@ -22,7 +23,7 @@ import * as dotenv from 'dotenv';
 import * as isEmail from 'isemail';
 import jwt from 'jsonwebtoken';
 import _ from 'lodash';
-import {Language, User} from '../models';
+import {Instruction, InstructionRelations, Language, User} from '../models';
 import {
   InstructionRepository,
   StepRepository,
@@ -394,6 +395,12 @@ export class UserController {
                 bio: {type: 'string'},
                 link: {type: 'string'},
                 wrappedDEK: {type: 'string'},
+                favorites: {
+                  type: 'array',
+                  items: {
+                    type: 'number',
+                  },
+                },
               },
             },
           },
@@ -450,6 +457,12 @@ export class UserController {
               darkmode: {type: 'boolean'},
               nick: {type: 'string'},
               bio: {type: 'string'},
+              favorites: {
+                type: 'array',
+                items: {
+                  type: 'number',
+                },
+              },
             },
           },
         },
@@ -646,5 +659,58 @@ export class UserController {
       deleteHash: null,
     });
     return true;
+  }
+
+  @get('/public-instructions', {
+    responses: {
+      '200': {
+        description: 'Get public instructions',
+        content: {
+          'application/json': {
+            schema: getModelSchemaRef(Instruction)
+          },
+        },
+      },
+    },
+  })
+  async getPublicInstructions(): Promise<(Instruction & InstructionRelations)[]> {
+    const data = await this.instructionRepository.find({
+      where: {
+        private: false,
+      },
+      include: [
+        {
+          relation: 'steps',
+        },
+      ],
+    });
+    return data;
+  }
+
+  @get('/users', {
+    responses: {
+      '200': {
+        description: 'Get users',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                username: {type: 'string'},
+                link: {type: 'string'},
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getUsers(): Promise<{username: string; link: string | null | undefined;}[]> {
+    const users = await this.userRepository.find();
+    const usernamesAndLinks = users.map(user => ({
+      username: user.username,
+      link: user.link,
+    }));
+    return usernamesAndLinks;
   }
 }
