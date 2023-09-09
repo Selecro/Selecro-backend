@@ -14,6 +14,7 @@ import {
   del,
   get,
   getModelSchemaRef,
+  param,
   patch,
   post,
   requestBody,
@@ -678,7 +679,10 @@ export class UserController {
       },
     },
   })
-  async getPublicInstructions(): Promise<(Instruction & InstructionRelations)[]> {
+  async getPublicInstructions(
+    @param.query.number('limit') limit: number = 10,
+    @param.query.number('offset') offset: number = 0,
+  ): Promise<(Instruction & InstructionRelations)[]> {
     const data = await this.instructionRepository.find({
       where: {
         private: false,
@@ -688,6 +692,8 @@ export class UserController {
           relation: 'steps',
         },
       ],
+      limit,
+      skip: offset
     });
     return data;
   }
@@ -710,8 +716,14 @@ export class UserController {
       },
     },
   })
-  async getUsers(): Promise<{username: string; link: string | null | undefined;}[]> {
-    const users = await this.userRepository.find();
+  async getUsers(
+    @param.query.number('limit') limit: number = 10,
+    @param.query.number('offset') offset: number = 0,
+  ): Promise<{username: string; link: string | null | undefined;}[]> {
+    const users = await this.userRepository.find({
+      limit,
+      skip: offset,
+    });
     const usernamesAndLinks = users.map(user => ({
       username: user.username,
       link: user.link,
