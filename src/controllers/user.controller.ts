@@ -13,7 +13,6 @@ import {
   RestBindings,
   del,
   get,
-  getModelSchemaRef,
   param,
   patch,
   post,
@@ -24,7 +23,7 @@ import * as dotenv from 'dotenv';
 import * as isEmail from 'isemail';
 import jwt from 'jsonwebtoken';
 import _ from 'lodash';
-import {Instruction, InstructionRelations, Language, User} from '../models';
+import {Difficulty, Instruction, Language, User} from '../models';
 import {
   InstructionRepository,
   StepRepository,
@@ -63,7 +62,7 @@ export class UserController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserLinkRepository)
     public userLinkRepository: UserLinkRepository,
-  ) {}
+  ) { }
 
   @post('/login', {
     responses: {
@@ -392,6 +391,7 @@ export class UserController {
             schema: {
               type: 'object',
               properties: {
+                id: {type: 'number'},
                 email: {type: 'string'},
                 username: {type: 'string'},
                 language: {enum: Object.values(Language)},
@@ -418,12 +418,11 @@ export class UserController {
   async getUser(): Promise<
     Omit<
       User,
-      'id' | 'passwordHash' | 'initializationVector' | 'kekSalt' | 'deleteHash'
+      'passwordHash' | 'initializationVector' | 'kekSalt' | 'deleteHash'
     >
   > {
     const user = await this.userRepository.findById(this.user.id, {
       fields: {
-        id: false,
         passwordHash: false,
         initializationVector: false,
         kekSalt: false,
@@ -686,37 +685,6 @@ export class UserController {
     return true;
   }
 
-  @get('/public-instructions', {
-    responses: {
-      '200': {
-        description: 'Get public instructions',
-        content: {
-          'application/json': {
-            schema: getModelSchemaRef(Instruction),
-          },
-        },
-      },
-    },
-  })
-  async getPublicInstructions(
-    @param.query.number('limit') limit: number = 10,
-    @param.query.number('offset') offset: number = 0,
-  ): Promise<(Instruction & InstructionRelations)[]> {
-    const data = await this.instructionRepository.find({
-      where: {
-        private: false,
-      },
-      include: [
-        {
-          relation: 'steps',
-        },
-      ],
-      limit,
-      skip: offset,
-    });
-    return data;
-  }
-
   @get('/users', {
     responses: {
       '200': {
@@ -752,5 +720,130 @@ export class UserController {
       link: user.link,
     }));
     return usernamesAndLinks;
+  }
+
+  @get('/user-detail', {
+    responses: {
+      '200': {
+        description: 'Get user detail',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                id: {type: 'number'},
+                username: {type: 'string'},
+                nick: {type: 'string'},
+                bio: {type: 'string'},
+                link: {type: 'string'},
+                followerCount: {type: 'number'},
+                followeeCount: {type: 'number'},
+                instructions: {
+                  type: 'object',
+                  items: {
+                    id: {type: 'number'},
+                    titleCz: {type: 'string'},
+                    titleEn: {type: 'string'},
+                    difficulty: {enum: Object.values(Difficulty)},
+                    link: {type: 'string'},
+                    private: {type: 'boolean'},
+                    premium: {type: 'boolean'},
+                    date: {type: 'string'},
+                    steps: {
+                      type: 'object',
+                      items: {
+                        id: {type: 'number'},
+                        titleCz: {type: 'string'},
+                        titleEn: {type: 'string'},
+                        descriptionCz: {
+                          type: 'array',
+                          items: {
+                            type: 'string',
+                          },
+                        },
+                        descriptionEn: {
+                          type: 'array',
+                          items: {
+                            type: 'string',
+                          },
+                        },
+                        link: {type: 'string'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getUserDetail(@param.query.number('id') userId: number): Promise<{
+    user: Omit<
+      User,
+      | 'email'
+      | 'passwordHash'
+      | 'wrappedDEK'
+      | 'initializationVector'
+      | 'kekSalt'
+      | 'language'
+      | 'darkmode'
+      | 'emailVerified'
+      | 'date'
+      | 'deleteHash'
+      | 'favourites'
+    >;
+    followerCount: number;
+    followeeCount: number;
+    instructions: Omit<Instruction, 'deleteHash'>[];
+  }> {
+    const user = await this.userRepository.findById(userId, {
+      fields: {
+        email: false,
+        passwordHash: false,
+        wrappedDEK: false,
+        initializationVector: false,
+        kekSalt: false,
+        language: false,
+        darkmode: false,
+        emailVerified: false,
+        date: false,
+        deleteHash: false,
+        favorites: false,
+      },
+    });
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    const instructions = await this.instructionRepository.find({
+      where: {
+        userId: userId,
+        private: false,
+      },
+      include: [
+        {
+          relation: 'steps',
+          scope: {
+            fields: {
+              deleteHash: false,
+            },
+          },
+        },
+      ],
+    });
+    const userForFollower = await this.userLinkRepository.find({
+      where: {
+        followerId: userId,
+      },
+    });
+    const followerCount = userForFollower.length;
+    const userForFollowee = await this.userLinkRepository.find({
+      where: {
+        followeeId: userId,
+      },
+    });
+    const followeeCount = userForFollowee.length;
+    return {user, followerCount, followeeCount, instructions};
   }
 }

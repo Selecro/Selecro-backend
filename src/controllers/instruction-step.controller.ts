@@ -9,14 +9,13 @@ import {
   RestBindings,
   del,
   get,
-  getModelSchemaRef,
   param,
   patch,
   post,
   requestBody,
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
-import {Instruction, Step, StepRelations} from '../models';
+import {Instruction, Step} from '../models';
 import {InstructionRepository, StepRepository} from '../repositories';
 import {ImgurService} from '../services';
 
@@ -32,7 +31,7 @@ export class InstructionStepController {
     @repository(InstructionRepository)
     public instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) {}
+  ) { }
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}/steps/{stepId}', {
@@ -208,7 +207,32 @@ export class InstructionStepController {
         description: 'Get steps instruction',
         content: {
           'application/json': {
-            schema: getModelSchemaRef(Step),
+            schema: {
+              type: 'object',
+              properties: {
+                steps: {
+                  type: 'object',
+                  items: {
+                    id: {type: 'number'},
+                    titleCz: {type: 'string'},
+                    titleEn: {type: 'string'},
+                    descriptionCz: {
+                      type: 'array',
+                      items: {
+                        type: 'string',
+                      },
+                    },
+                    descriptionEn: {
+                      type: 'array',
+                      items: {
+                        type: 'string',
+                      },
+                    },
+                    link: {type: 'string'},
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -216,7 +240,7 @@ export class InstructionStepController {
   })
   async getPublicInstructions(
     @param.path.number('instructionId') instructionId: number,
-  ): Promise<(Step & StepRelations)[]> {
+  ): Promise<Omit<Step, 'deleteHash'>[]> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
@@ -226,7 +250,11 @@ export class InstructionStepController {
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
-    const data = await this.stepRepository.find();
+    const data = await this.stepRepository.find({
+      fields: {
+        deleteHash: false,
+      },
+    });
     return data;
   }
 

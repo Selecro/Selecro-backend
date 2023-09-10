@@ -8,7 +8,6 @@ import {
   RestBindings,
   del,
   get,
-  getModelSchemaRef,
   param,
   patch,
   post,
@@ -16,7 +15,7 @@ import {
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import * as dotenv from 'dotenv';
-import {Difficulty, Instruction, InstructionRelations} from '../models';
+import {Difficulty, Instruction} from '../models';
 import {
   InstructionRepository,
   StepRepository,
@@ -39,7 +38,7 @@ export class UserInstructionController {
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) {}
+  ) { }
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}', {
@@ -214,15 +213,51 @@ export class UserInstructionController {
         description: 'Get users instructions',
         content: {
           'application/json': {
-            schema: getModelSchemaRef(Instruction),
+            schema: {
+              type: 'object',
+              properties: {
+                instructions: {
+                  type: 'object',
+                  items: {
+                    id: {type: 'number'},
+                    titleCz: {type: 'string'},
+                    titleEn: {type: 'string'},
+                    difficulty: {enum: Object.values(Difficulty)},
+                    link: {type: 'string'},
+                    private: {type: 'boolean'},
+                    premium: {type: 'boolean'},
+                    date: {type: 'string'},
+                    steps: {
+                      type: 'object',
+                      items: {
+                        id: {type: 'number'},
+                        titleCz: {type: 'string'},
+                        titleEn: {type: 'string'},
+                        descriptionCz: {
+                          type: 'array',
+                          items: {
+                            type: 'string',
+                          },
+                        },
+                        descriptionEn: {
+                          type: 'array',
+                          items: {
+                            type: 'string',
+                          },
+                        },
+                        link: {type: 'string'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
     },
   })
-  async getUsersInstructions(): Promise<
-    (Instruction & InstructionRelations)[]
-  > {
+  async getUsersInstructions(): Promise<Omit<Instruction, 'deleteHash'>[]> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
@@ -234,8 +269,16 @@ export class UserInstructionController {
       include: [
         {
           relation: 'steps',
+          scope: {
+            fields: {
+              deleteHash: false,
+            },
+          },
         },
       ],
+      fields: {
+        deleteHash: false,
+      },
     });
     return data;
   }
@@ -381,6 +424,75 @@ export class UserInstructionController {
       premium: request.premium,
     });
     return true;
+  }
+
+  @get('/public-instructions', {
+    responses: {
+      '200': {
+        description: 'Get public instructions',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                instructions: {
+                  type: 'object',
+                  items: {
+                    id: {type: 'number'},
+                    titleCz: {type: 'string'},
+                    titleEn: {type: 'string'},
+                    difficulty: {enum: Object.values(Difficulty)},
+                    link: {type: 'string'},
+                    private: {type: 'boolean'},
+                    premium: {type: 'boolean'},
+                    date: {type: 'string'},
+                    steps: {
+                      type: 'object',
+                      items: {
+                        id: {type: 'number'},
+                        titleCz: {type: 'string'},
+                        titleEn: {type: 'string'},
+                        descriptionCz: {
+                          type: 'array',
+                          items: {
+                            type: 'string',
+                          },
+                        },
+                        descriptionEn: {
+                          type: 'array',
+                          items: {
+                            type: 'string',
+                          },
+                        },
+                        link: {type: 'string'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getPublicInstructions(
+    @param.query.number('limit') limit: number = 10,
+    @param.query.number('offset') offset: number = 0,
+  ): Promise<Omit<Instruction, 'deleteHash'>[]> {
+    const data = await this.instructionRepository.find({
+      where: {
+        private: false,
+      },
+      include: [
+        {
+          relation: 'steps',
+        },
+      ],
+      limit,
+      skip: offset,
+    });
+    return data;
   }
 
   private validateInstructionOwnership(instruction: Instruction): void {
