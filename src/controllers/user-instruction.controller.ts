@@ -76,16 +76,16 @@ export class UserInstructionController {
       Instruction,
       'id' | 'userId' | 'date' | 'link' | 'deleteHash' | 'premium'
     >,
-  ): Promise<boolean> {
+  ): Promise<Instruction> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    await this.instructionRepository.create({
+    const newInstruction = await this.instructionRepository.create({
       ...instruction,
       userId: this.user.id,
     });
-    return true;
+    return newInstruction;
   }
 
   @authenticate('jwt')

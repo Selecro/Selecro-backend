@@ -16,10 +16,10 @@ export class UserLinkController {
     @repository(UserRepository) public userRepository: UserRepository,
     @repository(UserLinkRepository)
     public userLinkRepository: UserLinkRepository,
-  ) {}
+  ) { }
 
   @authenticate('jwt')
-  @post('/users/{id}//follow/{followeeId}')
+  @post('/users/{id}/follow/{followeeId}')
   async followUser(
     @param.path.number('followeeId') followeeId: number,
   ): Promise<boolean> {
@@ -39,7 +39,7 @@ export class UserLinkController {
   }
 
   @authenticate('jwt')
-  @del('/users/{id}//unfollow/{followeeId}')
+  @del('/users/{id}/unfollow/{followeeId}')
   async unfollowUser(
     @param.path.number('followeeId') followeeId: number,
   ): Promise<boolean> {

@@ -77,7 +77,7 @@ export class InstructionStepController {
       },
     })
     step: Omit<Step, 'id' | 'instructionId'>,
-  ): Promise<boolean> {
+  ): Promise<Step> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
@@ -88,11 +88,11 @@ export class InstructionStepController {
       throw new HttpErrors.NotFound('Instruction not found');
     }
     this.validateInstructionOwnership(instruction);
-    await this.stepRepository.create({
+    const newStep = await this.stepRepository.create({
       ...step,
       instructionId: instructionId,
     });
-    return true;
+    return newStep;
   }
 
   @authenticate('jwt')

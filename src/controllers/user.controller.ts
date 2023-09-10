@@ -722,7 +722,7 @@ export class UserController {
     return usernamesAndLinks;
   }
 
-  @get('/user-detail', {
+  @get('/user-detail/{id}', {
     responses: {
       '200': {
         description: 'Get user detail',
