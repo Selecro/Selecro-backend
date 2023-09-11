@@ -145,7 +145,7 @@ export class Instruction extends Entity {
     },
     default: () => [],
   })
-  premiumUserIds: number[];
+  premiumUserIds?: number[];
 
   @property({
     type: 'number',
