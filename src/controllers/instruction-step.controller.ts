@@ -31,7 +31,7 @@ export class InstructionStepController {
     @repository(InstructionRepository)
     public instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) {}
+  ) { }
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}/steps/{stepId}', {
@@ -415,6 +415,11 @@ export class InstructionStepController {
       await this.instructionRepository.findById(instructionId);
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
+    }
+    if (!instruction.premiumUserIds) {
+      throw new HttpErrors.Forbidden(
+        'You are not authorized to this instruction',
+      );
     }
     if (!instruction.premiumUserIds.includes(this.user.id)) {
       throw new HttpErrors.Forbidden(
