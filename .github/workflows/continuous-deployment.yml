@@ -74,7 +74,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             docker login || true && \
-            docker pull selecro/${{ env.IMAGE }}:${{ env.SHORT_SHA }} && \
+            docker pull selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && \
             docker ps -a | grep ${{ env.IMAGE }} && docker stop ${{ env.IMAGE }} || true && \
             docker ps -a | grep ${{ env.IMAGE }} && docker rm ${{ env.IMAGE }} || true && \
             docker run \
@@ -98,7 +98,7 @@ jobs:
             -e INSTRUCTION_KEY="${{ secrets.INSTRUCTION_KEY }}" \
             -e INSTRUCTION_KEY_PERMISSIONS="${{ secrets.INSTRUCTION_KEY_PERMISSIONS }}" \
             --name ${{ env.IMAGE }} -dp ${{ env.PORT }}:${{ env.PORT }} \
-            selecro/${{ env.IMAGE }}:${{ env.SHORT_SHA }} && \
+            selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && \
             docker update --restart unless-stopped ${{ env.IMAGE }} && exit
 
       - name: Cleanup
