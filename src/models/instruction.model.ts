@@ -137,6 +137,16 @@ export class Instruction extends Entity {
   })
   date: Date;
 
+  @property.array(Number, {
+    required: false,
+    postgresql: {
+      columnName: 'premium_user_ids',
+      array: true,
+    },
+    default: () => [],
+  })
+  premiumUserIds: number[];
+
   @property({
     type: 'number',
   })

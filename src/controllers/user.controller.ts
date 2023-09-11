@@ -62,7 +62,7 @@ export class UserController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserLinkRepository)
     public userLinkRepository: UserLinkRepository,
-  ) { }
+  ) {}
 
   @post('/login', {
     responses: {
@@ -535,7 +535,7 @@ export class UserController {
       userOriginal.passwordHash,
     );
     if (!passwordMatched) {
-      throw new HttpErrors.Unauthorized('password is not valid');
+      throw new HttpErrors.Unauthorized('Password is not valid');
     }
     await this.vaultService.deleteUser(String(userOriginal.id));
     if (userOriginal.deleteHash) {
@@ -792,11 +792,12 @@ export class UserController {
       | 'emailVerified'
       | 'date'
       | 'deleteHash'
-      | 'favourites'
+      | 'favorites'
     >;
     followerCount: number;
     followeeCount: number;
     instructions: Omit<Instruction, 'deleteHash'>[];
+    instructionsPremium: Omit<Instruction, 'deleteHash'>[];
   }> {
     const user = await this.userRepository.findById(userId, {
       fields: {
@@ -820,6 +821,7 @@ export class UserController {
       where: {
         userId: userId,
         private: false,
+        premium: false,
       },
       include: [
         {
@@ -831,6 +833,13 @@ export class UserController {
           },
         },
       ],
+    });
+    const instructionsPremium = await this.instructionRepository.find({
+      where: {
+        userId: userId,
+        private: false,
+        premium: true,
+      },
     });
     const userForFollower = await this.userLinkRepository.find({
       where: {
@@ -844,6 +853,12 @@ export class UserController {
       },
     });
     const followeeCount = userForFollowee.length;
-    return {user, followerCount, followeeCount, instructions};
+    return {
+      user,
+      followerCount,
+      followeeCount,
+      instructions,
+      instructionsPremium,
+    };
   }
 }

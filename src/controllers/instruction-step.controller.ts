@@ -31,7 +31,7 @@ export class InstructionStepController {
     @repository(InstructionRepository)
     public instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}/steps/{stepId}', {
@@ -229,6 +229,7 @@ export class InstructionStepController {
                       },
                     },
                     link: {type: 'string'},
+                    instructionId: {type: 'string'},
                   },
                 },
               },
@@ -362,6 +363,73 @@ export class InstructionStepController {
       deleteHash: null,
     });
     return true;
+  }
+
+  @authenticate('jwt')
+  @get('/premium-instructions/{instructionId}/detail', {
+    responses: {
+      '200': {
+        description: 'Get premium instructions',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                steps: {
+                  type: 'object',
+                  items: {
+                    id: {type: 'number'},
+                    titleCz: {type: 'string'},
+                    titleEn: {type: 'string'},
+                    descriptionCz: {
+                      type: 'array',
+                      items: {
+                        type: 'string',
+                      },
+                    },
+                    descriptionEn: {
+                      type: 'array',
+                      items: {
+                        type: 'string',
+                      },
+                    },
+                    link: {type: 'string'},
+                    instructionId: {type: 'number'},
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getPremiumInstructionDetail(
+    @param.path.number('instructionId') instructionId: number,
+  ): Promise<Omit<Step, 'deleteHash'>[]> {
+    const user = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    const instruction =
+      await this.instructionRepository.findById(instructionId);
+    if (!instruction) {
+      throw new HttpErrors.NotFound('Instruction not found');
+    }
+    if (!instruction.premiumUserIds.includes(this.user.id)) {
+      throw new HttpErrors.Forbidden(
+        'You are not authorized to this instruction',
+      );
+    }
+    const data = await this.stepRepository.find({
+      where: {
+        instructionId: instructionId,
+      },
+      fields: {
+        deleteHash: false,
+      },
+    });
+    return data;
   }
 
   private validateInstructionOwnership(instruction: Instruction): void {
