@@ -1,9 +1,9 @@
 import {UserService} from '@loopback/authentication';
+import {Credentials} from '@loopback/authentication-jwt';
 import {inject} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
-import {Credentials} from '../controllers/user.controller';
 import {User} from '../models';
 import {UserRepository} from '../repositories/user.repository';
 import {BcryptHasher} from './hash.password';
@@ -15,6 +15,7 @@ export class MyUserService implements UserService<User, Credentials> {
     @inject('services.hasher')
     public hasher: BcryptHasher,
   ) {}
+
   async verifyCredentials(credentials: Credentials): Promise<User> {
     const foundUser0 = await this.userRepository.findOne({
       where: {
@@ -31,7 +32,7 @@ export class MyUserService implements UserService<User, Credentials> {
         throw new HttpErrors.NotFound(`user not found`);
       }
       const passwordMatched = await this.hasher.comparePassword(
-        credentials.passwordHash,
+        credentials.password,
         foundUser0.passwordHash,
       );
       if (!passwordMatched) {
@@ -43,7 +44,7 @@ export class MyUserService implements UserService<User, Credentials> {
         throw new HttpErrors.NotFound(`user not found`);
       }
       const passwordMatched = await this.hasher.comparePassword(
-        credentials.passwordHash,
+        credentials.password,
         foundUser1.passwordHash,
       );
       if (!passwordMatched) {
@@ -54,13 +55,11 @@ export class MyUserService implements UserService<User, Credentials> {
   }
 
   convertToUserProfile(user: User): UserProfile {
-    let userName = '';
-    if (user.name) {
-      userName = user.name;
-    }
-    if (user.surname) {
-      userName = user.name ? `${user.name} ${user.surname}` : user.surname;
-    }
-    return {[securityId]: `${user.id}`, name: userName, email: user.email};
+    return {
+      [securityId]: user.id.toString(),
+      username: user.username,
+      id: user.id,
+      email: user.email,
+    };
   }
 }

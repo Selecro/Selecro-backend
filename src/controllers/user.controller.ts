@@ -1,7 +1,11 @@
 import {authenticate} from '@loopback/authentication';
-import {JWTService} from '@loopback/authentication-jwt';
+import {
+  Credentials,
+  JWTService,
+  UserCredentials,
+} from '@loopback/authentication-jwt';
 import {inject} from '@loopback/context';
-import {model, property, repository} from '@loopback/repository';
+import {repository} from '@loopback/repository';
 import {
   HttpErrors,
   Request,
@@ -9,9 +13,9 @@ import {
   RestBindings,
   del,
   get,
-  getModelSchemaRef,
+  param,
+  patch,
   post,
-  put,
   requestBody,
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
@@ -19,58 +23,22 @@ import * as dotenv from 'dotenv';
 import * as isEmail from 'isemail';
 import jwt from 'jsonwebtoken';
 import _ from 'lodash';
-import multer from 'multer';
-import {config} from '../datasources/sftp.datasource';
-import {Language, User} from '../models';
-import {UserRepository} from '../repositories';
-import {EmailService} from '../services/email';
-import {BcryptHasher} from '../services/hash.password';
-import {MyUserService} from '../services/user-service';
-import {validateCredentials} from '../services/validator.service';
+import {Difficulty, Instruction, Language, User} from '../models';
+import {
+  InstructionRepository,
+  StepRepository,
+  UserLinkRepository,
+  UserRepository,
+} from '../repositories';
+import {
+  BcryptHasher,
+  EmailService,
+  ImgurService,
+  MyUserService,
+  VaultService,
+  validateCredentials,
+} from '../services';
 dotenv.config();
-const Client = require('ssh2-sftp-client');
-const sftp = new Client();
-
-@model()
-export class UserSingup {
-  @property({
-    type: 'string',
-    required: true,
-  })
-  email: string;
-  @property({
-    type: 'string',
-    required: true,
-  })
-  username: string;
-  @property({
-    type: 'string',
-    required: true,
-  })
-  password: string;
-  @property({
-    type: 'string',
-    required: true,
-    jsonSchema: {
-      enum: Object.values(Language),
-    },
-  })
-  language: Language;
-}
-
-@model()
-export class Credentials {
-  @property({
-    type: 'string',
-    required: true,
-  })
-  email: string;
-  @property({
-    type: 'string',
-    required: true,
-  })
-  passwordHash: string;
-}
 
 export class UserController {
   constructor(
@@ -84,7 +52,16 @@ export class UserController {
     public hasher: BcryptHasher,
     @inject('services.email')
     public emailService: EmailService,
-    @repository(UserRepository) public userRepository: UserRepository,
+    @inject('services.imgur')
+    public imgurService: ImgurService,
+    @inject('services.vault')
+    public vaultService: VaultService,
+    @repository(UserRepository) protected userRepository: UserRepository,
+    @repository(InstructionRepository)
+    protected instructionRepository: InstructionRepository,
+    @repository(StepRepository) public stepRepository: StepRepository,
+    @repository(UserLinkRepository)
+    public userLinkRepository: UserLinkRepository,
   ) {}
 
   @post('/login', {
@@ -110,26 +87,33 @@ export class UserController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Credentials),
+          schema: {
+            type: 'object',
+            properties: {
+              email: {type: 'string'},
+              password: {type: 'string'},
+            },
+            required: ['email', 'password'],
+          },
         },
       },
     })
     credentials: Credentials,
-  ): Promise<{token: string}> {
+  ): Promise<{token: string; tokenKMS: string}> {
     const user = await this.userService.verifyCredentials(credentials);
     const userProfile = this.userService.convertToUserProfile(user);
-    const existedemail = await this.userRepository.findOne({
-      where: {email: user.email},
+    const existingUser = await this.userRepository.findOne({
+      where: {or: [{email: credentials.email}, {username: credentials.email}]},
     });
-    const existedusername = await this.userRepository.findOne({
-      where: {username: user.email},
-    });
-    if (existedemail?.emailVerified || existedusername?.emailVerified) {
-      const token = await this.jwtService.generateToken(userProfile);
-      return {token};
-    } else {
+    if (!existingUser?.emailVerified) {
       throw new HttpErrors.UnprocessableEntity('email is not verified');
     }
+    const token = await this.jwtService.generateToken(userProfile);
+    const tokenKMS = await this.vaultService.authenticate(
+      String(existingUser.id),
+      credentials.password,
+    );
+    return {token, tokenKMS};
   }
 
   @post('/signup', {
@@ -139,54 +123,81 @@ export class UserController {
         content: {
           'application/json': {
             schema: {
-              type: 'object',
-              properties: {
-                signup: {
-                  type: 'boolean',
-                },
-              },
+              type: 'boolean',
             },
           },
         },
       },
     },
   })
-  async signUp(
+  async signup(
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(UserSingup),
+          schema: {
+            type: 'object',
+            properties: {
+              email: {type: 'string'},
+              username: {type: 'string'},
+              password0: {type: 'string'},
+              password1: {type: 'string'},
+              language: {enum: Object.values(Language)},
+              wrappedDEK: {type: 'string'},
+              kekSalt: {type: 'string'},
+              initializationVector: {type: 'string'},
+            },
+            required: [
+              'email',
+              'username',
+              'password0',
+              'password1',
+              'language',
+              'wrappedDEK',
+              'kekSalt',
+              'initializationVector',
+            ],
+          },
         },
       },
     })
-    userData: UserSingup,
-  ): Promise<boolean> {
-    validateCredentials(_.pick(userData, ['email', 'password', 'username']));
-    const existedemail = await this.userRepository.findOne({
-      where: {email: userData.email},
+    credentials: UserCredentials,
+  ): Promise<string> {
+    validateCredentials(
+      _.pick(credentials, ['email', 'password0', 'password1', 'username']),
+    );
+    const existingUser = await this.userRepository.findOne({
+      where: {
+        or: [{email: credentials.email}, {username: credentials.username}],
+      },
     });
-    const existedusername = await this.userRepository.findOne({
-      where: {username: userData.username},
-    });
-    if (!existedemail && !existedusername) {
-      const user: User = new User(userData);
-      user.passwordHash = await this.hasher.hashPassword(userData.password);
-      const savedUser = await this.userRepository.create(
-        _.omit(user, 'password'),
+    if (existingUser) {
+      throw new HttpErrors.BadRequest(
+        'User with this email or username already exists.',
       );
-      try {
-        await this.emailService.sendRegistrationEmail(savedUser);
-        return true;
-      } catch (_err) {
-        throw new HttpErrors.UnprocessableEntity('error sending email');
-      }
-    } else if (existedemail) {
-      throw new HttpErrors.UnprocessableEntity('email already exist');
-    } else if (existedusername) {
-      throw new HttpErrors.UnprocessableEntity('username already exist');
-    } else {
-      throw new HttpErrors.UnprocessableEntity('unexpected error');
     }
+    const hashedPassword = await this.hasher.hashPassword(
+      credentials.password0,
+    );
+    await this.vaultService.createUser(
+      String(credentials.id),
+      credentials.password0,
+    );
+    const tokenKMS = await this.vaultService.authenticate(
+      String(credentials.id),
+      credentials.password0,
+    );
+    const newUser = new User({
+      email: credentials.email,
+      username: credentials.username,
+      passwordHash: hashedPassword,
+      wrappedDEK: credentials.wrappedDEK.toString('base64'),
+      kekSalt: credentials.kekSalt,
+      initializationVector: credentials.initializationVector.toString('base64'),
+      language: credentials.language,
+    });
+    const dbUser = await this.userRepository.create(newUser);
+    await this.emailService.sendRegistrationEmail(dbUser);
+    return tokenKMS;
   }
 
   @post('/verify-email', {
@@ -196,12 +207,7 @@ export class UserController {
         content: {
           'application/json': {
             schema: {
-              type: 'object',
-              properties: {
-                signup: {
-                  type: 'boolean',
-                },
-              },
+              type: 'boolean',
             },
           },
         },
@@ -209,7 +215,19 @@ export class UserController {
     },
   })
   async verifyEmail(
-    @requestBody()
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              token: {type: 'string'},
+            },
+            required: ['token'],
+          },
+        },
+      },
+    })
     request: {
       token: string;
     },
@@ -219,25 +237,25 @@ export class UserController {
       iat: number;
       exp: number;
     }
-    const {token} = request;
-    const secret = process.env.JWT_SECRET ?? '';
-    let decodedToken: DecodedToken;
     try {
-      decodedToken = jwt.verify(token, secret) as DecodedToken;
-    } catch (_err) {
-      throw new HttpErrors.UnprocessableEntity(
-        'Invalid or expired verification token',
-      );
-    }
-    const {userId} = decodedToken;
-    const user = await this.userRepository.findById(userId);
-    if (!user) {
-      throw new HttpErrors.UnprocessableEntity('User not found');
-    } else {
-      try {
-        await this.userRepository.updateById(user.id, {emailVerified: true});
-        return true;
-      } catch (_err) {
+      const {token} = request;
+      const secret = process.env.JWT_SECRET ?? '';
+      const decodedToken = jwt.verify(token, secret) as DecodedToken;
+      const {userId} = decodedToken;
+      const user = await this.userRepository.findById(userId);
+      if (!user) {
+        throw new HttpErrors.UnprocessableEntity('User not found');
+      }
+      await this.userRepository.updateById(user.id, {emailVerified: true});
+      return true;
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        throw new HttpErrors.UnprocessableEntity(
+          'Verification token has expired',
+        );
+      } else if (error.name === 'JsonWebTokenError') {
+        throw new HttpErrors.UnprocessableEntity('Invalid verification token');
+      } else {
         throw new HttpErrors.UnprocessableEntity(
           'Failed to update user email verification status',
         );
@@ -252,12 +270,7 @@ export class UserController {
         content: {
           'application/json': {
             schema: {
-              type: 'object',
-              properties: {
-                send: {
-                  type: 'boolean',
-                },
-              },
+              type: 'boolean',
             },
           },
         },
@@ -265,7 +278,19 @@ export class UserController {
     },
   })
   async sendPasswordChange(
-    @requestBody()
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              email: {type: 'string'},
+            },
+            required: ['email'],
+          },
+        },
+      },
+    })
     request: {
       email: string;
     },
@@ -277,14 +302,9 @@ export class UserController {
     });
     if (!user) {
       throw new HttpErrors.UnprocessableEntity('email not recognized');
-    } else {
-      try {
-        await this.emailService.sendPasswordChange(user);
-        return true;
-      } catch (_err) {
-        throw new HttpErrors.UnprocessableEntity('error in email send');
-      }
     }
+    await this.emailService.sendPasswordChange(user);
+    return true;
   }
 
   @post('/password-change', {
@@ -294,12 +314,7 @@ export class UserController {
         content: {
           'application/json': {
             schema: {
-              type: 'object',
-              properties: {
-                change: {
-                  type: 'boolean',
-                },
-              },
+              type: 'boolean',
             },
           },
         },
@@ -307,7 +322,21 @@ export class UserController {
     },
   })
   async changePassword(
-    @requestBody()
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              token: {type: 'string'},
+              password0: {type: 'string'},
+              password1: {type: 'string'},
+            },
+            required: ['token', 'password0', 'password1'],
+          },
+        },
+      },
+    })
     request: {
       token: string;
       password0: string;
@@ -315,39 +344,39 @@ export class UserController {
     },
   ): Promise<boolean> {
     interface DecodedToken {
-      userId: number;
+      userData: number;
       iat: number;
       exp: number;
     }
-    const {token} = request;
-    const secret = process.env.JWT_SECRET ?? '';
-    let decodedToken: DecodedToken;
     try {
-      decodedToken = jwt.verify(token, secret) as DecodedToken;
-    } catch (_err) {
-      throw new HttpErrors.UnprocessableEntity(
-        'Invalid or expired verification token',
+      const secret = process.env.JWT_SECRET ?? '';
+      const decodedToken = jwt.verify(request.token, secret) as DecodedToken;
+      const {userData} = decodedToken;
+      const user = await this.userRepository.findById(userData);
+      if (!user) {
+        throw new HttpErrors.UnprocessableEntity('User not found');
+      }
+      if (request.password0 !== request.password1) {
+        throw new HttpErrors.UnprocessableEntity('Passwords are not matching');
+      }
+      await this.emailService.sendSuccessfulyPasswordChange(user);
+      await this.vaultService.updatePassword(
+        String(user.id),
+        request.password0,
       );
-    }
-    const {userId} = decodedToken;
-    const user = await this.userRepository.findById(userId);
-    if (!user) {
-      throw new HttpErrors.UnprocessableEntity('User not found');
-    } else {
-      if (request.password0 === request.password1) {
-        try {
-          await this.emailService.sendSuccessfulyPasswordChange(user);
-          await this.userRepository.updateById(user.id, {
-            passwordHash: await this.hasher.hashPassword(request.password0),
-          });
-          return true;
-        } catch (_err) {
-          throw new HttpErrors.UnprocessableEntity(
-            'Failed to update user password',
-          );
-        }
+      await this.userRepository.updateById(user.id, {
+        passwordHash: await this.hasher.hashPassword(request.password0),
+      });
+      return true;
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        throw new HttpErrors.UnprocessableEntity(
+          'Verification token has expired',
+        );
+      } else if (error.name === 'JsonWebTokenError') {
+        throw new HttpErrors.UnprocessableEntity('Invalid verification token');
       } else {
-        throw new HttpErrors.UnprocessableEntity('Password are not matching');
+        throw new HttpErrors.UnprocessableEntity('Failed to change password');
       }
     }
   }
@@ -357,218 +386,479 @@ export class UserController {
     responses: {
       '200': {
         description: 'User model instance',
-        content: {'application/json': {schema: getModelSchemaRef(User)}},
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                id: {type: 'number'},
+                email: {type: 'string'},
+                username: {type: 'string'},
+                language: {enum: Object.values(Language)},
+                darkmode: {type: 'string'},
+                emailVerified: {type: 'string'},
+                date: {type: 'string'},
+                nick: {type: 'string'},
+                bio: {type: 'string'},
+                link: {type: 'string'},
+                wrappedDEK: {type: 'string'},
+                favorites: {
+                  type: 'array',
+                  items: {
+                    type: 'number',
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     },
   })
-  async findById(): Promise<User> {
-    return this.userRepository.findById(this.user.id);
+  async getUser(): Promise<
+    Omit<
+      User,
+      'passwordHash' | 'initializationVector' | 'kekSalt' | 'deleteHash'
+    >
+  > {
+    const user = await this.userRepository.findById(this.user.id, {
+      fields: {
+        passwordHash: false,
+        initializationVector: false,
+        kekSalt: false,
+        deleteHash: false,
+      },
+    });
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    return user;
   }
 
   @authenticate('jwt')
-  @put('/users/{id}', {
+  @patch('/users/{id}', {
     responses: {
-      '204': {
-        description: 'User PUT success',
+      '200': {
+        description: 'Update user',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
       },
     },
   })
-  async replaceById(
-    @requestBody()
-    user: User,
+  async patchUser(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              email: {type: 'string'},
+              username: {type: 'string'},
+              language: {enum: Object.values(Language)},
+              darkmode: {type: 'boolean'},
+              nick: {type: 'string'},
+              bio: {type: 'string'},
+              favorites: {
+                type: 'array',
+                items: {
+                  type: 'number',
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+    user: Partial<User>,
   ): Promise<boolean> {
-    const dbuser = await this.userRepository.findById(this.user.id);
-    if (
-      dbuser.date.toString() === new Date(user.date).toString() &&
-      dbuser.id === user.id &&
-      dbuser.passwordHash === user.passwordHash &&
-      dbuser.emailVerified === user.emailVerified &&
-      dbuser.link === user.link
-    ) {
-      await this.userRepository.updateById(this.user.id, user);
-      return true;
-    } else if (dbuser.email !== user.email) {
-      if (!isEmail.validate(user.email)) {
-        throw new HttpErrors.UnprocessableEntity('invalid Email');
-      } else {
-        await this.emailService.sendResetEmail(dbuser, user.email);
-        await this.userRepository.updateById(user.id, {emailVerified: false});
-        return true;
-      }
-    } else if (dbuser.date.toString() !== new Date(user.date).toString()) {
-      throw new HttpErrors.UnprocessableEntity('cant change creation date');
-    } else if (dbuser.link !== user.link) {
-      throw new HttpErrors.UnprocessableEntity('cant change profile link');
-    } else if (dbuser.emailVerified !== user.emailVerified) {
-      throw new HttpErrors.UnprocessableEntity('email is not verified');
-    } else if (dbuser.id !== user.id) {
-      throw new HttpErrors.UnprocessableEntity('cant change id');
-    } else if (dbuser.passwordHash !== user.passwordHash) {
-      throw new HttpErrors.UnprocessableEntity('cant change password');
-    } else {
-      throw new HttpErrors.UnprocessableEntity('unexpected error');
+    const userOriginal = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
     }
+    if (user.email && user.email !== user.email) {
+      if (!isEmail.validate(user.email)) {
+        throw new HttpErrors.UnprocessableEntity('invalid email');
+      }
+      await this.emailService.sendResetEmail(userOriginal, user.email);
+      await this.userRepository.updateById(this.user.id, {
+        emailVerified: false,
+      });
+    }
+    await this.userRepository.updateById(this.user.id, user);
+    return true;
   }
 
   @authenticate('jwt')
   @del('/users/{id}', {
     responses: {
-      '204': {
-        description: 'User DELETE success',
-      },
-    },
-  })
-  async deleteById(): Promise<boolean> {
-    try {
-      await this.userRepository.deleteById(this.user.id);
-      return true;
-    } catch (_err) {
-      throw new HttpErrors.UnprocessableEntity('error in delete');
-    }
-  }
-
-  @authenticate('jwt')
-  @get('/users/{id}/profilePictureGet', {
-    responses: {
       '200': {
-        description: 'User profile picture content',
-        content: {'image/jpeg': {}},
-      },
-    },
-  })
-  async getUserProfilePicture(): Promise<Buffer> {
-    const user = await this.userRepository.findById(this.user.id);
-    if (user.link) {
-      const sftpResponse = await sftp
-        .connect(config)
-        .then(async () => {
-          const x = await sftp.get('/users/' + user.link);
-          return x;
-        })
-        .then((response: string) => {
-          sftp.end();
-          return response;
-        })
-        .catch(() => {
-          throw new HttpErrors.UnprocessableEntity('error in get picture');
-        });
-      return sftpResponse;
-    } else {
-      throw new HttpErrors.UnprocessableEntity(
-        'user does not have profile picture',
-      );
-    }
-  }
-
-  @authenticate('jwt')
-  @put('/users/{id}/profilePictureSet', {
-    responses: {
-      200: {
+        description: 'Delete user',
         content: {
           'application/json': {
             schema: {
-              type: 'object',
+              type: 'boolean',
             },
           },
         },
-        description: 'Picture successfully uploaded',
       },
     },
   })
-  async uploadImage(
+  async deleteUser(
     @requestBody({
-      description: 'multipart/form-data for files/fields',
-      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              password: {type: 'string'},
+            },
+            required: ['password'],
+          },
+        },
+      },
+    })
+    request: {
+      password: string;
+    },
+  ): Promise<boolean> {
+    const userOriginal = await this.userRepository.findById(this.user.id);
+    if (!userOriginal) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    const passwordMatched = await this.hasher.comparePassword(
+      request.password,
+      userOriginal.passwordHash,
+    );
+    if (!passwordMatched) {
+      throw new HttpErrors.Unauthorized('Password is not valid');
+    }
+    await this.vaultService.deleteUser(String(userOriginal.id));
+    if (userOriginal.deleteHash) {
+      await this.imgurService.deleteImage(userOriginal.deleteHash);
+    }
+    await this.userRepository.deleteById(this.user.id);
+    const userLinksToDelete = await this.userLinkRepository.find({
+      where: {
+        or: [{followerId: this.user.id}, {followeeId: this.user.id}],
+      },
+    });
+    const userLinksToKeep = userLinksToDelete.filter(
+      userLink => userLink.id !== this.user.id,
+    );
+    for (const userLink of userLinksToKeep) {
+      await this.userLinkRepository.deleteById(userLink.id);
+    }
+    const instructionHashes = await this.instructionRepository.find({
+      where: {
+        and: [
+          {
+            deleteHash: {neq: ''},
+            userId: this.user.id,
+          },
+        ],
+      },
+    });
+    const userInstructionHashes = instructionHashes.map(
+      instruction => instruction.deleteHash,
+    );
+    for (const hash in userInstructionHashes) {
+      await this.imgurService.deleteImage(hash);
+    }
+    const InstructionIDs = instructionHashes.map(
+      instructions => instructions.id,
+    );
+    for (const InstructionID of InstructionIDs) {
+      const deleteHashs = await this.stepRepository.find({
+        where: {
+          and: [
+            {
+              deleteHash: {neq: ''},
+              instructionId: InstructionID,
+            },
+          ],
+        },
+        fields: {deleteHash: true},
+      });
+      const hashes = deleteHashs.map(step => step.deleteHash);
+      for (const hash in hashes) {
+        await this.imgurService.deleteImage(hash);
+      }
+    }
+    const instructions = await this.instructionRepository.find({
+      fields: {userId: this.user.id},
+    });
+    await this.instructionRepository.deleteAll({userId: this.user.id});
+    for (const instruction of instructions) {
+      await this.stepRepository.deleteAll({instructionId: instruction.id});
+      const users = await this.userRepository.find();
+      for (const user of users) {
+        user.favorites = user.favorites?.filter(
+          favorite => favorite !== instruction.id,
+        );
+        await this.userRepository.updateById(user.id, user);
+      }
+    }
+    return true;
+  }
+
+  @authenticate('jwt')
+  @post('/users/{id}/profile-picture', {
+    responses: {
+      '200': {
+        description: 'Update profile picture',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
+      },
+    },
+  })
+  async uploadProfilePicture(
+    @requestBody({
       content: {
         'multipart/form-data': {
           'x-parser': 'stream',
           schema: {
             type: 'object',
             properties: {
-              file: {type: 'string', format: 'binary'},
+              image: {type: 'string', format: 'binary'},
             },
+            required: ['image'],
           },
         },
       },
     })
     request: Request,
     @inject(RestBindings.Http.RESPONSE) response: Response,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
-    const storage = multer.diskStorage({
-      destination: function (_req, _file, cb) {
-        cb(null, './public');
-      },
-      filename: function (_req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, file.fieldname + '-' + uniqueSuffix);
-      },
-    });
-    const upload = multer({storage: storage});
-    if (user) {
-      if (user.link !== null) {
-        await sftp
-          .connect(config)
-          .then(() => sftp.delete('/users/' + user.link))
-          .then(() => sftp.end())
-          .catch(() => {
-            throw new HttpErrors.UnprocessableEntity(
-              'error in deleting old picture',
-            );
-          });
-      }
-      upload.single('image')(request, response, err => {
-        if (err) {
-          new HttpErrors.UnprocessableEntity('Error in uploading file');
-        } else {
-          sftp
-            .connect(config)
-            .then(() =>
-              sftp.put(
-                './public/' + request.file?.filename,
-                'users/' + request.file?.filename,
-              ),
-            )
-            .then(() => sftp.end())
-            .then(() =>
-              this.userRepository.updateById(user.id, {
-                link: request.file?.filename,
-              }),
-            )
-            .then(() => {
-              return true;
-            })
-            .catch((_error: string) => {
-              throw new HttpErrors.UnprocessableEntity(
-                'Error in uploading file to SFTP',
-              );
-            });
-        }
-      });
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
     }
+    if (user.deleteHash) {
+      await this.imgurService.deleteImage(user.deleteHash);
+    }
+    const data = await this.imgurService.savePicture(request, response);
+    await this.userRepository.updateById(user.id, {
+      link: data.link,
+      deleteHash: data.deletehash,
+    });
+    return true;
   }
 
   @authenticate('jwt')
-  @del('/users/{id}/profilePictureDel', {
+  @del('/users/{id}/profile-picture', {
     responses: {
       '200': {
-        description: 'User picture DELETE success',
+        description: 'Delete profile picture',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
       },
     },
   })
-  async delUserProfilePicture(): Promise<Buffer> {
+  async deleteProfilePicture(): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
-    if (user.link != null) {
-      const sftpResponse = await sftp.connect(config).then(async () => {
-        const x = await sftp.delete('/users/' + user.link);
-        await this.userRepository.updateById(user.id, {link: null});
-        return x;
-      });
-      return sftpResponse;
-    } else {
-      throw new HttpErrors.UnprocessableEntity(
-        'user does not have profile picture',
-      );
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
     }
+    if (!user.deleteHash) {
+      throw new HttpErrors.NotFound('Users profile picture does not exist');
+    }
+    await this.imgurService.deleteImage(user.deleteHash);
+    await this.userRepository.updateById(user.id, {
+      link: null,
+      deleteHash: null,
+    });
+    return true;
+  }
+
+  @get('/users', {
+    responses: {
+      '200': {
+        description: 'Get users',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                id: {type: 'number'},
+                username: {type: 'string'},
+                link: {type: 'string'},
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getUsers(
+    @param.query.number('limit') limit: number = 10,
+    @param.query.number('offset') offset: number = 0,
+  ): Promise<
+    {id: number; username: string; link: string | null | undefined}[]
+  > {
+    const users = await this.userRepository.find({
+      limit,
+      skip: offset,
+    });
+    const usernamesAndLinks = users.map(user => ({
+      id: user.id,
+      username: user.username,
+      link: user.link,
+    }));
+    return usernamesAndLinks;
+  }
+
+  @get('/user-detail/{id}', {
+    responses: {
+      '200': {
+        description: 'Get user detail',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                id: {type: 'number'},
+                username: {type: 'string'},
+                nick: {type: 'string'},
+                bio: {type: 'string'},
+                link: {type: 'string'},
+                followerCount: {type: 'number'},
+                followeeCount: {type: 'number'},
+                instructions: {
+                  type: 'object',
+                  items: {
+                    id: {type: 'number'},
+                    titleCz: {type: 'string'},
+                    titleEn: {type: 'string'},
+                    difficulty: {enum: Object.values(Difficulty)},
+                    link: {type: 'string'},
+                    private: {type: 'boolean'},
+                    premium: {type: 'boolean'},
+                    date: {type: 'string'},
+                    steps: {
+                      type: 'object',
+                      items: {
+                        id: {type: 'number'},
+                        titleCz: {type: 'string'},
+                        titleEn: {type: 'string'},
+                        descriptionCz: {
+                          type: 'array',
+                          items: {
+                            type: 'string',
+                          },
+                        },
+                        descriptionEn: {
+                          type: 'array',
+                          items: {
+                            type: 'string',
+                          },
+                        },
+                        link: {type: 'string'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getUserDetail(@param.query.number('id') userId: number): Promise<{
+    user: Omit<
+      User,
+      | 'email'
+      | 'passwordHash'
+      | 'wrappedDEK'
+      | 'initializationVector'
+      | 'kekSalt'
+      | 'language'
+      | 'darkmode'
+      | 'emailVerified'
+      | 'date'
+      | 'deleteHash'
+      | 'favorites'
+    >;
+    followerCount: number;
+    followeeCount: number;
+    instructions: Omit<Instruction, 'deleteHash'>[];
+    instructionsPremium: Omit<Instruction, 'deleteHash'>[];
+  }> {
+    const user = await this.userRepository.findById(userId, {
+      fields: {
+        email: false,
+        passwordHash: false,
+        wrappedDEK: false,
+        initializationVector: false,
+        kekSalt: false,
+        language: false,
+        darkmode: false,
+        emailVerified: false,
+        date: false,
+        deleteHash: false,
+        favorites: false,
+      },
+    });
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    const instructions = await this.instructionRepository.find({
+      where: {
+        userId: userId,
+        private: false,
+        premium: false,
+      },
+      include: [
+        {
+          relation: 'steps',
+          scope: {
+            fields: {
+              deleteHash: false,
+            },
+          },
+        },
+      ],
+    });
+    const instructionsPremium = await this.instructionRepository.find({
+      where: {
+        userId: userId,
+        private: false,
+        premium: true,
+      },
+    });
+    const userForFollower = await this.userLinkRepository.find({
+      where: {
+        followerId: userId,
+      },
+    });
+    const followerCount = userForFollower.length;
+    const userForFollowee = await this.userLinkRepository.find({
+      where: {
+        followeeId: userId,
+      },
+    });
+    const followeeCount = userForFollowee.length;
+    return {
+      user,
+      followerCount,
+      followeeCount,
+      instructions,
+      instructionsPremium,
+    };
   }
 }

@@ -5,14 +5,19 @@ dotenv.config();
 
 export function validateCredentials(credentials: {
   email: string;
-  password: string;
+  password0: string;
+  password1: string;
   username: string;
 }) {
   if (!isEmail.validate(credentials.email)) {
     throw new HttpErrors.UnprocessableEntity('invalid Email');
   }
 
-  if (credentials.password.length <= 8) {
+  if (credentials.password0 !== credentials.password1) {
+    throw new HttpErrors.UnprocessableEntity('passwords do not match');
+  }
+
+  if (credentials.password0.length <= 8 && credentials.password1.length <= 8) {
     throw new HttpErrors.UnprocessableEntity(
       'password length should be greater than 8',
     );

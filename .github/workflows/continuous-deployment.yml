@@ -1,0 +1,107 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+  workflow_dispatch:
+
+jobs:
+  run_pull:
+    name: Run Pull and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checking out code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set deployment variables
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/dev" ]; then
+            echo "EXTPORT=3002" >> $GITHUB_ENV
+            echo "IMAGE=backend-dev" >> $GITHUB_ENV
+            echo "VAULT_PORT=8202" >> $GITHUB_ENV
+            echo "SQLDATABASE=selecro_dev" >> $GITHUB_ENV
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "EXTPORT=3001" >> $GITHUB_ENV
+            echo "IMAGE=backend-main" >> $GITHUB_ENV
+            echo "VAULT_PORT=8201" >> $GITHUB_ENV
+            echo "SQLDATABASE=selecro_main" >> $GITHUB_ENV
+          else
+            echo "Invalid branch for deployment" && exit 1
+          fi
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Get the short SHA hash of the commit
+        run: |
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} .
+          docker push selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }}
+
+      - name: Install OpenVPN
+        run: |
+          sudo apt-get update && sudo apt-get install openvpn -y
+
+      - name: Configure OpenVPN
+        run: |
+          echo "${{ secrets.OPENVPN_CONFIG }}" > ~/openvpn-config.ovpn
+
+      - name: Connect to OpenVPN
+        run: |
+          sudo openvpn --config ~/openvpn-config.ovpn &
+
+      - name: Wait for VPN Connection
+        run: |
+          sleep 20
+
+      - name: SSH into Your Server and Deploy
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            docker login || true && \
+            docker pull selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && \
+            docker ps -a | grep ${{ env.IMAGE }} && docker stop ${{ env.IMAGE }} || true && \
+            docker ps -a | grep ${{ env.IMAGE }} && docker rm ${{ env.IMAGE }} || true && \
+            docker run \
+            -e HOST="${{ secrets.HOST }}" \
+            -e SQLHOST="${{ secrets.SQLHOST }}" \
+            -e SQLPORT="${{ secrets.SQLPORT }}" \
+            -e SQLUSER="${{ secrets.SQLUSER }}" \
+            -e SQLPASSWORD="${{ secrets.SQLPASSWORD }}" \
+            -e SQLDATABASE="${{ env.SQLDATABASE }}" \
+            -e TOKEN="${{ secrets.TOKEN }}" \
+            -e EXTPORT="${{ env.EXTPORT }}" \
+            -e EMAILHOST="${{ secrets.EMAILHOST }}" \
+            -e EMAILPORT="${{ secrets.EMAILPORT }}" \
+            -e EMAILUSER="${{ secrets.EMAILUSER }}" \
+            -e EMAILPASSWORD="${{ secrets.EMAILPASSWORD }}" \
+            -e JWT_SECRET="$${{ secrets.JWT_SECRET }}" \
+            -e UNSEAL_KEY_1="${{ secrets.UNSEAL_KEY_1 }}" \
+            -e UNSEAL_KEY_2="${{ secrets.UNSEAL_KEY_2 }}" \
+            -e VAULT_URL="${{ secrets.VAULT_URL }}" \
+            -e VAULT_PORT="${{ env.VAULT_PORT }}" \
+            -e CLIENT_ID="${{ secrets.CLIENT_ID }}" \
+            -e ROOT_VAULT="${{ secrets.ROOT_VAULT }}" \
+            -e INSTRUCTION_KEY="${{ secrets.INSTRUCTION_KEY }}" \
+            -e INSTRUCTION_KEY_PERMISSIONS="${{ secrets.INSTRUCTION_KEY_PERMISSIONS }}" \
+            --name ${{ env.IMAGE }} -dp ${{ env.EXTPORT }}:${{ env.EXTPORT }} \
+            selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && \
+            docker update --restart unless-stopped ${{ env.IMAGE }} && exit
+
+      - name: Cleanup
+        run: rm -rf ~/.ssh
