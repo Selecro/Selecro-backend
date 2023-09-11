@@ -14,10 +14,8 @@ import path from 'path';
 import {PingController, UserController} from './controllers';
 import {DbDataSource} from './datasources';
 import {
-  GroupRepository,
   InstructionRepository,
   StepRepository,
-  UserGroupRepository,
   UserLinkRepository,
   UserRepository,
 } from './repositories';
@@ -55,9 +53,7 @@ export class SelecroBackendApplication extends BootMixin(
     this.repository(UserRepository);
     this.repository(InstructionRepository);
     this.repository(StepRepository);
-    this.repository(UserGroupRepository);
     this.repository(UserLinkRepository);
-    this.repository(GroupRepository);
     this.dataSource(DbDataSource);
 
     this.bind('services.jwt.service').toClass(JWTService);

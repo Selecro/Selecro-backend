@@ -7,12 +7,10 @@ export class UserLink extends Entity {
   @property({
     id: true,
     generated: true,
-    required: true,
     postgresql: {
       columnName: 'id',
-      dataType: 'integer',
       dataLength: null,
-      dataPrecision: null,
+      dataPrecision: 10,
       dataScale: 0,
       nullable: 'NO',
     },
@@ -21,31 +19,31 @@ export class UserLink extends Entity {
 
   @property({
     type: 'number',
-    required: false,
+    required: true,
     postgresql: {
       columnName: 'follower_id',
       dataType: 'integer',
       dataLength: null,
       dataPrecision: null,
-      dataScale: 0,
-      nullable: 'YES',
+      dataScale: null,
+      nullable: 'NO',
     },
   })
-  followerId?: number;
+  followerId: number;
 
   @property({
     type: 'number',
-    required: false,
+    required: true,
     postgresql: {
       columnName: 'followee_id',
       dataType: 'integer',
       dataLength: null,
       dataPrecision: null,
-      dataScale: 0,
-      nullable: 'YES',
+      dataScale: null,
+      nullable: 'NO',
     },
   })
-  followeeId?: number;
+  followeeId: number;
 
   constructor(data?: Partial<UserLink>) {
     super(data);

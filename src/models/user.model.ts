@@ -1,4 +1,5 @@
 import {Entity, hasMany, model, property} from '@loopback/repository';
+import {UserLink} from '.';
 import {Instruction} from './instruction.model';
 
 export enum Language {
@@ -221,6 +222,25 @@ export class User extends Entity {
     },
   })
   deleteHash?: string | null;
+
+  @property.array(Number, {
+    required: false,
+    postgresql: {
+      columnName: 'favorites',
+      array: true,
+    },
+    default: () => [],
+  })
+  favorites?: number[];
+
+  @hasMany(() => User, {
+    through: {
+      model: () => UserLink,
+      keyFrom: 'followerId',
+      keyTo: 'followeeId',
+    },
+  })
+  users: User[];
 
   @hasMany(() => Instruction, {keyTo: 'userId'})
   instructions: Instruction[];

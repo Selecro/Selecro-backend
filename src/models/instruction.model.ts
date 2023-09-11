@@ -110,6 +110,21 @@ export class Instruction extends Entity {
   private: boolean;
 
   @property({
+    type: 'boolean',
+    required: true,
+    postgresql: {
+      columnName: 'premium',
+      dataType: 'boolean',
+      dataLength: null,
+      dataPrecision: null,
+      dataScale: null,
+      nullable: 'NO',
+      default: false,
+    },
+  })
+  premium: boolean;
+
+  @property({
     type: 'date',
     required: true,
     postgresql: {
@@ -121,6 +136,16 @@ export class Instruction extends Entity {
     valueGenerator: () => 'NOW()',
   })
   date: Date;
+
+  @property.array(Number, {
+    required: false,
+    postgresql: {
+      columnName: 'premium_user_ids',
+      array: true,
+    },
+    default: () => [],
+  })
+  premiumUserIds: number[];
 
   @property({
     type: 'number',

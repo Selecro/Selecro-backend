@@ -13,6 +13,7 @@ import {
   RestBindings,
   del,
   get,
+  param,
   patch,
   post,
   requestBody,
@@ -22,10 +23,11 @@ import * as dotenv from 'dotenv';
 import * as isEmail from 'isemail';
 import jwt from 'jsonwebtoken';
 import _ from 'lodash';
-import {Language, User} from '../models';
+import {Difficulty, Instruction, Language, User} from '../models';
 import {
   InstructionRepository,
   StepRepository,
+  UserLinkRepository,
   UserRepository,
 } from '../repositories';
 import {
@@ -58,7 +60,9 @@ export class UserController {
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) { }
+    @repository(UserLinkRepository)
+    public userLinkRepository: UserLinkRepository,
+  ) {}
 
   @post('/login', {
     responses: {
@@ -356,7 +360,10 @@ export class UserController {
         throw new HttpErrors.UnprocessableEntity('Passwords are not matching');
       }
       await this.emailService.sendSuccessfulyPasswordChange(user);
-      await this.vaultService.updatePassword(String(user.id), request.password0);
+      await this.vaultService.updatePassword(
+        String(user.id),
+        request.password0,
+      );
       await this.userRepository.updateById(user.id, {
         passwordHash: await this.hasher.hashPassword(request.password0),
       });
@@ -384,6 +391,7 @@ export class UserController {
             schema: {
               type: 'object',
               properties: {
+                id: {type: 'number'},
                 email: {type: 'string'},
                 username: {type: 'string'},
                 language: {enum: Object.values(Language)},
@@ -394,6 +402,12 @@ export class UserController {
                 bio: {type: 'string'},
                 link: {type: 'string'},
                 wrappedDEK: {type: 'string'},
+                favorites: {
+                  type: 'array',
+                  items: {
+                    type: 'number',
+                  },
+                },
               },
             },
           },
@@ -404,12 +418,11 @@ export class UserController {
   async getUser(): Promise<
     Omit<
       User,
-      'id' | 'passwordHash' | 'initializationVector' | 'kekSalt' | 'deleteHash'
+      'passwordHash' | 'initializationVector' | 'kekSalt' | 'deleteHash'
     >
   > {
     const user = await this.userRepository.findById(this.user.id, {
       fields: {
-        id: false,
         passwordHash: false,
         initializationVector: false,
         kekSalt: false,
@@ -450,6 +463,12 @@ export class UserController {
               darkmode: {type: 'boolean'},
               nick: {type: 'string'},
               bio: {type: 'string'},
+              favorites: {
+                type: 'array',
+                items: {
+                  type: 'number',
+                },
+              },
             },
           },
         },
@@ -507,22 +526,33 @@ export class UserController {
       password: string;
     },
   ): Promise<boolean> {
-    const user = await this.userRepository.findById(this.user.id);
-    if (!user) {
+    const userOriginal = await this.userRepository.findById(this.user.id);
+    if (!userOriginal) {
       throw new HttpErrors.NotFound('User not found');
     }
     const passwordMatched = await this.hasher.comparePassword(
       request.password,
-      user.passwordHash,
+      userOriginal.passwordHash,
     );
     if (!passwordMatched) {
-      throw new HttpErrors.Unauthorized('password is not valid');
+      throw new HttpErrors.Unauthorized('Password is not valid');
     }
-    await this.vaultService.deleteUser(String(user.id));
-    if (user.deleteHash) {
-      await this.imgurService.deleteImage(user.deleteHash);
+    await this.vaultService.deleteUser(String(userOriginal.id));
+    if (userOriginal.deleteHash) {
+      await this.imgurService.deleteImage(userOriginal.deleteHash);
     }
     await this.userRepository.deleteById(this.user.id);
+    const userLinksToDelete = await this.userLinkRepository.find({
+      where: {
+        or: [{followerId: this.user.id}, {followeeId: this.user.id}],
+      },
+    });
+    const userLinksToKeep = userLinksToDelete.filter(
+      userLink => userLink.id !== this.user.id,
+    );
+    for (const userLink of userLinksToKeep) {
+      await this.userLinkRepository.deleteById(userLink.id);
+    }
     const instructionHashes = await this.instructionRepository.find({
       where: {
         and: [
@@ -565,6 +595,13 @@ export class UserController {
     await this.instructionRepository.deleteAll({userId: this.user.id});
     for (const instruction of instructions) {
       await this.stepRepository.deleteAll({instructionId: instruction.id});
+      const users = await this.userRepository.find();
+      for (const user of users) {
+        user.favorites = user.favorites?.filter(
+          favorite => favorite !== instruction.id,
+        );
+        await this.userRepository.updateById(user.id, user);
+      }
     }
     return true;
   }
@@ -646,5 +683,182 @@ export class UserController {
       deleteHash: null,
     });
     return true;
+  }
+
+  @get('/users', {
+    responses: {
+      '200': {
+        description: 'Get users',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                id: {type: 'number'},
+                username: {type: 'string'},
+                link: {type: 'string'},
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getUsers(
+    @param.query.number('limit') limit: number = 10,
+    @param.query.number('offset') offset: number = 0,
+  ): Promise<
+    {id: number; username: string; link: string | null | undefined}[]
+  > {
+    const users = await this.userRepository.find({
+      limit,
+      skip: offset,
+    });
+    const usernamesAndLinks = users.map(user => ({
+      id: user.id,
+      username: user.username,
+      link: user.link,
+    }));
+    return usernamesAndLinks;
+  }
+
+  @get('/user-detail/{id}', {
+    responses: {
+      '200': {
+        description: 'Get user detail',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                id: {type: 'number'},
+                username: {type: 'string'},
+                nick: {type: 'string'},
+                bio: {type: 'string'},
+                link: {type: 'string'},
+                followerCount: {type: 'number'},
+                followeeCount: {type: 'number'},
+                instructions: {
+                  type: 'object',
+                  items: {
+                    id: {type: 'number'},
+                    titleCz: {type: 'string'},
+                    titleEn: {type: 'string'},
+                    difficulty: {enum: Object.values(Difficulty)},
+                    link: {type: 'string'},
+                    private: {type: 'boolean'},
+                    premium: {type: 'boolean'},
+                    date: {type: 'string'},
+                    steps: {
+                      type: 'object',
+                      items: {
+                        id: {type: 'number'},
+                        titleCz: {type: 'string'},
+                        titleEn: {type: 'string'},
+                        descriptionCz: {
+                          type: 'array',
+                          items: {
+                            type: 'string',
+                          },
+                        },
+                        descriptionEn: {
+                          type: 'array',
+                          items: {
+                            type: 'string',
+                          },
+                        },
+                        link: {type: 'string'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getUserDetail(@param.query.number('id') userId: number): Promise<{
+    user: Omit<
+      User,
+      | 'email'
+      | 'passwordHash'
+      | 'wrappedDEK'
+      | 'initializationVector'
+      | 'kekSalt'
+      | 'language'
+      | 'darkmode'
+      | 'emailVerified'
+      | 'date'
+      | 'deleteHash'
+      | 'favorites'
+    >;
+    followerCount: number;
+    followeeCount: number;
+    instructions: Omit<Instruction, 'deleteHash'>[];
+    instructionsPremium: Omit<Instruction, 'deleteHash'>[];
+  }> {
+    const user = await this.userRepository.findById(userId, {
+      fields: {
+        email: false,
+        passwordHash: false,
+        wrappedDEK: false,
+        initializationVector: false,
+        kekSalt: false,
+        language: false,
+        darkmode: false,
+        emailVerified: false,
+        date: false,
+        deleteHash: false,
+        favorites: false,
+      },
+    });
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    const instructions = await this.instructionRepository.find({
+      where: {
+        userId: userId,
+        private: false,
+        premium: false,
+      },
+      include: [
+        {
+          relation: 'steps',
+          scope: {
+            fields: {
+              deleteHash: false,
+            },
+          },
+        },
+      ],
+    });
+    const instructionsPremium = await this.instructionRepository.find({
+      where: {
+        userId: userId,
+        private: false,
+        premium: true,
+      },
+    });
+    const userForFollower = await this.userLinkRepository.find({
+      where: {
+        followerId: userId,
+      },
+    });
+    const followerCount = userForFollower.length;
+    const userForFollowee = await this.userLinkRepository.find({
+      where: {
+        followeeId: userId,
+      },
+    });
+    const followeeCount = userForFollowee.length;
+    return {
+      user,
+      followerCount,
+      followeeCount,
+      instructions,
+      instructionsPremium,
+    };
   }
 }
