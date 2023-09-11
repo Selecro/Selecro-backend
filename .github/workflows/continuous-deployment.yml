@@ -98,7 +98,7 @@ jobs:
             -e INSTRUCTION_KEY="${{ secrets.INSTRUCTION_KEY }}" \
             -e INSTRUCTION_KEY_PERMISSIONS="${{ secrets.INSTRUCTION_KEY_PERMISSIONS }}" \
             --name ${{ env.IMAGE }} -dp ${{ env.PORT }}:${{ env.PORT }} \
-            selecro/${{ env.IMAGE }} && \
+            selecro/${{ env.IMAGE }}:${{ env.SHORT_SHA }} && \
             docker update --restart unless-stopped ${{ env.IMAGE }} && exit
 
       - name: Cleanup
