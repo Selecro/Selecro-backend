@@ -1,8 +1,6 @@
 import {authenticate} from '@loopback/authentication';
 import {inject} from '@loopback/core';
-import {
-  repository
-} from '@loopback/repository';
+import {repository} from '@loopback/repository';
 import {
   HttpErrors,
   del,
@@ -10,13 +8,15 @@ import {
   param,
   patch,
   post,
-  requestBody
+  requestBody,
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
+import {Progress, ProgressRelations} from '../models';
 import {
-  Progress, ProgressRelations
-} from '../models';
-import {InstructionRepository, ProgressRepository, UserRepository} from '../repositories';
+  InstructionRepository,
+  ProgressRepository,
+  UserRepository,
+} from '../repositories';
 import {JWTService} from '../services';
 
 export class UserProgressController {
@@ -28,8 +28,9 @@ export class UserProgressController {
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
     @repository(UserRepository) protected userRepository: UserRepository,
-    @repository(UserRepository) protected progressRepository: ProgressRepository,
-  ) { }
+    @repository(UserRepository)
+    protected progressRepository: ProgressRepository,
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/progresses/{progressId}', {
@@ -57,11 +58,7 @@ export class UserProgressController {
               stepId: {type: 'number'},
               descriptionId: {type: 'number'},
             },
-            required: [
-              'instructionId',
-              'stepId',
-              'descriptionId',
-            ],
+            required: ['instructionId', 'stepId', 'descriptionId'],
           },
         },
       },
@@ -83,7 +80,7 @@ export class UserProgressController {
         'Progress with this instructionId and userId already exists.',
       );
     }
-    this.progressRepository.create({
+    await this.progressRepository.create({
       ...progress,
       userId: this.user.id,
     });
@@ -129,7 +126,7 @@ export class UserProgressController {
     const progressOriginal = await this.progressRepository.findOne({
       where: {
         instructionId: instructionId,
-        userId: this.user.id
+        userId: this.user.id,
       },
     });
     if (!progressOriginal) {
@@ -165,7 +162,7 @@ export class UserProgressController {
     const progress = await this.progressRepository.findOne({
       where: {
         instructionId: instructionId,
-        userId: this.user.id
+        userId: this.user.id,
       },
     });
     if (!progress) {
@@ -200,7 +197,7 @@ export class UserProgressController {
   })
   async find(
     @param.path.number('instructionId') instructionId: number,
-  ): Promise<(Progress & ProgressRelations)> {
+  ): Promise<Progress & ProgressRelations> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
@@ -219,9 +216,7 @@ export class UserProgressController {
 
   private validateProgressOwnership(progress: Progress): void {
     if (Number(progress.userId) !== Number(this.user.id)) {
-      throw new HttpErrors.Forbidden(
-        'You are not authorized to this progress',
-      );
+      throw new HttpErrors.Forbidden('You are not authorized to this progress');
     }
   }
 }

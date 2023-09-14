@@ -19,16 +19,27 @@ export class UserRepository extends DefaultCrudRepository<
     typeof User.prototype.id
   >;
 
-  public readonly progresses: HasManyRepositoryFactory<Progress, typeof User.prototype.id>;
+  public readonly progresses: HasManyRepositoryFactory<
+    Progress,
+    typeof User.prototype.id
+  >;
 
   constructor(
     @inject('datasources.db') dataSource: DbDataSource,
     @repository.getter('InstructionRepository')
-    protected instructionRepositoryGetter: Getter<InstructionRepository>, @repository.getter('ProgressRepository') protected progressRepositoryGetter: Getter<ProgressRepository>,
+    protected instructionRepositoryGetter: Getter<InstructionRepository>,
+    @repository.getter('ProgressRepository')
+    protected progressRepositoryGetter: Getter<ProgressRepository>,
   ) {
     super(User, dataSource);
-    this.progresses = this.createHasManyRepositoryFactoryFor('progresses', progressRepositoryGetter,);
-    this.registerInclusionResolver('progresses', this.progresses.inclusionResolver);
+    this.progresses = this.createHasManyRepositoryFactoryFor(
+      'progresses',
+      progressRepositoryGetter,
+    );
+    this.registerInclusionResolver(
+      'progresses',
+      this.progresses.inclusionResolver,
+    );
     this.instructions = this.createHasManyRepositoryFactoryFor(
       'instructions',
       instructionRepositoryGetter,

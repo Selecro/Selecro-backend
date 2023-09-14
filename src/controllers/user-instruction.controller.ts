@@ -38,7 +38,7 @@ export class UserInstructionController {
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}', {
@@ -663,10 +663,13 @@ export class UserInstructionController {
     if (!keyMatch) {
       throw new HttpErrors.Unauthorized('Invalid password');
     }
-    const instruction = await this.instructionRepository.findById(instructionId);
+    const instruction =
+      await this.instructionRepository.findById(instructionId);
     instruction.premiumUserIds = instruction.premiumUserIds ?? [];
     if (instruction.premiumUserIds.includes(userId)) {
-      instruction.premiumUserIds = instruction.premiumUserIds.filter(id => id !== userId);
+      instruction.premiumUserIds = instruction.premiumUserIds.filter(
+        id => id !== userId,
+      );
     } else {
       instruction.premiumUserIds.push(userId);
     }

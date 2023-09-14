@@ -8,9 +8,7 @@ export class ProgressRepository extends DefaultCrudRepository<
   typeof Progress.prototype.id,
   ProgressRelations
 > {
-  constructor(
-    @inject('datasources.db') dataSource: DbDataSource,
-  ) {
+  constructor(@inject('datasources.db') dataSource: DbDataSource) {
     super(Progress, dataSource);
   }
 }
