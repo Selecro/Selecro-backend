@@ -15,9 +15,10 @@ import {
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import * as dotenv from 'dotenv';
-import {Difficulty, Instruction} from '../models';
+import {Difficulty, Instruction, Progress, ProgressRelations} from '../models';
 import {
   InstructionRepository,
+  ProgressRepository,
   StepRepository,
   UserRepository,
 } from '../repositories';
@@ -38,7 +39,9 @@ export class UserInstructionController {
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) {}
+    @repository(UserRepository)
+    protected progressRepository: ProgressRepository,
+  ) { }
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}', {
@@ -277,13 +280,13 @@ export class UserInstructionController {
     },
   })
   async getUsersInstructions(): Promise<
-    Omit<Instruction, 'deleteHash' | 'premiumUserIds'>[]
+    {instreuctions: Omit<Instruction, 'deleteHash' | 'premiumUserIds'>[]; progress: (Progress & ProgressRelations)[];}
   > {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const data = await this.instructionRepository.find({
+    const instreuctions = await this.instructionRepository.find({
       where: {
         userId: this.user.id,
       },
@@ -302,7 +305,12 @@ export class UserInstructionController {
         premiumUserIds: false,
       },
     });
-    return data;
+    const progress = await this.progressRepository.find({
+      where: {
+        userId: this.user.id,
+      },
+    });
+    return {instreuctions, progress};
   }
 
   @authenticate('jwt')

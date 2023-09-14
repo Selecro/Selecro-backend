@@ -11,10 +11,11 @@ import {
 import {ServiceMixin} from '@loopback/service-proxy';
 import * as dotenv from 'dotenv';
 import path from 'path';
-import {PingController, UserController} from './controllers';
+import {InstructionStepController, PingController, UserController, UserInstructionController, UserLinkController, UserProgressController} from './controllers';
 import {DbDataSource} from './datasources';
 import {
   InstructionRepository,
+  ProgressRepository,
   StepRepository,
   UserLinkRepository,
   UserRepository,
@@ -49,11 +50,15 @@ export class SelecroBackendApplication extends BootMixin(
     this.component(JWTAuthenticationComponent);
     this.controller(PingController);
     this.controller(UserController);
-    this.controller(StepRepository);
+    this.controller(UserProgressController);
+    this.controller(UserLinkController);
+    this.controller(UserInstructionController);
+    this.controller(InstructionStepController);
     this.repository(UserRepository);
     this.repository(InstructionRepository);
     this.repository(StepRepository);
     this.repository(UserLinkRepository);
+    this.repository(ProgressRepository);
     this.dataSource(DbDataSource);
 
     this.bind('services.jwt.service').toClass(JWTService);
