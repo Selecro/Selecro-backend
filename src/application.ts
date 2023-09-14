@@ -11,7 +11,14 @@ import {
 import {ServiceMixin} from '@loopback/service-proxy';
 import * as dotenv from 'dotenv';
 import path from 'path';
-import {InstructionStepController, PingController, UserController, UserInstructionController, UserLinkController, UserProgressController} from './controllers';
+import {
+  InstructionStepController,
+  PingController,
+  UserController,
+  UserInstructionController,
+  UserLinkController,
+  UserProgressController,
+} from './controllers';
 import {DbDataSource} from './datasources';
 import {
   InstructionRepository,
