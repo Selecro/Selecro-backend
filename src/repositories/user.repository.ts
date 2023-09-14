@@ -5,8 +5,9 @@ import {
   HasManyRepositoryFactory,
 } from '@loopback/repository';
 import {DbDataSource} from '../datasources';
-import {User, UserRelations, Instruction} from '../models';
+import {User, UserRelations, Instruction, Progress} from '../models';
 import {InstructionRepository} from './instruction.repository';
+import {ProgressRepository} from './progress.repository';
 
 export class UserRepository extends DefaultCrudRepository<
   User,
@@ -18,12 +19,16 @@ export class UserRepository extends DefaultCrudRepository<
     typeof User.prototype.id
   >;
 
+  public readonly progresses: HasManyRepositoryFactory<Progress, typeof User.prototype.id>;
+
   constructor(
     @inject('datasources.db') dataSource: DbDataSource,
     @repository.getter('InstructionRepository')
-    protected instructionRepositoryGetter: Getter<InstructionRepository>,
+    protected instructionRepositoryGetter: Getter<InstructionRepository>, @repository.getter('ProgressRepository') protected progressRepositoryGetter: Getter<ProgressRepository>,
   ) {
     super(User, dataSource);
+    this.progresses = this.createHasManyRepositoryFactoryFor('progresses', progressRepositoryGetter,);
+    this.registerInclusionResolver('progresses', this.progresses.inclusionResolver);
     this.instructions = this.createHasManyRepositoryFactoryFor(
       'instructions',
       instructionRepositoryGetter,

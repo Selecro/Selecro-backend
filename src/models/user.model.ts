@@ -1,6 +1,7 @@
 import {Entity, hasMany, model, property} from '@loopback/repository';
 import {UserLink} from '.';
 import {Instruction} from './instruction.model';
+import {Progress} from './progress.model';
 
 export enum Language {
   CZ = 'CZ',
@@ -244,6 +245,9 @@ export class User extends Entity {
 
   @hasMany(() => Instruction, {keyTo: 'userId'})
   instructions: Instruction[];
+
+  @hasMany(() => Progress, {keyTo: 'userId'})
+  progresses: Progress[];
 
   constructor(data?: Partial<User>) {
     super(data);
