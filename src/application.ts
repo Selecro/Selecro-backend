@@ -70,7 +70,7 @@ export class SelecroBackendApplication extends BootMixin(
 
     this.bind('services.jwt.service').toClass(JWTService);
     this.bind('authentication.jwt.expiresIn').to('32d');
-    this.bind('authentication.jwt.secret').to(process.env.TOKEN);
+    this.bind('authentication.jwt.secret').to(process.env.JWT_SECRET);
     this.bind('services.hasher').toClass(BcryptHasher);
     this.bind('services.hasher.rounds').to(10);
     this.bind('services.user.service').toClass(MyUserService);

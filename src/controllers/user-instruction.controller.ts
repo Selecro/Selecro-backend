@@ -96,7 +96,7 @@ export class UserInstructionController {
       if (!key) {
         throw new HttpErrors.Unauthorized('Key not providen');
       }
-      const instructionKey = process.env.INSTRUCTION_KEY ?? '';
+      const instructionKey = process.env.INSTRUCTION_KEY_PREMIUM ?? '';
       const keyMatch = await this.hasher.comparePassword(key, instructionKey);
       if (!keyMatch) {
         throw new HttpErrors.Unauthorized('Invalid password');
@@ -440,7 +440,7 @@ export class UserInstructionController {
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
-    const instructionKey = process.env.INSTRUCTION_KEY ?? '';
+    const instructionKey = process.env.INSTRUCTION_KEY_PREMIUM ?? '';
     const keyMatch = await this.hasher.comparePassword(
       request.key,
       instructionKey,
@@ -664,7 +664,8 @@ export class UserInstructionController {
     @param.query.number('instructionId') instructionId: number,
     @param.query.number('userId') userId: number,
   ): Promise<boolean> {
-    const instructionKey = process.env.INSTRUCTION_KEY_PERMISSIONS ?? '';
+    const instructionKey =
+      process.env.INSTRUCTION_KEY_PREMIUM_PERMISSIONS ?? '';
     const keyMatch = await this.hasher.comparePassword(
       request.key,
       instructionKey,
