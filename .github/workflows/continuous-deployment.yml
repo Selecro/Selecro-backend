@@ -21,15 +21,23 @@ jobs:
       - name: Set deployment variables
         run: |
           if [ "${{ github.ref }}" = "refs/heads/dev" ]; then
-            echo "EXTPORT=3002" >> $GITHUB_ENV
             echo "IMAGE=backend-dev" >> $GITHUB_ENV
-            echo "VAULT_PORT=8202" >> $GITHUB_ENV
-            echo "SQLDATABASE=selecro_dev" >> $GITHUB_ENV
+            echo "DEFAULT_PORT=${{ secrets.DEFAULT_PORT_DEV }}" >> $GITHUB_ENV
+            echo "SQL_DATABASE=${{ secrets.SQL_DATABASE_DEV }}" >> $GITHUB_ENV
+            echo "VAULT_PORT=${{ secrets.VAULT_PORT_DEV }}" >> $GITHUB_ENV
+            echo "UNSEAL_KEY_1=${{ secrets.UNSEAL_KEY_1_DEV }}" >> $GITHUB_ENV
+            echo "UNSEAL_KEY_2=${{ secrets.UNSEAL_KEY_2_DEV }}" >> $GITHUB_ENV
+            echo "UNSEAL_KEY_3=${{ secrets.UNSEAL_KEY_3_DEV }}" >> $GITHUB_ENV
+            echo "ROOT_VAULT_TOKEN=${{ secrets.ROOT_VAULT_TOKEN_DEV }}" >> $GITHUB_ENV
           elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            echo "EXTPORT=3001" >> $GITHUB_ENV
             echo "IMAGE=backend-main" >> $GITHUB_ENV
-            echo "VAULT_PORT=8201" >> $GITHUB_ENV
-            echo "SQLDATABASE=selecro_main" >> $GITHUB_ENV
+            echo "DEFAULT_PORT=${{ secrets.DEFAULT_PORT_MAIN }}" >> $GITHUB_ENV
+            echo "SQL_DATABASE=${{ secrets.SQL_DATABASE_MAIN }}" >> $GITHUB_ENV
+            echo "VAULT_PORT=${{ secrets.VAULT_PORT_MAIN }}" >> $GITHUB_ENV
+            echo "UNSEAL_KEY_1=${{ secrets.UNSEAL_KEY_1_MAIN }}" >> $GITHUB_ENV
+            echo "UNSEAL_KEY_2=${{ secrets.UNSEAL_KEY_2_MAIN }}" >> $GITHUB_ENV
+            echo "UNSEAL_KEY_3=${{ secrets.UNSEAL_KEY_3_MAIN }}" >> $GITHUB_ENV
+            echo "ROOT_VAULT_TOKEN=${{ secrets.ROOT_VAULT_TOKEN_MAIN }}" >> $GITHUB_ENV
           else
             echo "Invalid branch for deployment" && exit 1
           fi
@@ -78,27 +86,30 @@ jobs:
             docker ps -a | grep ${{ env.IMAGE }} && docker stop ${{ env.IMAGE }} || true && \
             docker ps -a | grep ${{ env.IMAGE }} && docker rm ${{ env.IMAGE }} || true && \
             docker run \
-            -e HOST="${{ secrets.HOST }}" \
-            -e SQLHOST="${{ secrets.SQLHOST }}" \
-            -e SQLPORT="${{ secrets.SQLPORT }}" \
-            -e SQLUSER="${{ secrets.SQLUSER }}" \
-            -e SQLPASSWORD="${{ secrets.SQLPASSWORD }}" \
-            -e SQLDATABASE="${{ env.SQLDATABASE }}" \
-            -e TOKEN="${{ secrets.TOKEN }}" \
-            -e EXTPORT="${{ env.EXTPORT }}" \
-            -e EMAILHOST="${{ secrets.EMAILHOST }}" \
-            -e EMAILPORT="${{ secrets.EMAILPORT }}" \
-            -e EMAILUSER="${{ secrets.EMAILUSER }}" \
-            -e EMAILPASSWORD="${{ secrets.EMAILPASSWORD }}" \
-            -e JWT_SECRET="$${{ secrets.JWT_SECRET }}" \
-            -e UNSEAL_KEY_1="${{ secrets.UNSEAL_KEY_1 }}" \
-            -e UNSEAL_KEY_2="${{ secrets.UNSEAL_KEY_2 }}" \
+            -e DEFAULT_HOST="${{ secrets.DEFAULT_HOST }}" \
+            -e DEFAULT_PORT="${{ env.DEFAULT_PORT }}" \
+            -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            -e JWT_SECRET_EMAIL="${{ secrets.JWT_SECRET_EMAIL }}" \
+            -e JWT_SECRET_SIGNUP="${{ secrets.JWT_SECRET_SIGNUP }}" \
+            -e SQL_HOST="${{ secrets.SQL_HOST }}" \
+            -e SQL_PORT="${{ secrets.SQL_PORT }}" \
+            -e SQL_USER="${{ secrets.SQL_USER }}" \
+            -e SQL_PASSWORD="${{ secrets.SQL_PASSWORD }}" \
+            -e SQL_DATABASE="${{ env.SQL_DATABASE }}" \
+            -e EMAIL_HOST="${{ secrets.EMAIL_HOST }}" \
+            -e EMAIL_PORT="${{ secrets.EMAIL_PORT }}" \
+            -e EMAIL_USER="${{ secrets.EMAIL_USER }}" \
+            -e EMAIL_PASSWORD="${{ secrets.EMAIL_PASSWORD }}" \
+            -e VAULT_URL="${{ secrets.VAULT_URL }}" \
             -e VAULT_URL="${{ secrets.VAULT_URL }}" \
             -e VAULT_PORT="${{ env.VAULT_PORT }}" \
-            -e CLIENT_ID="${{ secrets.CLIENT_ID }}" \
-            -e ROOT_VAULT="${{ secrets.ROOT_VAULT }}" \
-            -e INSTRUCTION_KEY="${{ secrets.INSTRUCTION_KEY }}" \
-            -e INSTRUCTION_KEY_PERMISSIONS="${{ secrets.INSTRUCTION_KEY_PERMISSIONS }}" \
+            -e UNSEAL_KEY_1="${{ env.UNSEAL_KEY_1 }}" \
+            -e UNSEAL_KEY_2="${{ env.UNSEAL_KEY_2 }}" \
+            -e UNSEAL_KEY_3="${{ env.UNSEAL_KEY_3 }}" \
+            -e ROOT_VAULT_TOKEN="${{ env.ROOT_VAULT_TOKEN }}" \
+            -e IMGUR_CLIENT_ID="${{ secrets.IMGUR_CLIENT_ID }}" \
+            -e INSTRUCTION_KEY_PREMIUM="${{ secrets.INSTRUCTION_KEY_PREMIUM }}" \
+            -e INSTRUCTION_KEY_PREMIUM_PERMISSIONS="${{ secrets.INSTRUCTION_KEY_PREMIUM_PERMISSIONS }}" \
             --name ${{ env.IMAGE }} -dp ${{ env.EXTPORT }}:${{ env.EXTPORT }} \
             selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && \
             docker update --restart unless-stopped ${{ env.IMAGE }} && exit

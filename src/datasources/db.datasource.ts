@@ -6,11 +6,11 @@ dotenv.config();
 const config = {
   name: 'db',
   connector: 'postgresql',
-  host: process.env.SQLHOST,
-  port: Number(process.env.SQLPORT),
-  user: process.env.SQLUSER,
-  password: process.env.SQLPASSWORD,
-  database: process.env.SQLDATABASE,
+  host: process.env.SQL_HOST,
+  port: Number(process.env.SQL_PORT),
+  user: process.env.SQL_USER,
+  password: process.env.SQL_PASSWORD,
+  database: process.env.SQL_DATABASE,
 };
 
 // Observe application's life cycle to disconnect the datasource when
@@ -20,8 +20,7 @@ const config = {
 @lifeCycleObserver('datasource')
 export class DbDataSource
   extends juggler.DataSource
-  implements LifeCycleObserver
-{
+  implements LifeCycleObserver {
   static dataSourceName = 'db';
   static readonly defaultConfig = config;
 

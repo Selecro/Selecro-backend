@@ -5,9 +5,9 @@ import multer from 'multer';
 dotenv.config();
 
 export class ImgurService {
-  private readonly clientId = process.env.CLIENT_ID ?? '';
+  private readonly clientId = process.env.IMGUR_CLIENT_ID ?? '';
 
-  constructor() {}
+  constructor() { }
 
   async savePicture(
     request: Request,
