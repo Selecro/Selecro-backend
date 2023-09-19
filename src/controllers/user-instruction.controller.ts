@@ -41,7 +41,7 @@ export class UserInstructionController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserRepository)
     protected progressRepository: ProgressRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}', {
@@ -664,7 +664,8 @@ export class UserInstructionController {
     @param.query.number('instructionId') instructionId: number,
     @param.query.number('userId') userId: number,
   ): Promise<boolean> {
-    const instructionKey = process.env.INSTRUCTION_KEY_PREMIUM_PERMISSIONS ?? '';
+    const instructionKey =
+      process.env.INSTRUCTION_KEY_PREMIUM_PERMISSIONS ?? '';
     const keyMatch = await this.hasher.comparePassword(
       request.key,
       instructionKey,

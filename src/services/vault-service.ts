@@ -38,7 +38,11 @@ export class VaultService {
 
   private async unseal(): Promise<void> {
     try {
-      const unsealKeys: string[] = [this.unsealKeys[0], this.unsealKeys[1], this.unsealKeys[2]];
+      const unsealKeys: string[] = [
+        this.unsealKeys[0],
+        this.unsealKeys[1],
+        this.unsealKeys[2],
+      ];
       for (const key of unsealKeys) {
         const response = await fetch(`${this.vaultEndpoint}/v1/sys/unseal`, {
           method: 'POST',
@@ -51,9 +55,7 @@ export class VaultService {
           }),
         });
         if (!response.ok) {
-          throw new Error(
-            `Unseal error`,
-          );
+          throw new Error(`Unseal error`);
         }
       }
     } catch (error) {
@@ -79,9 +81,7 @@ export class VaultService {
         },
       );
       if (!response.ok) {
-        throw new Error(
-          `Unable to create policy`,
-        );
+        throw new Error(`Unable to create policy`);
       }
     } catch (error) {
       throw new Error(`Authentication error: ${error.message}`);
@@ -105,9 +105,7 @@ export class VaultService {
         },
       );
       if (!response.ok) {
-        throw new Error(
-          `Unable to create user`,
-        );
+        throw new Error(`Unable to create user`);
       }
     } catch (error) {
       throw new Error(`Authentication error: ${error.message}`);
@@ -126,9 +124,7 @@ export class VaultService {
         },
       );
       if (!response.ok) {
-        throw new Error(
-          `Unable to create key`,
-        );
+        throw new Error(`Unable to create key`);
       }
     } catch (error) {
       throw new Error(`Authentication error: ${error.message}`);
@@ -151,9 +147,7 @@ export class VaultService {
         },
       );
       if (!response.ok) {
-        throw new Error(
-          `Unable to update password`,
-        );
+        throw new Error(`Unable to update password`);
       }
     } catch (error) {
       throw new Error(`Authentication error: ${error.message}`);
@@ -172,9 +166,7 @@ export class VaultService {
         },
       );
       if (!response.ok) {
-        throw new Error(
-          `Unable to delete user`,
-        );
+        throw new Error(`Unable to delete user`);
       }
     } catch (error) {
       throw new Error(`Authentication error: ${error.message}`);

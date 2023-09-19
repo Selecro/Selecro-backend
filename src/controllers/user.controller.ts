@@ -62,7 +62,7 @@ export class UserController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserLinkRepository)
     public userLinkRepository: UserLinkRepository,
-  ) { }
+  ) {}
 
   @post('/login', {
     responses: {
@@ -182,16 +182,12 @@ export class UserController {
       language: credentials.language,
     });
     const dbUser = await this.userRepository.create(newUser);
-    await this.vaultService.createUserPolicy(
-      String(dbUser.id),
-    );
+    await this.vaultService.createUserPolicy(String(dbUser.id));
     await this.vaultService.createUser(
       String(dbUser.id),
       credentials.password0,
     );
-    await this.vaultService.createUserKey(
-      String(dbUser.id),
-    );
+    await this.vaultService.createUserKey(String(dbUser.id));
     await this.emailService.sendRegistrationEmail(dbUser);
     const secret = process.env.JWT_SECRET_SIGNUP ?? '';
     const userId = dbUser.id;
@@ -253,7 +249,9 @@ export class UserController {
       if (user.wrappedDEK !== 'null') {
         throw new HttpErrors.UnprocessableEntity('DEK already saved');
       }
-      await this.userRepository.updateById(user.id, {wrappedDEK: request.wrappedDEK});
+      await this.userRepository.updateById(user.id, {
+        wrappedDEK: request.wrappedDEK,
+      });
       return true;
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
