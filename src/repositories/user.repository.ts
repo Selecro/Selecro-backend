@@ -1,11 +1,11 @@
-import {inject, Getter} from '@loopback/core';
+import {Getter, inject} from '@loopback/core';
 import {
   DefaultCrudRepository,
-  repository,
   HasManyRepositoryFactory,
+  repository,
 } from '@loopback/repository';
 import {DbDataSource} from '../datasources';
-import {User, UserRelations, Instruction, Progress} from '../models';
+import {Instruction, Progress, User, UserRelations} from '../models';
 import {InstructionRepository} from './instruction.repository';
 import {ProgressRepository} from './progress.repository';
 

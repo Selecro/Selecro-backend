@@ -2,6 +2,7 @@ import {authenticate} from '@loopback/authentication';
 import {
   Credentials,
   JWTService,
+  TokenObject,
   UserCredentials,
 } from '@loopback/authentication-jwt';
 import {inject} from '@loopback/context';
@@ -112,6 +113,64 @@ export class UserController {
     return token;
   }
 
+  @post('/refresh-token', {
+    responses: {
+      '200': {
+        description: 'Refresh token',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                token: {type: 'string'},
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async refreshToken(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              token: {type: 'string'},
+            },
+            required: [
+              'token',
+            ],
+          },
+        },
+      },
+    })
+    requestBody: {refreshToken: string},
+  ): Promise<TokenObject> {
+    try {
+      const {refreshToken} = requestBody;
+      if (!refreshToken) {
+        throw new HttpErrors.Unauthorized(
+          `Error verifying token: 'refresh token' is null`,
+        );
+      }
+      const userRefreshData = await this.jwtService.verifyToken(refreshToken);
+      const user = await this.userRepository.findById(
+        userRefreshData.userId.toString(),
+      );
+      const userProfile: UserProfile = this.userService.convertToUserProfile(user);
+      const token = await this.jwtService.generateToken(userProfile);
+      return {
+        accessToken: token,
+      };
+    } catch (error) {
+      throw new HttpErrors.Unauthorized(
+        `Error verifying token: ${error.message}`,
+      );
+    }
+  }
+
   @post('/signup', {
     responses: {
       '200': {
@@ -119,7 +178,10 @@ export class UserController {
         content: {
           'application/json': {
             schema: {
-              type: 'boolean',
+              type: 'object',
+              properties: {
+                token: {type: 'string'},
+              },
             },
           },
         },
