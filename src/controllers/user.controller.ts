@@ -62,7 +62,7 @@ export class UserController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserLinkRepository)
     public userLinkRepository: UserLinkRepository,
-  ) {}
+  ) { }
 
   @post('/login', {
     responses: {
@@ -605,7 +605,9 @@ export class UserController {
     if (!passwordMatched) {
       throw new HttpErrors.Unauthorized('Password is not valid');
     }
+    await this.vaultService.deleteUserKey(String(userOriginal.id));
     await this.vaultService.deleteUser(String(userOriginal.id));
+    await this.vaultService.deleteUserPolicy(String(userOriginal.id));
     if (userOriginal.deleteHash) {
       await this.imgurService.deleteImage(userOriginal.deleteHash);
     }

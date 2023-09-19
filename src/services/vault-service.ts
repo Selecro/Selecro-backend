@@ -63,6 +63,30 @@ export class VaultService {
     }
   }
 
+  async createUser(password: string, id: string): Promise<void> {
+    try {
+      const data = {
+        password: password,
+        policies: [String(id)],
+      };
+      const response = await fetch(
+        `${this.vaultEndpoint}/v1/auth/userpass/users/${id}`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Vault-Token': this.rootToken,
+          },
+          body: JSON.stringify(data),
+        },
+      );
+      if (!response.ok) {
+        throw new Error(`Unable to create user`);
+      }
+    } catch (error) {
+      throw new Error(`Authentication error: ${error.message}`);
+    }
+  }
+
   async createUserPolicy(id: string): Promise<void> {
     try {
       let policyData = fs.readFileSync(
@@ -82,30 +106,6 @@ export class VaultService {
       );
       if (!response.ok) {
         throw new Error(`Unable to create policy`);
-      }
-    } catch (error) {
-      throw new Error(`Authentication error: ${error.message}`);
-    }
-  }
-
-  async createUser(password: string, id: string): Promise<void> {
-    try {
-      const data = {
-        password: password,
-        policies: [String(id)],
-      };
-      const response = await fetch(
-        `${this.vaultEndpoint}/v1/auth/userpass/users/${id}`,
-        {
-          method: 'POST',
-          headers: {
-            'X-Vault-Token': this.rootToken,
-          },
-          body: JSON.stringify(data),
-        },
-      );
-      if (!response.ok) {
-        throw new Error(`Unable to create user`);
       }
     } catch (error) {
       throw new Error(`Authentication error: ${error.message}`);
@@ -167,6 +167,44 @@ export class VaultService {
       );
       if (!response.ok) {
         throw new Error(`Unable to delete user`);
+      }
+    } catch (error) {
+      throw new Error(`Authentication error: ${error.message}`);
+    }
+  }
+
+  async deleteUserPolicy(id: string): Promise<void> {
+    try {
+      const response = await fetch(
+        `${this.vaultEndpoint}/v1/sys/policy/acl/${id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'X-Vault-Token': this.rootToken,
+          },
+        },
+      );
+      if (!response.ok) {
+        throw new Error(`Unable to delete policy`);
+      }
+    } catch (error) {
+      throw new Error(`Authentication error: ${error.message}`);
+    }
+  }
+
+  async deleteUserKey(id: string): Promise<void> {
+    try {
+      const response = await fetch(
+        `${this.vaultEndpoint}/v1/transit/keys/${id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'X-Vault-Token': this.rootToken,
+          },
+        },
+      );
+      if (!response.ok) {
+        throw new Error(`Unable to delete key`);
       }
     } catch (error) {
       throw new Error(`Authentication error: ${error.message}`);
