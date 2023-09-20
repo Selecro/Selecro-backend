@@ -30,7 +30,7 @@ export class UserProgressController {
     @repository(UserRepository) protected userRepository: UserRepository,
     @repository(UserRepository)
     protected progressRepository: ProgressRepository,
-  ) {}
+  ) { }
 
   @authenticate('jwt')
   @post('/users/{id}/progresses/{progressId}', {
@@ -57,8 +57,9 @@ export class UserProgressController {
               instructionId: {type: 'number'},
               stepId: {type: 'number'},
               descriptionId: {type: 'number'},
+              time: {type: 'number'},
             },
-            required: ['instructionId', 'stepId', 'descriptionId'],
+            required: ['instructionId', 'stepId', 'descriptionId', 'time'],
           },
         },
       },
@@ -112,6 +113,7 @@ export class UserProgressController {
             properties: {
               stepId: {type: 'number'},
               descriptionId: {type: 'number'},
+              time: {type: 'number'},
             },
           },
         },
