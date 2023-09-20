@@ -61,6 +61,20 @@ export class Progress extends Entity {
 
   @property({
     type: 'number',
+    required: true,
+    postgresql: {
+      columnName: 'time',
+      dataType: 'integer',
+      dataLength: null,
+      dataPrecision: null,
+      dataScale: null,
+      nullable: 'NO',
+    },
+  })
+  time: number;
+
+  @property({
+    type: 'number',
   })
   userId: number;
 
