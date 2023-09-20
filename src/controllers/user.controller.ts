@@ -524,14 +524,15 @@ export class UserController {
                 id: {type: 'number'},
                 email: {type: 'string'},
                 username: {type: 'string'},
+                wrappedDEK: {type: 'string'},
+                initializationVector: {type: 'string'},
+                kekSalt: {type: 'string'},
                 language: {enum: Object.values(Language)},
-                darkmode: {type: 'string'},
-                emailVerified: {type: 'string'},
+                darkmode: {type: 'boolean'},
                 date: {type: 'string'},
                 nick: {type: 'string'},
                 bio: {type: 'string'},
                 link: {type: 'string'},
-                wrappedDEK: {type: 'string'},
                 favorites: {
                   type: 'array',
                   items: {
@@ -548,14 +549,12 @@ export class UserController {
   async getUser(): Promise<
     Omit<
       User,
-      'passwordHash' | 'initializationVector' | 'kekSalt' | 'deleteHash'
+      'passwordHash' | 'deleteHash'
     >
   > {
     const user = await this.userRepository.findById(this.user.id, {
       fields: {
         passwordHash: false,
-        initializationVector: false,
-        kekSalt: false,
         deleteHash: false,
       },
     });
