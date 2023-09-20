@@ -11,7 +11,7 @@ export class EmailService {
   constructor() {}
 
   public generateVerificationToken(userId: number): string {
-    const secret = process.env.JWT_SECRET ?? '';
+    const secret = process.env.JWT_SECRET_EMAIL ?? '';
     const token = jwt.sign({userId}, secret, {
       expiresIn: '1h',
       algorithm: 'HS256',
@@ -28,7 +28,7 @@ export class EmailService {
     );
     body = body.replace('{{URL}}', url);
     await EmailDataSource.sendMail({
-      from: process.env.EMAILUSER,
+      from: process.env.EMAIL_USER,
       to: user.email,
       subject: 'Selecro: Registration',
       html: body,
@@ -48,13 +48,13 @@ export class EmailService {
     );
     body0 = body0.replace('{{URL}}', url);
     await EmailDataSource.sendMail({
-      from: process.env.EMAILUSER,
+      from: process.env.EMAIL_USER,
       to: email,
       subject: 'Selecro: Email verification',
       html: body0,
     });
     await EmailDataSource.sendMail({
-      from: process.env.EMAILUSER,
+      from: process.env.EMAIL_USER,
       to: user.email,
       subject: 'Selecro: Email change',
       html: body1,
@@ -70,7 +70,7 @@ export class EmailService {
     );
     body = body.replace('{{URL}}', url);
     await EmailDataSource.sendMail({
-      from: process.env.EMAILUSER,
+      from: process.env.EMAIL_USER,
       to: user.email,
       subject: 'Selecro: Change password',
       html: body,
@@ -83,7 +83,7 @@ export class EmailService {
       'utf-8',
     );
     await EmailDataSource.sendMail({
-      from: process.env.EMAILUSER,
+      from: process.env.EMAIL_USER,
       to: user.email,
       subject: 'Selecro: Successfuly changed password',
       html: body,

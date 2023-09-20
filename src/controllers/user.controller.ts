@@ -2,6 +2,7 @@ import {authenticate} from '@loopback/authentication';
 import {
   Credentials,
   JWTService,
+  TokenObject,
   UserCredentials,
 } from '@loopback/authentication-jwt';
 import {inject} from '@loopback/context';
@@ -62,7 +63,7 @@ export class UserController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserLinkRepository)
     public userLinkRepository: UserLinkRepository,
-  ) {}
+  ) { }
 
   @post('/login', {
     responses: {
@@ -99,7 +100,7 @@ export class UserController {
       },
     })
     credentials: Credentials,
-  ): Promise<{token: string; tokenKMS: string}> {
+  ): Promise<string> {
     const user = await this.userService.verifyCredentials(credentials);
     const userProfile = this.userService.convertToUserProfile(user);
     const existingUser = await this.userRepository.findOne({
@@ -109,11 +110,65 @@ export class UserController {
       throw new HttpErrors.UnprocessableEntity('email is not verified');
     }
     const token = await this.jwtService.generateToken(userProfile);
-    const tokenKMS = await this.vaultService.authenticate(
-      String(existingUser.id),
-      credentials.password,
-    );
-    return {token, tokenKMS};
+    return token;
+  }
+
+  @post('/refresh-token', {
+    responses: {
+      '200': {
+        description: 'Refresh token',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                token: {type: 'string'},
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async refreshToken(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              token: {type: 'string'},
+            },
+            required: [
+              'token',
+            ],
+          },
+        },
+      },
+    })
+    requestBody: {refreshToken: string},
+  ): Promise<TokenObject> {
+    try {
+      const {refreshToken} = requestBody;
+      if (!refreshToken) {
+        throw new HttpErrors.Unauthorized(
+          `Error verifying token: 'refresh token' is null`,
+        );
+      }
+      const userRefreshData = await this.jwtService.verifyToken(refreshToken);
+      const user = await this.userRepository.findById(
+        userRefreshData.userId.toString(),
+      );
+      const userProfile: UserProfile = this.userService.convertToUserProfile(user);
+      const token = await this.jwtService.generateToken(userProfile);
+      return {
+        accessToken: token,
+      };
+    } catch (error) {
+      throw new HttpErrors.Unauthorized(
+        `Error verifying token: ${error.message}`,
+      );
+    }
   }
 
   @post('/signup', {
@@ -123,7 +178,10 @@ export class UserController {
         content: {
           'application/json': {
             schema: {
-              type: 'boolean',
+              type: 'object',
+              properties: {
+                token: {type: 'string'},
+              },
             },
           },
         },
@@ -142,7 +200,6 @@ export class UserController {
               password0: {type: 'string'},
               password1: {type: 'string'},
               language: {enum: Object.values(Language)},
-              wrappedDEK: {type: 'string'},
               kekSalt: {type: 'string'},
               initializationVector: {type: 'string'},
             },
@@ -152,7 +209,6 @@ export class UserController {
               'password0',
               'password1',
               'language',
-              'wrappedDEK',
               'kekSalt',
               'initializationVector',
             ],
@@ -178,26 +234,100 @@ export class UserController {
     const hashedPassword = await this.hasher.hashPassword(
       credentials.password0,
     );
-    await this.vaultService.createUser(
-      String(credentials.id),
-      credentials.password0,
-    );
-    const tokenKMS = await this.vaultService.authenticate(
-      String(credentials.id),
-      credentials.password0,
-    );
     const newUser = new User({
       email: credentials.email,
       username: credentials.username,
       passwordHash: hashedPassword,
-      wrappedDEK: credentials.wrappedDEK.toString('base64'),
+      wrappedDEK: 'null',
       kekSalt: credentials.kekSalt,
       initializationVector: credentials.initializationVector.toString('base64'),
       language: credentials.language,
     });
     const dbUser = await this.userRepository.create(newUser);
+    await this.vaultService.createUserPolicy(String(dbUser.id));
+    await this.vaultService.createUser(
+      String(dbUser.id),
+      credentials.password0,
+    );
+    await this.vaultService.createUserKey(String(dbUser.id));
     await this.emailService.sendRegistrationEmail(dbUser);
-    return tokenKMS;
+    const secret = process.env.JWT_SECRET_SIGNUP ?? '';
+    const userId = dbUser.id;
+    const token = jwt.sign({userId}, secret, {
+      expiresIn: 60,
+      algorithm: 'HS256',
+    });
+    return token;
+  }
+
+  @post('/save-Wrapped-DEK', {
+    responses: {
+      '200': {
+        description: 'Save Wrapped DEK',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
+      },
+    },
+  })
+  async saveWrappedDEK(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              token: {type: 'string'},
+              wrappedDEK: {type: 'string'},
+            },
+            required: ['token', 'wrappedDEK'],
+          },
+        },
+      },
+    })
+    request: {
+      token: string;
+      wrappedDEK: string;
+    },
+  ): Promise<boolean> {
+    interface DecodedToken {
+      userId: number;
+      iat: number;
+      exp: number;
+    }
+    try {
+      const {token} = request;
+      const secret = process.env.JWT_SECRET_SIGNUP ?? '';
+      const decodedToken = jwt.verify(token, secret) as DecodedToken;
+      const {userId} = decodedToken;
+      const user = await this.userRepository.findById(userId);
+      if (!user) {
+        throw new HttpErrors.UnprocessableEntity('User not found');
+      }
+      if (user.wrappedDEK !== 'null') {
+        throw new HttpErrors.UnprocessableEntity('DEK already saved');
+      }
+      await this.userRepository.updateById(user.id, {
+        wrappedDEK: request.wrappedDEK,
+      });
+      return true;
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        throw new HttpErrors.UnprocessableEntity(
+          'Verification token has expired',
+        );
+      } else if (error.name === 'JsonWebTokenError') {
+        throw new HttpErrors.UnprocessableEntity('Invalid verification token');
+      } else {
+        throw new HttpErrors.UnprocessableEntity(
+          'Failed to update user email verification status',
+        );
+      }
+    }
   }
 
   @post('/verify-email', {
@@ -239,7 +369,7 @@ export class UserController {
     }
     try {
       const {token} = request;
-      const secret = process.env.JWT_SECRET ?? '';
+      const secret = process.env.JWT_SECRET_EMAIL ?? '';
       const decodedToken = jwt.verify(token, secret) as DecodedToken;
       const {userId} = decodedToken;
       const user = await this.userRepository.findById(userId);
@@ -349,7 +479,7 @@ export class UserController {
       exp: number;
     }
     try {
-      const secret = process.env.JWT_SECRET ?? '';
+      const secret = process.env.JWT_SECRET_EMAIL ?? '';
       const decodedToken = jwt.verify(request.token, secret) as DecodedToken;
       const {userData} = decodedToken;
       const user = await this.userRepository.findById(userData);
@@ -537,7 +667,9 @@ export class UserController {
     if (!passwordMatched) {
       throw new HttpErrors.Unauthorized('Password is not valid');
     }
+    await this.vaultService.deleteUserKey(String(userOriginal.id));
     await this.vaultService.deleteUser(String(userOriginal.id));
+    await this.vaultService.deleteUserPolicy(String(userOriginal.id));
     if (userOriginal.deleteHash) {
       await this.imgurService.deleteImage(userOriginal.deleteHash);
     }

@@ -15,9 +15,10 @@ import {
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import * as dotenv from 'dotenv';
-import {Difficulty, Instruction} from '../models';
+import {Difficulty, Instruction, Progress, ProgressRelations} from '../models';
 import {
   InstructionRepository,
+  ProgressRepository,
   StepRepository,
   UserRepository,
 } from '../repositories';
@@ -38,7 +39,9 @@ export class UserInstructionController {
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) { }
+    @repository(UserRepository)
+    protected progressRepository: ProgressRepository,
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}', {
@@ -93,7 +96,7 @@ export class UserInstructionController {
       if (!key) {
         throw new HttpErrors.Unauthorized('Key not providen');
       }
-      const instructionKey = process.env.INSTRUCTION_KEY ?? '';
+      const instructionKey = process.env.INSTRUCTION_KEY_PREMIUM ?? '';
       const keyMatch = await this.hasher.comparePassword(key, instructionKey);
       if (!keyMatch) {
         throw new HttpErrors.Unauthorized('Invalid password');
@@ -276,14 +279,15 @@ export class UserInstructionController {
       },
     },
   })
-  async getUsersInstructions(): Promise<
-    Omit<Instruction, 'deleteHash' | 'premiumUserIds'>[]
-  > {
+  async getUsersInstructions(): Promise<{
+    instreuctions: Omit<Instruction, 'deleteHash' | 'premiumUserIds'>[];
+    progress: (Progress & ProgressRelations)[];
+  }> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const data = await this.instructionRepository.find({
+    const instreuctions = await this.instructionRepository.find({
       where: {
         userId: this.user.id,
       },
@@ -302,7 +306,12 @@ export class UserInstructionController {
         premiumUserIds: false,
       },
     });
-    return data;
+    const progress = await this.progressRepository.find({
+      where: {
+        userId: this.user.id,
+      },
+    });
+    return {instreuctions, progress};
   }
 
   @authenticate('jwt')
@@ -431,7 +440,7 @@ export class UserInstructionController {
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
-    const instructionKey = process.env.INSTRUCTION_KEY ?? '';
+    const instructionKey = process.env.INSTRUCTION_KEY_PREMIUM ?? '';
     const keyMatch = await this.hasher.comparePassword(
       request.key,
       instructionKey,
@@ -655,7 +664,8 @@ export class UserInstructionController {
     @param.query.number('instructionId') instructionId: number,
     @param.query.number('userId') userId: number,
   ): Promise<boolean> {
-    const instructionKey = process.env.INSTRUCTION_KEY_PERMISSIONS ?? '';
+    const instructionKey =
+      process.env.INSTRUCTION_KEY_PREMIUM_PERMISSIONS ?? '';
     const keyMatch = await this.hasher.comparePassword(
       request.key,
       instructionKey,
@@ -663,10 +673,13 @@ export class UserInstructionController {
     if (!keyMatch) {
       throw new HttpErrors.Unauthorized('Invalid password');
     }
-    const instruction = await this.instructionRepository.findById(instructionId);
+    const instruction =
+      await this.instructionRepository.findById(instructionId);
     instruction.premiumUserIds = instruction.premiumUserIds ?? [];
     if (instruction.premiumUserIds.includes(userId)) {
-      instruction.premiumUserIds = instruction.premiumUserIds.filter(id => id !== userId);
+      instruction.premiumUserIds = instruction.premiumUserIds.filter(
+        id => id !== userId,
+      );
     } else {
       instruction.premiumUserIds.push(userId);
     }
