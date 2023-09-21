@@ -1,5 +1,8 @@
 import {authenticate} from '@loopback/authentication';
-import {inject} from '@loopback/core';
+import {
+  JWTService
+} from '@loopback/authentication-jwt';
+import {inject} from '@loopback/context';
 import {repository} from '@loopback/repository';
 import {
   HttpErrors,
@@ -8,16 +11,15 @@ import {
   param,
   patch,
   post,
-  requestBody,
+  requestBody
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import {Progress, ProgressRelations} from '../models';
 import {
   InstructionRepository,
   ProgressRepository,
-  UserRepository,
+  UserRepository
 } from '../repositories';
-import {JWTService} from '../services';
 
 export class UserProgressController {
   constructor(
@@ -176,7 +178,7 @@ export class UserProgressController {
   }
 
   @authenticate('jwt')
-  @get('/users/{id}/progress/{instructionId}', {
+  @get('/users/{id}/progresses/{instructionId}', {
     responses: {
       '200': {
         description: 'Progress model instance',

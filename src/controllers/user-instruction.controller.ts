@@ -41,7 +41,7 @@ export class UserInstructionController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserRepository)
     protected progressRepository: ProgressRepository,
-  ) {}
+  ) { }
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}', {
@@ -466,6 +466,68 @@ export class UserInstructionController {
     return true;
   }
 
+  @authenticate('jwt')
+  @patch('/authorizate-for-premium-instruction/{instructionId}/{userId}', {
+    responses: {
+      '200': {
+        description: 'Authorize user for premium instructions',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
+      },
+    },
+  })
+  async authorizeUserToPremiumInstruction(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              key: {type: 'string'},
+            },
+            required: ['key'],
+          },
+        },
+      },
+    })
+    request: {
+      key: string;
+    },
+    @param.query.number('instructionId') instructionId: number,
+    @param.query.number('userId') userId: number,
+  ): Promise<boolean> {
+    const user = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    const instructionKey =
+      process.env.INSTRUCTION_KEY_PREMIUM_PERMISSIONS ?? '';
+    const keyMatch = await this.hasher.comparePassword(
+      request.key,
+      instructionKey,
+    );
+    if (!keyMatch) {
+      throw new HttpErrors.Unauthorized('Invalid password');
+    }
+    const instruction =
+      await this.instructionRepository.findById(instructionId);
+    instruction.premiumUserIds = instruction.premiumUserIds ?? [];
+    if (instruction.premiumUserIds.includes(userId)) {
+      instruction.premiumUserIds = instruction.premiumUserIds.filter(
+        id => id !== userId,
+      );
+    } else {
+      instruction.premiumUserIds.push(userId);
+    }
+    await this.instructionRepository.updateById(instructionId, instruction);
+    return true;
+  }
+
   @get('/public-instructions', {
     responses: {
       '200': {
@@ -628,63 +690,6 @@ export class UserInstructionController {
       skip: offset,
     });
     return data;
-  }
-
-  @patch('/authorizate-for-premium-instruction/{instructionId}/{userId}', {
-    responses: {
-      '200': {
-        description: 'Authorize user for premium instructions',
-        content: {
-          'application/json': {
-            schema: {
-              type: 'boolean',
-            },
-          },
-        },
-      },
-    },
-  })
-  async authorizeUserToPremiumInstruction(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            properties: {
-              key: {type: 'string'},
-            },
-            required: ['key'],
-          },
-        },
-      },
-    })
-    request: {
-      key: string;
-    },
-    @param.query.number('instructionId') instructionId: number,
-    @param.query.number('userId') userId: number,
-  ): Promise<boolean> {
-    const instructionKey =
-      process.env.INSTRUCTION_KEY_PREMIUM_PERMISSIONS ?? '';
-    const keyMatch = await this.hasher.comparePassword(
-      request.key,
-      instructionKey,
-    );
-    if (!keyMatch) {
-      throw new HttpErrors.Unauthorized('Invalid password');
-    }
-    const instruction =
-      await this.instructionRepository.findById(instructionId);
-    instruction.premiumUserIds = instruction.premiumUserIds ?? [];
-    if (instruction.premiumUserIds.includes(userId)) {
-      instruction.premiumUserIds = instruction.premiumUserIds.filter(
-        id => id !== userId,
-      );
-    } else {
-      instruction.premiumUserIds.push(userId);
-    }
-    await this.instructionRepository.updateById(instructionId, instruction);
-    return true;
   }
 
   private validateInstructionOwnership(instruction: Instruction): void {

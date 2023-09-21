@@ -16,10 +16,23 @@ export class UserLinkController {
     @repository(UserRepository) public userRepository: UserRepository,
     @repository(UserLinkRepository)
     public userLinkRepository: UserLinkRepository,
-  ) {}
+  ) { }
 
   @authenticate('jwt')
-  @post('/users/{id}/follow/{followeeId}')
+  @post('/users/{id}/follow/{followeeId}', {
+    responses: {
+      '200': {
+        description: 'Follow User',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
+      },
+    },
+  })
   async followUser(
     @param.path.number('followeeId') followeeId: number,
   ): Promise<boolean> {
@@ -39,7 +52,20 @@ export class UserLinkController {
   }
 
   @authenticate('jwt')
-  @del('/users/{id}/unfollow/{followeeId}')
+  @del('/users/{id}/unfollow/{followeeId}', {
+    responses: {
+      '200': {
+        description: 'Unfollow User',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
+      },
+    },
+  })
   async unfollowUser(
     @param.path.number('followeeId') followeeId: number,
   ): Promise<boolean> {
@@ -63,12 +89,30 @@ export class UserLinkController {
     return true;
   }
 
-  @get('/users/{id}/followers')
+  @get('/users/{userId}/followers', {
+    responses: {
+      '200': {
+        description: 'Get followers',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                id: {type: 'number'},
+                username: {type: 'string'},
+                link: {type: 'string'},
+              },
+            },
+          },
+        },
+      },
+    },
+  })
   async getFollowers(
-    @param.path.number('id') userId: number,
+    @param.path.number('userId') userId: number,
     @param.query.number('limit') limit: number = 10,
     @param.query.number('offset') offset: number = 0,
-  ): Promise<User[]> {
+  ): Promise<Partial<User[]>> {
     const userLinks = await this.userLinkRepository.find({
       where: {
         followeeId: userId,
@@ -81,16 +125,49 @@ export class UserLinkController {
       where: {
         id: {inq: followerIds},
       },
+      fields: {
+        email: false,
+        passwordHash: false,
+        wrappedDEK: false,
+        initializationVector: false,
+        kekSalt: false,
+        language: false,
+        darkmode: false,
+        emailVerified: false,
+        date: false,
+        nick: false,
+        bio: false,
+        deleteHash: false,
+        favorites: false,
+      },
     });
     return followers;
   }
 
-  @get('/users/{id}/following')
-  async getFollowing(
-    @param.path.number('id') userId: number,
+  @get('/users/{userId}/followees', {
+    responses: {
+      '200': {
+        description: 'Get followees',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                id: {type: 'number'},
+                username: {type: 'string'},
+                link: {type: 'string'},
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getFollowees(
+    @param.path.number('userId') userId: number,
     @param.query.number('limit') limit: number = 10,
     @param.query.number('offset') offset: number = 0,
-  ): Promise<User[]> {
+  ): Promise<Partial<User[]>> {
     const userLinks = await this.userLinkRepository.find({
       where: {
         followerId: userId,
@@ -102,6 +179,21 @@ export class UserLinkController {
     const following = await this.userRepository.find({
       where: {
         id: {inq: followeeIds},
+      },
+      fields: {
+        email: false,
+        passwordHash: false,
+        wrappedDEK: false,
+        initializationVector: false,
+        kekSalt: false,
+        language: false,
+        darkmode: false,
+        emailVerified: false,
+        date: false,
+        nick: false,
+        bio: false,
+        deleteHash: false,
+        favorites: false,
       },
     });
     return following;

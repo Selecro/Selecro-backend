@@ -8,7 +8,7 @@ import {TokenObject} from '@loopback/authentication-jwt';
 import {inject} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
-import {securityId, UserProfile} from '@loopback/security';
+import {UserProfile, securityId} from '@loopback/security';
 import {promisify} from 'util';
 import {
   UserRepository
@@ -27,8 +27,6 @@ export class JWTService implements TokenService {
     private jwtExpiresIn: string,
     @inject('services.user.service')
     public userService: MyUserService,
-    @inject('services.jwt.service')
-    public jwtService: JWTService,
     @repository(UserRepository) protected userRepository: UserRepository,
   ) { }
 
@@ -96,7 +94,7 @@ export class JWTService implements TokenService {
       const userProfile: UserProfile =
         this.userService.convertToUserProfile(user);
       // create a JSON Web Token based on the user profile
-      const token = await this.jwtService.generateToken(userProfile);
+      const token = await this.generateToken(userProfile);
       return {
         accessToken: token,
       };

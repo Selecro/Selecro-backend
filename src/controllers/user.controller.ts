@@ -853,7 +853,7 @@ export class UserController {
     return usernamesAndLinks;
   }
 
-  @get('/user-detail/{id}', {
+  @get('/user-detail/{userId}', {
     responses: {
       '200': {
         description: 'Get user detail',
@@ -910,7 +910,7 @@ export class UserController {
       },
     },
   })
-  async getUserDetail(@param.query.number('id') userId: number): Promise<{
+  async getUserDetail(@param.query.number('userId') userId: number): Promise<{
     user: Omit<
       User,
       | 'email'
