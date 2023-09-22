@@ -49,7 +49,7 @@ export class UserProgressController {
       },
     },
   })
-  async create(
+  async createProgress(
     @requestBody({
       content: {
         'application/json': {
@@ -105,7 +105,7 @@ export class UserProgressController {
       },
     },
   })
-  async patch(
+  async patchProgress(
     @param.path.number('instructionId') instructionId: number,
     @requestBody({
       content: {
@@ -156,8 +156,8 @@ export class UserProgressController {
       },
     },
   })
-  async delete(
-    @param.query.number('instructionId') instructionId: number,
+  async deleteProgress(
+    @param.path.number('instructionId') instructionId: number,
   ): Promise<boolean> {
     const userOriginal = await this.userRepository.findById(this.user.id);
     if (!userOriginal) {
@@ -199,7 +199,7 @@ export class UserProgressController {
       },
     },
   })
-  async find(
+  async getProgress(
     @param.path.number('instructionId') instructionId: number,
   ): Promise<Progress & ProgressRelations> {
     const user = await this.userRepository.findById(this.user.id);

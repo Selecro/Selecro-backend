@@ -623,7 +623,7 @@ export class UserController {
   }
 
   @authenticate('jwt')
-  @del('/users/{id}', {
+  @del('/users/{id}/{password}', {
     responses: {
       '200': {
         description: 'Delete user',
@@ -638,29 +638,14 @@ export class UserController {
     },
   })
   async deleteUser(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            properties: {
-              password: {type: 'string'},
-            },
-            required: ['password'],
-          },
-        },
-      },
-    })
-    request: {
-      password: string;
-    },
+    @param.path.password('password') password: string,
   ): Promise<boolean> {
     const userOriginal = await this.userRepository.findById(this.user.id);
     if (!userOriginal) {
       throw new HttpErrors.NotFound('User not found');
     }
     const passwordMatched = await this.hasher.comparePassword(
-      request.password,
+      password,
       userOriginal.passwordHash,
     );
     if (!passwordMatched) {
@@ -910,7 +895,9 @@ export class UserController {
       },
     },
   })
-  async getUserDetail(@param.query.number('userId') userId: number): Promise<{
+  async getUserDetail(
+    @param.path.number('userId') userId: number
+  ): Promise<{
     user: Omit<
       User,
       | 'email'
@@ -927,8 +914,8 @@ export class UserController {
     >;
     followerCount: number;
     followeeCount: number;
-    instructions: Omit<Instruction, 'deleteHash'>[];
-    instructionsPremium: Omit<Instruction, 'deleteHash'>[];
+    instructions: Omit<Instruction, 'deleteHash'>[] | null;
+    instructionsPremium: Omit<Instruction, 'deleteHash'>[] | null;
   }> {
     const user = await this.userRepository.findById(userId, {
       fields: {

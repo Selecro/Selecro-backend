@@ -58,7 +58,7 @@ export class UserInstructionController {
       },
     },
   })
-  async create(
+  async createInstruction(
     @requestBody({
       content: {
         'application/json': {
@@ -124,7 +124,7 @@ export class UserInstructionController {
       },
     },
   })
-  async patch(
+  async patchInstruction(
     @param.path.number('instructionId') instructionId: number,
     @requestBody({
       content: {
@@ -181,8 +181,8 @@ export class UserInstructionController {
       },
     },
   })
-  async delete(
-    @param.query.number('instructionId') instructionId: number,
+  async deleteInstruction(
+    @param.path.number('instructionId') instructionId: number,
   ): Promise<boolean> {
     const userOriginal = await this.userRepository.findById(this.user.id);
     if (!userOriginal) {
@@ -280,14 +280,14 @@ export class UserInstructionController {
     },
   })
   async getUsersInstructions(): Promise<{
-    instreuctions: Omit<Instruction, 'deleteHash' | 'premiumUserIds'>[];
+    instructions: Omit<Instruction, 'deleteHash' | 'premiumUserIds'>[];
     progress: (Progress & ProgressRelations)[];
   }> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const instreuctions = await this.instructionRepository.find({
+    const instructions = await this.instructionRepository.find({
       where: {
         userId: this.user.id,
       },
@@ -311,7 +311,7 @@ export class UserInstructionController {
         userId: this.user.id,
       },
     });
-    return {instreuctions, progress};
+    return {instructions, progress};
   }
 
   @authenticate('jwt')
@@ -329,7 +329,7 @@ export class UserInstructionController {
       },
     },
   })
-  async uploadPicture(
+  async uploadInstructionPicture(
     @param.path.number('instructionId') instructionId: number,
     @requestBody({
       content: {
@@ -384,7 +384,7 @@ export class UserInstructionController {
       },
     },
   })
-  async deleteImage(
+  async deleteInstructionPicture(
     @param.path.number('instructionId') instructionId: number,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
@@ -423,12 +423,25 @@ export class UserInstructionController {
       },
     },
   })
-  async setPremium(
+  async setPremiumInstruction(
     @param.path.number('instructionId') instructionId: number,
-    @requestBody()
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              key: {type: 'string'},
+              premium: {type: 'boolean'},
+            },
+            required: ['key', 'premium'],
+          },
+        },
+      },
+    })
     request: {
-      premium: boolean;
       key: string;
+      premium: boolean;
     },
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
@@ -482,6 +495,8 @@ export class UserInstructionController {
     },
   })
   async authorizeUserToPremiumInstruction(
+    @param.path.number('instructionId') instructionId: number,
+    @param.path.number('userId') userId: number,
     @requestBody({
       content: {
         'application/json': {
@@ -498,8 +513,6 @@ export class UserInstructionController {
     request: {
       key: string;
     },
-    @param.query.number('instructionId') instructionId: number,
-    @param.query.number('userId') userId: number,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
