@@ -3,12 +3,12 @@ import * as nodemailer from 'nodemailer';
 dotenv.config();
 
 const config = {
-  host: process.env.EMAILHOST,
+  host: process.env.EMAIL_HOST,
   secure: true,
-  port: Number(process.env.EMAILPORT),
+  port: Number(process.env.EMAIL_PORT),
   auth: {
-    user: process.env.EMAILUSER,
-    pass: process.env.EMAILPASSWORD,
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
   },
 };
 

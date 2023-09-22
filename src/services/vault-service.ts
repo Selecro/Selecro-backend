@@ -1,5 +1,6 @@
 import fetch from 'cross-fetch';
 import * as dotenv from 'dotenv';
+import * as fs from 'fs';
 dotenv.config();
 
 export class VaultService {
@@ -8,8 +9,9 @@ export class VaultService {
   private readonly unsealKeys: string[] = [
     process.env.UNSEAL_KEY_1 ?? '',
     process.env.UNSEAL_KEY_2 ?? '',
+    process.env.UNSEAL_KEY_3 ?? '',
   ];
-  private readonly rootToken = process.env.ROOT_VAULT ?? '';
+  private readonly rootToken = process.env.ROOT_VAULT_TOKEN ?? '';
 
   constructor() {
     this.checkAndUnsealIfNeeded().catch(error => {
@@ -21,9 +23,6 @@ export class VaultService {
     try {
       const response = await fetch(`${this.vaultEndpoint}/v1/sys/seal-status`, {
         method: 'GET',
-        headers: {
-          'X-Vault-Token': this.rootToken,
-        },
       });
       if (!response.ok) {
         throw new Error(`Status check error: ${response.statusText}`);
@@ -39,7 +38,11 @@ export class VaultService {
 
   private async unseal(): Promise<void> {
     try {
-      const unsealKeys: string[] = [this.unsealKeys[0], this.unsealKeys[1]];
+      const unsealKeys: string[] = [
+        this.unsealKeys[0],
+        this.unsealKeys[1],
+        this.unsealKeys[2],
+      ];
       for (const key of unsealKeys) {
         const response = await fetch(`${this.vaultEndpoint}/v1/sys/unseal`, {
           method: 'POST',
@@ -52,9 +55,7 @@ export class VaultService {
           }),
         });
         if (!response.ok) {
-          throw new Error(
-            `Unseal error with key ${key}: ${response.statusText}`,
-          );
+          throw new Error(`Unseal error`);
         }
       }
     } catch (error) {
@@ -62,38 +63,11 @@ export class VaultService {
     }
   }
 
-  async authenticate(password: string, id: string): Promise<string> {
-    try {
-      const data = {
-        password: password,
-      };
-      const response = await fetch(
-        `${this.vaultEndpoint}/v1/auth/userpass/login/${id}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        },
-      );
-      if (!response.ok) {
-        throw new Error(
-          `Authentication error: Unable to authenticate with the provided credentials.`,
-        );
-      }
-      const responseData = await response.json();
-      return responseData.auth.client_token;
-    } catch (error) {
-      throw new Error(`Authentication error: ${error.message}`);
-    }
-  }
-
   async createUser(password: string, id: string): Promise<void> {
     try {
       const data = {
         password: password,
-        policies: ['selecro-main'],
+        policies: [String(id)],
       };
       const response = await fetch(
         `${this.vaultEndpoint}/v1/auth/userpass/users/${id}`,
@@ -106,9 +80,51 @@ export class VaultService {
         },
       );
       if (!response.ok) {
-        throw new Error(
-          `Authentication error: Unable to authenticate with the provided credentials.`,
-        );
+        throw new Error(`Unable to create user`);
+      }
+    } catch (error) {
+      throw new Error(`Authentication error: ${error.message}`);
+    }
+  }
+
+  async createUserPolicy(id: string): Promise<void> {
+    try {
+      let policyData = fs.readFileSync(
+        `./src/services/example-user-policy.hcl`,
+        'utf-8',
+      );
+      policyData = policyData.replace('{{id}}', id);
+      const response = await fetch(
+        `${this.vaultEndpoint}/v1/sys/policy/${id}`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Vault-Token': this.rootToken,
+          },
+          body: JSON.stringify({data: policyData}),
+        },
+      );
+      if (!response.ok) {
+        throw new Error(`Unable to create policy`);
+      }
+    } catch (error) {
+      throw new Error(`Authentication error: ${error.message}`);
+    }
+  }
+
+  async createUserKey(id: string): Promise<void> {
+    try {
+      const response = await fetch(
+        `${this.vaultEndpoint}/v1/transit/keys/${id}`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Vault-Token': this.rootToken,
+          },
+        },
+      );
+      if (!response.ok) {
+        throw new Error(`Unable to create key`);
       }
     } catch (error) {
       throw new Error(`Authentication error: ${error.message}`);
@@ -131,9 +147,7 @@ export class VaultService {
         },
       );
       if (!response.ok) {
-        throw new Error(
-          `Authentication error: Unable to authenticate with the provided credentials.`,
-        );
+        throw new Error(`Unable to update password`);
       }
     } catch (error) {
       throw new Error(`Authentication error: ${error.message}`);
@@ -152,9 +166,45 @@ export class VaultService {
         },
       );
       if (!response.ok) {
-        throw new Error(
-          `Authentication error: Unable to authenticate with the provided credentials.`,
-        );
+        throw new Error(`Unable to delete user`);
+      }
+    } catch (error) {
+      throw new Error(`Authentication error: ${error.message}`);
+    }
+  }
+
+  async deleteUserPolicy(id: string): Promise<void> {
+    try {
+      const response = await fetch(
+        `${this.vaultEndpoint}/v1/sys/policy/acl/${id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'X-Vault-Token': this.rootToken,
+          },
+        },
+      );
+      if (!response.ok) {
+        throw new Error(`Unable to delete policy`);
+      }
+    } catch (error) {
+      throw new Error(`Authentication error: ${error.message}`);
+    }
+  }
+
+  async deleteUserKey(id: string): Promise<void> {
+    try {
+      const response = await fetch(
+        `${this.vaultEndpoint}/v1/transit/keys/${id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'X-Vault-Token': this.rootToken,
+          },
+        },
+      );
+      if (!response.ok) {
+        throw new Error(`Unable to delete key`);
       }
     } catch (error) {
       throw new Error(`Authentication error: ${error.message}`);

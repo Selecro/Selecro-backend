@@ -48,8 +48,8 @@ export class InstructionStepController {
       },
     },
   })
-  async create(
-    @param.path.number('id') instructionId: number,
+  async createStep(
+    @param.path.number('instructionId') instructionId: number,
     @requestBody({
       content: {
         'application/json': {
@@ -76,7 +76,7 @@ export class InstructionStepController {
         },
       },
     })
-    step: Omit<Step, 'id' | 'instructionId'>,
+    step: Omit<Step, 'id' | 'link' | 'deleteHash' | 'instructionId'>,
   ): Promise<Step> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
@@ -110,9 +110,9 @@ export class InstructionStepController {
       },
     },
   })
-  async patch(
-    @param.path.number('stepId') stepId: number,
+  async patchStep(
     @param.path.number('instructionId') instructionId: number,
+    @param.path.number('stepId') stepId: number,
     @requestBody({
       content: {
         'application/json': {
@@ -160,7 +160,7 @@ export class InstructionStepController {
   }
 
   @authenticate('jwt')
-  @del('/users/{id}/instructions/{instructionId}/steps/{stepId}', {
+  @del('/users/{id}/instructions/{instructionId}/steps/${stepId}', {
     responses: {
       '200': {
         description: 'Delete Step',
@@ -174,9 +174,9 @@ export class InstructionStepController {
       },
     },
   })
-  async delete(
-    @param.path.number('stepId') stepId: number,
+  async deleteStep(
     @param.path.number('instructionId') instructionId: number,
+    @param.path.number('stepId') stepId: number,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
@@ -239,7 +239,7 @@ export class InstructionStepController {
       },
     },
   })
-  async getPublicInstructions(
+  async getSteps(
     @param.path.number('instructionId') instructionId: number,
   ): Promise<Omit<Step, 'deleteHash'>[]> {
     const user = await this.userRepository.findById(this.user.id);
@@ -274,9 +274,9 @@ export class InstructionStepController {
       },
     },
   })
-  async uploadPicture(
-    @param.path.number('stepId') stepId: number,
+  async uploadStepsPicture(
     @param.path.number('instructionId') instructionId: number,
+    @param.path.number('stepId') stepId: number,
     @requestBody({
       content: {
         'multipart/form-data': {
@@ -335,9 +335,9 @@ export class InstructionStepController {
       },
     },
   })
-  async deleteImage(
-    @param.path.number('stepId') stepId: number,
+  async deleteStepPicture(
     @param.path.number('instructionId') instructionId: number,
+    @param.path.number('stepId') stepId: number,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {

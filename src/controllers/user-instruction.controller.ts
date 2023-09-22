@@ -15,9 +15,10 @@ import {
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import * as dotenv from 'dotenv';
-import {Difficulty, Instruction} from '../models';
+import {Difficulty, Instruction, Progress, ProgressRelations} from '../models';
 import {
   InstructionRepository,
+  ProgressRepository,
   StepRepository,
   UserRepository,
 } from '../repositories';
@@ -38,6 +39,8 @@ export class UserInstructionController {
     @repository(InstructionRepository)
     protected instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
+    @repository(UserRepository)
+    protected progressRepository: ProgressRepository,
   ) { }
 
   @authenticate('jwt')
@@ -55,7 +58,7 @@ export class UserInstructionController {
       },
     },
   })
-  async create(
+  async createInstruction(
     @requestBody({
       content: {
         'application/json': {
@@ -93,7 +96,7 @@ export class UserInstructionController {
       if (!key) {
         throw new HttpErrors.Unauthorized('Key not providen');
       }
-      const instructionKey = process.env.INSTRUCTION_KEY ?? '';
+      const instructionKey = process.env.INSTRUCTION_KEY_PREMIUM ?? '';
       const keyMatch = await this.hasher.comparePassword(key, instructionKey);
       if (!keyMatch) {
         throw new HttpErrors.Unauthorized('Invalid password');
@@ -121,7 +124,7 @@ export class UserInstructionController {
       },
     },
   })
-  async patch(
+  async patchInstruction(
     @param.path.number('instructionId') instructionId: number,
     @requestBody({
       content: {
@@ -178,8 +181,8 @@ export class UserInstructionController {
       },
     },
   })
-  async delete(
-    @param.query.number('instructionId') instructionId: number,
+  async deleteInstruction(
+    @param.path.number('instructionId') instructionId: number,
   ): Promise<boolean> {
     const userOriginal = await this.userRepository.findById(this.user.id);
     if (!userOriginal) {
@@ -276,14 +279,15 @@ export class UserInstructionController {
       },
     },
   })
-  async getUsersInstructions(): Promise<
-    Omit<Instruction, 'deleteHash' | 'premiumUserIds'>[]
-  > {
+  async getUsersInstructions(): Promise<{
+    instructions: Omit<Instruction, 'deleteHash' | 'premiumUserIds'>[];
+    progress: (Progress & ProgressRelations)[];
+  }> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
     }
-    const data = await this.instructionRepository.find({
+    const instructions = await this.instructionRepository.find({
       where: {
         userId: this.user.id,
       },
@@ -302,7 +306,12 @@ export class UserInstructionController {
         premiumUserIds: false,
       },
     });
-    return data;
+    const progress = await this.progressRepository.find({
+      where: {
+        userId: this.user.id,
+      },
+    });
+    return {instructions, progress};
   }
 
   @authenticate('jwt')
@@ -320,7 +329,7 @@ export class UserInstructionController {
       },
     },
   })
-  async uploadPicture(
+  async uploadInstructionPicture(
     @param.path.number('instructionId') instructionId: number,
     @requestBody({
       content: {
@@ -375,7 +384,7 @@ export class UserInstructionController {
       },
     },
   })
-  async deleteImage(
+  async deleteInstructionPicture(
     @param.path.number('instructionId') instructionId: number,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
@@ -414,12 +423,25 @@ export class UserInstructionController {
       },
     },
   })
-  async setPremium(
+  async setPremiumInstruction(
     @param.path.number('instructionId') instructionId: number,
-    @requestBody()
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              key: {type: 'string'},
+              premium: {type: 'boolean'},
+            },
+            required: ['key', 'premium'],
+          },
+        },
+      },
+    })
     request: {
-      premium: boolean;
       key: string;
+      premium: boolean;
     },
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
@@ -431,7 +453,7 @@ export class UserInstructionController {
     if (!instruction) {
       throw new HttpErrors.NotFound('Instruction not found');
     }
-    const instructionKey = process.env.INSTRUCTION_KEY ?? '';
+    const instructionKey = process.env.INSTRUCTION_KEY_PREMIUM ?? '';
     const keyMatch = await this.hasher.comparePassword(
       request.key,
       instructionKey,
@@ -454,6 +476,68 @@ export class UserInstructionController {
     await this.instructionRepository.updateById(instructionId, {
       premium: request.premium,
     });
+    return true;
+  }
+
+  @authenticate('jwt')
+  @patch('/authorizate-for-premium-instruction/{instructionId}/{userId}', {
+    responses: {
+      '200': {
+        description: 'Authorize user for premium instructions',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'boolean',
+            },
+          },
+        },
+      },
+    },
+  })
+  async authorizeUserToPremiumInstruction(
+    @param.path.number('instructionId') instructionId: number,
+    @param.path.number('userId') userId: number,
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              key: {type: 'string'},
+            },
+            required: ['key'],
+          },
+        },
+      },
+    })
+    request: {
+      key: string;
+    },
+  ): Promise<boolean> {
+    const user = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    const instructionKey =
+      process.env.INSTRUCTION_KEY_PREMIUM_PERMISSIONS ?? '';
+    const keyMatch = await this.hasher.comparePassword(
+      request.key,
+      instructionKey,
+    );
+    if (!keyMatch) {
+      throw new HttpErrors.Unauthorized('Invalid password');
+    }
+    const instruction =
+      await this.instructionRepository.findById(instructionId);
+    instruction.premiumUserIds = instruction.premiumUserIds ?? [];
+    if (instruction.premiumUserIds.includes(userId)) {
+      instruction.premiumUserIds = instruction.premiumUserIds.filter(
+        id => id !== userId,
+      );
+    } else {
+      instruction.premiumUserIds.push(userId);
+    }
+    await this.instructionRepository.updateById(instructionId, instruction);
     return true;
   }
 
@@ -619,59 +703,6 @@ export class UserInstructionController {
       skip: offset,
     });
     return data;
-  }
-
-  @patch('/authorizate-for-premium-instruction/{instructionId}/{userId}', {
-    responses: {
-      '200': {
-        description: 'Authorize user for premium instructions',
-        content: {
-          'application/json': {
-            schema: {
-              type: 'boolean',
-            },
-          },
-        },
-      },
-    },
-  })
-  async authorizeUserToPremiumInstruction(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            properties: {
-              key: {type: 'string'},
-            },
-            required: ['key'],
-          },
-        },
-      },
-    })
-    request: {
-      key: string;
-    },
-    @param.query.number('instructionId') instructionId: number,
-    @param.query.number('userId') userId: number,
-  ): Promise<boolean> {
-    const instructionKey = process.env.INSTRUCTION_KEY_PERMISSIONS ?? '';
-    const keyMatch = await this.hasher.comparePassword(
-      request.key,
-      instructionKey,
-    );
-    if (!keyMatch) {
-      throw new HttpErrors.Unauthorized('Invalid password');
-    }
-    const instruction = await this.instructionRepository.findById(instructionId);
-    instruction.premiumUserIds = instruction.premiumUserIds ?? [];
-    if (instruction.premiumUserIds.includes(userId)) {
-      instruction.premiumUserIds = instruction.premiumUserIds.filter(id => id !== userId);
-    } else {
-      instruction.premiumUserIds.push(userId);
-    }
-    await this.instructionRepository.updateById(instructionId, instruction);
-    return true;
   }
 
   private validateInstructionOwnership(instruction: Instruction): void {

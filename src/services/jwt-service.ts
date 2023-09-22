@@ -4,10 +4,17 @@
 // License text available at https://opensource.org/licenses/MIT
 
 import {TokenService} from '@loopback/authentication';
+import {TokenObject} from '@loopback/authentication-jwt';
 import {inject} from '@loopback/core';
+import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
-import {securityId, UserProfile} from '@loopback/security';
+import {UserProfile, securityId} from '@loopback/security';
 import {promisify} from 'util';
+import {
+  UserRepository
+} from '../repositories';
+import {MyUserService} from './user-service';
+
 const jwt = require('jsonwebtoken');
 const signAsync = promisify(jwt.sign);
 const verifyAsync = promisify(jwt.verify);
@@ -18,7 +25,10 @@ export class JWTService implements TokenService {
     private jwtSecret: string,
     @inject('authentication.jwt.expiresIn')
     private jwtExpiresIn: string,
-  ) {}
+    @inject('services.user.service')
+    public userService: MyUserService,
+    @repository(UserRepository) protected userRepository: UserRepository,
+  ) { }
 
   async verifyToken(token: string): Promise<UserProfile> {
     if (!token) {
@@ -68,5 +78,30 @@ export class JWTService implements TokenService {
       throw new HttpErrors.Unauthorized(`Error encoding token : ${error}`);
     }
     return token;
+  }
+
+  async refreshToken(refreshToken: string): Promise<TokenObject> {
+    try {
+      if (!refreshToken) {
+        throw new HttpErrors.Unauthorized(
+          `Error verifying token : 'refresh token' is null`,
+        );
+      }
+      const userRefreshData = await this.verifyToken(refreshToken);
+      const user = await this.userRepository.findById(
+        userRefreshData.userId.toString(),
+      );
+      const userProfile: UserProfile =
+        this.userService.convertToUserProfile(user);
+      // create a JSON Web Token based on the user profile
+      const token = await this.generateToken(userProfile);
+      return {
+        accessToken: token,
+      };
+    } catch (error) {
+      throw new HttpErrors.Unauthorized(
+        `Error verifying token : ${error.message}`,
+      );
+    }
   }
 }
