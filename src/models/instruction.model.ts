@@ -153,7 +153,7 @@ export class Instruction extends Entity {
   userId: number;
 
   @hasMany(() => Step, {keyTo: 'instructionId'})
-  steps: Step[];
+  steps?: Step[];
 
   constructor(data?: Partial<Instruction>) {
     super(data);

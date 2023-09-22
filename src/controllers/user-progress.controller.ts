@@ -1,5 +1,8 @@
 import {authenticate} from '@loopback/authentication';
-import {inject} from '@loopback/core';
+import {
+  JWTService
+} from '@loopback/authentication-jwt';
+import {inject} from '@loopback/context';
 import {repository} from '@loopback/repository';
 import {
   HttpErrors,
@@ -8,16 +11,15 @@ import {
   param,
   patch,
   post,
-  requestBody,
+  requestBody
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import {Progress, ProgressRelations} from '../models';
 import {
   InstructionRepository,
   ProgressRepository,
-  UserRepository,
+  UserRepository
 } from '../repositories';
-import {JWTService} from '../services';
 
 export class UserProgressController {
   constructor(
@@ -47,7 +49,7 @@ export class UserProgressController {
       },
     },
   })
-  async create(
+  async createProgress(
     @requestBody({
       content: {
         'application/json': {
@@ -103,7 +105,7 @@ export class UserProgressController {
       },
     },
   })
-  async patch(
+  async patchProgress(
     @param.path.number('instructionId') instructionId: number,
     @requestBody({
       content: {
@@ -154,8 +156,8 @@ export class UserProgressController {
       },
     },
   })
-  async delete(
-    @param.query.number('instructionId') instructionId: number,
+  async deleteProgress(
+    @param.path.number('instructionId') instructionId: number,
   ): Promise<boolean> {
     const userOriginal = await this.userRepository.findById(this.user.id);
     if (!userOriginal) {
@@ -176,7 +178,7 @@ export class UserProgressController {
   }
 
   @authenticate('jwt')
-  @get('/users/{id}/progress/{instructionId}', {
+  @get('/users/{id}/progresses/{instructionId}', {
     responses: {
       '200': {
         description: 'Progress model instance',
@@ -197,7 +199,7 @@ export class UserProgressController {
       },
     },
   })
-  async find(
+  async getProgress(
     @param.path.number('instructionId') instructionId: number,
   ): Promise<Progress & ProgressRelations> {
     const user = await this.userRepository.findById(this.user.id);

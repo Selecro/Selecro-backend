@@ -524,14 +524,15 @@ export class UserController {
                 id: {type: 'number'},
                 email: {type: 'string'},
                 username: {type: 'string'},
+                wrappedDEK: {type: 'string'},
+                initializationVector: {type: 'string'},
+                kekSalt: {type: 'string'},
                 language: {enum: Object.values(Language)},
-                darkmode: {type: 'string'},
-                emailVerified: {type: 'string'},
+                darkmode: {type: 'boolean'},
                 date: {type: 'string'},
                 nick: {type: 'string'},
                 bio: {type: 'string'},
                 link: {type: 'string'},
-                wrappedDEK: {type: 'string'},
                 favorites: {
                   type: 'array',
                   items: {
@@ -548,14 +549,12 @@ export class UserController {
   async getUser(): Promise<
     Omit<
       User,
-      'passwordHash' | 'initializationVector' | 'kekSalt' | 'deleteHash'
+      'passwordHash' | 'deleteHash'
     >
   > {
     const user = await this.userRepository.findById(this.user.id, {
       fields: {
         passwordHash: false,
-        initializationVector: false,
-        kekSalt: false,
         deleteHash: false,
       },
     });
@@ -624,7 +623,7 @@ export class UserController {
   }
 
   @authenticate('jwt')
-  @del('/users/{id}', {
+  @del('/users/{id}/{password}', {
     responses: {
       '200': {
         description: 'Delete user',
@@ -639,29 +638,14 @@ export class UserController {
     },
   })
   async deleteUser(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            properties: {
-              password: {type: 'string'},
-            },
-            required: ['password'],
-          },
-        },
-      },
-    })
-    request: {
-      password: string;
-    },
+    @param.path.password('password') password: string,
   ): Promise<boolean> {
     const userOriginal = await this.userRepository.findById(this.user.id);
     if (!userOriginal) {
       throw new HttpErrors.NotFound('User not found');
     }
     const passwordMatched = await this.hasher.comparePassword(
-      request.password,
+      password,
       userOriginal.passwordHash,
     );
     if (!passwordMatched) {
@@ -854,7 +838,7 @@ export class UserController {
     return usernamesAndLinks;
   }
 
-  @get('/user-detail/{id}', {
+  @get('/user-detail/{userId}', {
     responses: {
       '200': {
         description: 'Get user detail',
@@ -911,7 +895,9 @@ export class UserController {
       },
     },
   })
-  async getUserDetail(@param.query.number('id') userId: number): Promise<{
+  async getUserDetail(
+    @param.path.number('userId') userId: number
+  ): Promise<{
     user: Omit<
       User,
       | 'email'
@@ -928,8 +914,8 @@ export class UserController {
     >;
     followerCount: number;
     followeeCount: number;
-    instructions: Omit<Instruction, 'deleteHash'>[];
-    instructionsPremium: Omit<Instruction, 'deleteHash'>[];
+    instructions: Omit<Instruction, 'deleteHash'>[] | null;
+    instructionsPremium: Omit<Instruction, 'deleteHash'>[] | null;
   }> {
     const user = await this.userRepository.findById(userId, {
       fields: {
