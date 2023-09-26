@@ -217,7 +217,7 @@ export class UserController {
       },
     })
     credentials: UserCredentials,
-  ): Promise<string> {
+  ): Promise<{token: string, userId: number}> {
     validateCredentials(
       _.pick(credentials, ['email', 'password0', 'password1', 'username']),
     );
@@ -257,7 +257,7 @@ export class UserController {
       expiresIn: 60,
       algorithm: 'HS256',
     });
-    return token;
+    return {token: token, userId: userId};
   }
 
   @post('/save-Wrapped-DEK', {
