@@ -12,8 +12,9 @@ export enum Difficulty {
 })
 export class Instruction extends Entity {
   @property({
+    type: 'string',
     id: true,
-    generated: true,
+    defaultFn: 'uuidv4',
     postgresql: {
       columnName: 'id',
       dataLength: null,
@@ -22,7 +23,7 @@ export class Instruction extends Entity {
       nullable: 'NO',
     },
   })
-  id: number;
+  id: string;
 
   @property({
     type: 'string',
@@ -81,7 +82,7 @@ export class Instruction extends Entity {
   link?: string | null;
 
   @property({
-    type: 'any',
+    type: 'string',
     required: false,
     postgresql: {
       columnName: 'delete_hash',
@@ -137,7 +138,7 @@ export class Instruction extends Entity {
   })
   date: Date;
 
-  @property.array(Number, {
+  @property.array(String, {
     required: false,
     postgresql: {
       columnName: 'premium_user_ids',
@@ -145,12 +146,12 @@ export class Instruction extends Entity {
     },
     default: () => [],
   })
-  premiumUserIds?: number[];
+  premiumUserIds?: string[];
 
   @property({
-    type: 'number',
+    type: 'string',
   })
-  userId: number;
+  userId: string;
 
   @hasMany(() => Step, {keyTo: 'instructionId'})
   steps?: Step[];

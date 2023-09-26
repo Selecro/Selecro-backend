@@ -5,8 +5,9 @@ import {Entity, model, property} from '@loopback/repository';
 })
 export class UserLink extends Entity {
   @property({
+    type: 'string',
     id: true,
-    generated: true,
+    defaultFn: 'uuidv4',
     postgresql: {
       columnName: 'id',
       dataLength: null,
@@ -15,35 +16,35 @@ export class UserLink extends Entity {
       nullable: 'NO',
     },
   })
-  id: number;
+  id: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
     postgresql: {
       columnName: 'follower_id',
-      dataType: 'integer',
+      dataType: 'text',
       dataLength: null,
       dataPrecision: null,
       dataScale: null,
-      nullable: 'NO',
+      nullable: 'YES',
     },
   })
-  followerId: number;
+  followerId: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
     postgresql: {
       columnName: 'followee_id',
-      dataType: 'integer',
+      dataType: 'text',
       dataLength: null,
       dataPrecision: null,
       dataScale: null,
-      nullable: 'NO',
+      nullable: 'YES',
     },
   })
-  followeeId: number;
+  followeeId: string;
 
   constructor(data?: Partial<UserLink>) {
     super(data);
