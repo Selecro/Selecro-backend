@@ -89,4 +89,13 @@ export class EmailService {
       html: body,
     });
   }
+
+  async sendError(error: string): Promise<void> {
+    await EmailDataSource.sendMail({
+      from: process.env.EMAIL_USER,
+      to: 'error@selecro.cz',
+      subject: 'Selecro: error',
+      html: error,
+    });
+  }
 }
