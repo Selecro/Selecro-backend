@@ -152,7 +152,7 @@ export class UserController {
       const {refreshToken} = requestBody;
       if (!refreshToken) {
         throw new HttpErrors.Unauthorized(
-          `Error verifying token: 'refresh token' is null`,
+          'Error verifying token: refresh token is null',
         );
       }
       const userRefreshData = await this.jwtService.verifyToken(refreshToken);
@@ -165,8 +165,9 @@ export class UserController {
         accessToken: token,
       };
     } catch (error) {
+      await this.emailService.sendError('Error verifying token: ' + error);
       throw new HttpErrors.Unauthorized(
-        `Error verifying token: ${error.message}`,
+        'Error verifying token',
       );
     }
   }
@@ -316,6 +317,7 @@ export class UserController {
       });
       return true;
     } catch (error) {
+      await this.emailService.sendError('Failed to update user email verification status: ' + error);
       if (error.name === 'TokenExpiredError') {
         throw new HttpErrors.UnprocessableEntity(
           'Verification token has expired',
@@ -379,6 +381,7 @@ export class UserController {
       await this.userRepository.updateById(user.id, {emailVerified: true});
       return true;
     } catch (error) {
+      await this.emailService.sendError('Failed to update user email verification status: ' + error);
       if (error.name === 'TokenExpiredError') {
         throw new HttpErrors.UnprocessableEntity(
           'Verification token has expired',
@@ -499,6 +502,7 @@ export class UserController {
       });
       return true;
     } catch (error) {
+      await this.emailService.sendError('Failed to update user email verification status: ' + error);
       if (error.name === 'TokenExpiredError') {
         throw new HttpErrors.UnprocessableEntity(
           'Verification token has expired',

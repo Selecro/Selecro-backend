@@ -10,8 +10,9 @@ dotenv.config();
 export class EmailService {
   constructor() { }
 
-  public generateVerificationToken(userId: string): string {
+  private generateVerificationToken(userId: string): string {
     const secret = process.env.JWT_SECRET_EMAIL ?? '';
+    console.log(secret);
     const token = jwt.sign({userId}, secret, {
       expiresIn: '1h',
       algorithm: 'HS256',
