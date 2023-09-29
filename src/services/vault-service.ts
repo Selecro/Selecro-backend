@@ -199,7 +199,7 @@ export class VaultService {
   async deleteUserPolicy(id: string): Promise<void> {
     try {
       const response = await fetch(
-        `${this.vaultEndpoint}/v1/sys/policy/acl/${id}`,
+        `${this.vaultEndpoint}/v1/sys/policy/${id}`,
         {
           method: 'DELETE',
           headers: {
