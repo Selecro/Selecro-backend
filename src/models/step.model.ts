@@ -5,8 +5,9 @@ import {Entity, model, property} from '@loopback/repository';
 })
 export class Step extends Entity {
   @property({
+    type: 'string',
     id: true,
-    generated: true,
+    defaultFn: 'uuidv4',
     postgresql: {
       columnName: 'id',
       dataLength: null,
@@ -15,7 +16,7 @@ export class Step extends Entity {
       nullable: 'NO',
     },
   })
-  id: number;
+  id: string;
 
   @property({
     type: 'string',
@@ -80,7 +81,7 @@ export class Step extends Entity {
   link?: string | null;
 
   @property({
-    type: 'any',
+    type: 'string',
     required: false,
     postgresql: {
       columnName: 'delete_hash',
@@ -94,9 +95,9 @@ export class Step extends Entity {
   deleteHash?: string | null;
 
   @property({
-    type: 'number',
+    type: 'string',
   })
-  instructionId: number;
+  instructionId: string;
 
   constructor(data?: Partial<Step>) {
     super(data);

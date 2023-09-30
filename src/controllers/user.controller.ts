@@ -152,12 +152,12 @@ export class UserController {
       const {refreshToken} = requestBody;
       if (!refreshToken) {
         throw new HttpErrors.Unauthorized(
-          `Error verifying token: 'refresh token' is null`,
+          'Error verifying token: refresh token is null',
         );
       }
       const userRefreshData = await this.jwtService.verifyToken(refreshToken);
       const user = await this.userRepository.findById(
-        userRefreshData.userId.toString(),
+        userRefreshData.userId,
       );
       const userProfile: UserProfile = this.userService.convertToUserProfile(user);
       const token = await this.jwtService.generateToken(userProfile);
@@ -165,8 +165,9 @@ export class UserController {
         accessToken: token,
       };
     } catch (error) {
+      await this.emailService.sendError('Error verifying token: ' + error);
       throw new HttpErrors.Unauthorized(
-        `Error verifying token: ${error.message}`,
+        'Error verifying token',
       );
     }
   }
@@ -217,7 +218,7 @@ export class UserController {
       },
     })
     credentials: UserCredentials,
-  ): Promise<{token: string, userId: number}> {
+  ): Promise<{token: string, userId: string}> {
     validateCredentials(
       _.pick(credentials, ['email', 'password0', 'password1', 'username']),
     );
@@ -240,16 +241,16 @@ export class UserController {
       passwordHash: hashedPassword,
       wrappedDEK: 'null',
       kekSalt: credentials.kekSalt,
-      initializationVector: credentials.initializationVector.toString('base64'),
+      initializationVector: credentials.initializationVector,
       language: credentials.language,
     });
     const dbUser = await this.userRepository.create(newUser);
-    await this.vaultService.createUserPolicy(String(dbUser.id));
+    await this.vaultService.createUserPolicy(dbUser.id);
     await this.vaultService.createUser(
-      String(dbUser.id),
+      dbUser.id,
       credentials.password0,
     );
-    await this.vaultService.createUserKey(String(dbUser.id));
+    await this.vaultService.createUserKey(dbUser.id);
     await this.emailService.sendRegistrationEmail(dbUser);
     const secret = process.env.JWT_SECRET_SIGNUP ?? '';
     const userId = dbUser.id;
@@ -295,7 +296,7 @@ export class UserController {
     },
   ): Promise<boolean> {
     interface DecodedToken {
-      userId: number;
+      userId: string;
       iat: number;
       exp: number;
     }
@@ -316,6 +317,7 @@ export class UserController {
       });
       return true;
     } catch (error) {
+      await this.emailService.sendError('Failed to update user email verification status: ' + error);
       if (error.name === 'TokenExpiredError') {
         throw new HttpErrors.UnprocessableEntity(
           'Verification token has expired',
@@ -363,7 +365,7 @@ export class UserController {
     },
   ): Promise<boolean> {
     interface DecodedToken {
-      userId: number;
+      userId: string;
       iat: number;
       exp: number;
     }
@@ -379,6 +381,7 @@ export class UserController {
       await this.userRepository.updateById(user.id, {emailVerified: true});
       return true;
     } catch (error) {
+      await this.emailService.sendError('Failed to update user email verification status: ' + error);
       if (error.name === 'TokenExpiredError') {
         throw new HttpErrors.UnprocessableEntity(
           'Verification token has expired',
@@ -474,7 +477,7 @@ export class UserController {
     },
   ): Promise<boolean> {
     interface DecodedToken {
-      userData: number;
+      userData: string;
       iat: number;
       exp: number;
     }
@@ -491,7 +494,7 @@ export class UserController {
       }
       await this.emailService.sendSuccessfulyPasswordChange(user);
       await this.vaultService.updatePassword(
-        String(user.id),
+        user.id,
         request.password0,
       );
       await this.userRepository.updateById(user.id, {
@@ -499,6 +502,7 @@ export class UserController {
       });
       return true;
     } catch (error) {
+      await this.emailService.sendError('Failed to update user email verification status: ' + error);
       if (error.name === 'TokenExpiredError') {
         throw new HttpErrors.UnprocessableEntity(
           'Verification token has expired',
@@ -521,7 +525,7 @@ export class UserController {
             schema: {
               type: 'object',
               properties: {
-                id: {type: 'number'},
+                id: {type: 'string'},
                 email: {type: 'string'},
                 username: {type: 'string'},
                 wrappedDEK: {type: 'string'},
@@ -651,9 +655,9 @@ export class UserController {
     if (!passwordMatched) {
       throw new HttpErrors.Unauthorized('Password is not valid');
     }
-    await this.vaultService.deleteUserKey(String(userOriginal.id));
-    await this.vaultService.deleteUser(String(userOriginal.id));
-    await this.vaultService.deleteUserPolicy(String(userOriginal.id));
+    await this.vaultService.deleteUserKey(userOriginal.id);
+    await this.vaultService.deleteUser(userOriginal.id);
+    await this.vaultService.deleteUserPolicy(userOriginal.id);
     if (userOriginal.deleteHash) {
       await this.imgurService.deleteImage(userOriginal.deleteHash);
     }
@@ -810,7 +814,7 @@ export class UserController {
             schema: {
               type: 'object',
               properties: {
-                id: {type: 'number'},
+                id: {type: 'string'},
                 username: {type: 'string'},
                 link: {type: 'string'},
               },
@@ -824,7 +828,7 @@ export class UserController {
     @param.query.number('limit') limit: number = 10,
     @param.query.number('offset') offset: number = 0,
   ): Promise<
-    {id: number; username: string; link: string | null | undefined}[]
+    {id: string; username: string; link: string | null | undefined}[]
   > {
     const users = await this.userRepository.find({
       limit,
@@ -847,7 +851,7 @@ export class UserController {
             schema: {
               type: 'object',
               properties: {
-                id: {type: 'number'},
+                id: {type: 'string'},
                 username: {type: 'string'},
                 nick: {type: 'string'},
                 bio: {type: 'string'},
@@ -857,7 +861,7 @@ export class UserController {
                 instructions: {
                   type: 'object',
                   items: {
-                    id: {type: 'number'},
+                    id: {type: 'string'},
                     titleCz: {type: 'string'},
                     titleEn: {type: 'string'},
                     difficulty: {enum: Object.values(Difficulty)},
@@ -868,7 +872,7 @@ export class UserController {
                     steps: {
                       type: 'object',
                       items: {
-                        id: {type: 'number'},
+                        id: {type: 'string'},
                         titleCz: {type: 'string'},
                         titleEn: {type: 'string'},
                         descriptionCz: {
@@ -896,7 +900,7 @@ export class UserController {
     },
   })
   async getUserDetail(
-    @param.path.number('userId') userId: number
+    @param.path.string('userId') userId: string,
   ): Promise<{
     user: Omit<
       User,

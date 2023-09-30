@@ -1,13 +1,18 @@
-import {Request, Response} from '@loopback/rest';
+import {inject} from '@loopback/core';
+import {HttpErrors, Request, Response} from '@loopback/rest';
 import fetch from 'cross-fetch';
 import * as dotenv from 'dotenv';
 import multer from 'multer';
+import {EmailService} from '.';
 dotenv.config();
 
 export class ImgurService {
   private readonly clientId = process.env.IMGUR_CLIENT_ID ?? '';
 
-  constructor() {}
+  constructor(
+    @inject('services.email')
+    public emailService: EmailService,
+  ) { }
 
   async savePicture(
     request: Request,
@@ -24,11 +29,13 @@ export class ImgurService {
       });
       const imgurData = await imgurResponse.json();
       if (!imgurData.success) {
-        throw new Error(`Error in save`);
+        await this.emailService.sendError('Error in save picture: ' + JSON.stringify(imgurData, null, 2));
+        throw new HttpErrors.InternalServerError('Error in save picture');
       }
       return {link: imgurData.data.link, deletehash: imgurData.data.deletehash};
     } catch (error) {
-      throw new Error(`Save error: ${error.message}`);
+      await this.emailService.sendError('Error in save picture: ' + error);
+      throw new HttpErrors.InternalServerError('Error in save picture');
     }
   }
 
@@ -45,11 +52,13 @@ export class ImgurService {
       );
       const imgurData = await imgurResponse.json();
       if (!imgurData.success) {
-        throw new Error(`Error in save`);
+        await this.emailService.sendError('Error in delete picture: ' + JSON.stringify(imgurData, null, 2));
+        throw new HttpErrors.InternalServerError('Error in delete picture');
       }
       return true;
     } catch (error) {
-      throw new Error(`Write error: ${error.message}`);
+      await this.emailService.sendError('Error in delete picture: ' + error);
+      throw new HttpErrors.InternalServerError('Error in delete picture');
     }
   }
 
@@ -67,7 +76,7 @@ export class ImgurService {
         if (file.mimetype.startsWith('image/')) {
           cb(null, true);
         } else {
-          cb(new Error('Only image files are allowed'));
+          cb(new HttpErrors.UnprocessableEntity('Only image files are allowed'));
         }
       },
     }).single('image');
@@ -84,10 +93,11 @@ export class ImgurService {
       if (request.file) {
         return request.file;
       } else {
-        throw new Error(`No file uploaded.`);
+        throw new HttpErrors.UnprocessableEntity('No file uploaded.');
       }
     } catch (error) {
-      throw new Error(`Upload error: ${error.message}`);
+      await this.emailService.sendError('Error in upload picture: ' + error);
+      throw new HttpErrors.InternalServerError('Error in upload picture');
     }
   }
 }

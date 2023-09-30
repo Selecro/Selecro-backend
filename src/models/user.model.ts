@@ -13,8 +13,9 @@ export enum Language {
 })
 export class User extends Entity {
   @property({
+    type: 'string',
     id: true,
-    generated: true,
+    defaultFn: 'uuidv4',
     postgresql: {
       columnName: 'id',
       dataLength: null,
@@ -23,7 +24,7 @@ export class User extends Entity {
       nullable: 'NO',
     },
   })
-  id: number;
+  id: string;
 
   @property({
     type: 'string',
@@ -169,7 +170,7 @@ export class User extends Entity {
   date: Date;
 
   @property({
-    type: 'any',
+    type: 'string',
     required: false,
     postgresql: {
       columnName: 'nick',
@@ -183,7 +184,7 @@ export class User extends Entity {
   nick?: string | null;
 
   @property({
-    type: 'any',
+    type: 'string',
     required: false,
     postgresql: {
       columnName: 'bio',
@@ -197,7 +198,7 @@ export class User extends Entity {
   bio?: string | null;
 
   @property({
-    type: 'any',
+    type: 'string',
     required: false,
     postgresql: {
       columnName: 'link',
@@ -211,7 +212,7 @@ export class User extends Entity {
   link?: string | null;
 
   @property({
-    type: 'any',
+    type: 'string',
     required: false,
     postgresql: {
       columnName: 'delete_hash',
@@ -224,7 +225,7 @@ export class User extends Entity {
   })
   deleteHash?: string | null;
 
-  @property.array(Number, {
+  @property.array(String, {
     required: false,
     postgresql: {
       columnName: 'favorites',
@@ -232,7 +233,7 @@ export class User extends Entity {
     },
     default: () => [],
   })
-  favorites?: number[];
+  favorites?: string[];
 
   @hasMany(() => User, {
     through: {

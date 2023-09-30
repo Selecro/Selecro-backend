@@ -10,6 +10,7 @@ import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {UserProfile, securityId} from '@loopback/security';
 import {promisify} from 'util';
+import {EmailService} from '.';
 import {
   UserRepository
 } from '../repositories';
@@ -25,6 +26,8 @@ export class JWTService implements TokenService {
     private jwtSecret: string,
     @inject('authentication.jwt.expiresIn')
     private jwtExpiresIn: string,
+    @inject('services.email')
+    public emailService: EmailService,
     @inject('services.user.service')
     public userService: MyUserService,
     @repository(UserRepository) protected userRepository: UserRepository,
@@ -50,8 +53,9 @@ export class JWTService implements TokenService {
         },
       );
     } catch (error) {
+      await this.emailService.sendError('Error verifying token:' + error);
       throw new HttpErrors.Unauthorized(
-        `Error verifying token : ${error.message}`,
+        `Error verifying token`,
       );
     }
     return userProfile;
@@ -75,7 +79,8 @@ export class JWTService implements TokenService {
         expiresIn: this.jwtExpiresIn,
       });
     } catch (error) {
-      throw new HttpErrors.Unauthorized(`Error encoding token : ${error}`);
+      await this.emailService.sendError('Error encoding token:' + error);
+      throw new HttpErrors.Unauthorized(`Error encoding token`);
     }
     return token;
   }
@@ -99,8 +104,9 @@ export class JWTService implements TokenService {
         accessToken: token,
       };
     } catch (error) {
+      await this.emailService.sendError(`Error verifying token: ` + error);
       throw new HttpErrors.Unauthorized(
-        `Error verifying token : ${error.message}`,
+        `Error verifying token`,
       );
     }
   }

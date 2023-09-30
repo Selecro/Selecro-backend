@@ -8,10 +8,11 @@ dotenv.config();
 
 @bind({scope: BindingScope.TRANSIENT})
 export class EmailService {
-  constructor() {}
+  constructor() { }
 
-  public generateVerificationToken(userId: number): string {
+  private generateVerificationToken(userId: string): string {
     const secret = process.env.JWT_SECRET_EMAIL ?? '';
+    console.log(secret);
     const token = jwt.sign({userId}, secret, {
       expiresIn: '1h',
       algorithm: 'HS256',
@@ -87,6 +88,15 @@ export class EmailService {
       to: user.email,
       subject: 'Selecro: Successfuly changed password',
       html: body,
+    });
+  }
+
+  async sendError(error: string): Promise<void> {
+    await EmailDataSource.sendMail({
+      from: process.env.EMAIL_USER,
+      to: 'error@selecro.cz',
+      subject: 'Selecro: error',
+      html: error,
     });
   }
 }

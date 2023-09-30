@@ -34,7 +34,7 @@ export class UserLinkController {
     },
   })
   async followUser(
-    @param.path.number('followeeId') followeeId: number,
+    @param.path.string('followeeId') followeeId: string,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
@@ -67,7 +67,7 @@ export class UserLinkController {
     },
   })
   async unfollowUser(
-    @param.path.number('followeeId') followeeId: number,
+    @param.path.string('followeeId') followeeId: string,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
@@ -98,7 +98,7 @@ export class UserLinkController {
             schema: {
               type: 'object',
               properties: {
-                id: {type: 'number'},
+                id: {type: 'string'},
                 username: {type: 'string'},
                 link: {type: 'string'},
               },
@@ -109,7 +109,7 @@ export class UserLinkController {
     },
   })
   async getFollowers(
-    @param.path.number('userId') userId: number,
+    @param.path.string('userId') userId: string,
     @param.query.number('limit') limit: number = 10,
     @param.query.number('offset') offset: number = 0,
   ): Promise<Partial<User[]>> {
@@ -153,7 +153,7 @@ export class UserLinkController {
             schema: {
               type: 'object',
               properties: {
-                id: {type: 'number'},
+                id: {type: 'string'},
                 username: {type: 'string'},
                 link: {type: 'string'},
               },
@@ -164,7 +164,7 @@ export class UserLinkController {
     },
   })
   async getFollowees(
-    @param.path.number('userId') userId: number,
+    @param.path.string('userId') userId: string,
     @param.query.number('limit') limit: number = 10,
     @param.query.number('offset') offset: number = 0,
   ): Promise<Partial<User[]>> {
