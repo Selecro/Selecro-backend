@@ -41,7 +41,7 @@ export class UserInstructionController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserRepository)
     protected progressRepository: ProgressRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}', {

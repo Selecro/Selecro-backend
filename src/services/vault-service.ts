@@ -2,13 +2,14 @@ import {inject} from '@loopback/core';
 import {HttpErrors} from '@loopback/rest';
 import fetch from 'cross-fetch';
 import * as dotenv from 'dotenv';
-import * as fs from 'fs';
 import {EmailService} from '.';
 dotenv.config();
 
 export class VaultService {
   private readonly vaultEndpoint =
-    process.env.VAULT_URL ?? '' + process.env.VAULT_PORT ?? '';
+    process.env.VAULT_URL && process.env.VAULT_PORT
+      ? `${process.env.VAULT_URL}${process.env.VAULT_PORT}`
+      : '';
   private readonly unsealKeys: string[] = [
     process.env.UNSEAL_KEY_1 ?? '',
     process.env.UNSEAL_KEY_2 ?? '',
@@ -21,19 +22,26 @@ export class VaultService {
     public emailService: EmailService,
   ) {
     this.checkAndUnsealIfNeeded().catch(async error => {
-      await this.emailService.sendError('Error during initialization: ' + error);
+      await this.emailService.sendError(
+        'Error during initialization: ' + error,
+      );
       throw new HttpErrors.InternalServerError('Error during initialization');
     });
   }
 
   private async checkAndUnsealIfNeeded(): Promise<void> {
     try {
-      const response = await fetch(`
-      ${this.vaultEndpoint}/v1/sys/seal-status`, {
-        method: 'GET',
-      });
+      const response = await fetch(
+        `
+      ${this.vaultEndpoint}/v1/sys/seal-status`,
+        {
+          method: 'GET',
+        },
+      );
       if (!response.ok) {
-        await this.emailService.sendError(String('Status check error: ' + JSON.stringify(response, null, 2)));
+        await this.emailService.sendError(
+          String('Status check error: ' + JSON.stringify(response, null, 2)),
+        );
         throw new HttpErrors.InternalServerError('Status check error');
       }
       const responseData = await response.json();
@@ -54,8 +62,7 @@ export class VaultService {
         this.unsealKeys[2],
       ];
       for (const key of unsealKeys) {
-        const response = await fetch(
-          `${this.vaultEndpoint}/v1/sys/unseal`, {
+        const response = await fetch(`${this.vaultEndpoint}/v1/sys/unseal`, {
           method: 'POST',
           headers: {
             'X-Vault-Token': this.rootToken,
@@ -66,7 +73,9 @@ export class VaultService {
           }),
         });
         if (!response.ok) {
-          await this.emailService.sendError(String('Unseal error: ' + JSON.stringify(response, null, 2)));
+          await this.emailService.sendError(
+            String('Unseal error: ' + JSON.stringify(response, null, 2)),
+          );
           throw new HttpErrors.InternalServerError('Unseal error');
         }
       }
@@ -76,7 +85,7 @@ export class VaultService {
     }
   }
 
-  async createUser(password: string, id: string): Promise<void> {
+  async createUser(id: string, password: string): Promise<void> {
     try {
       const data = {
         password: password,
@@ -93,7 +102,9 @@ export class VaultService {
         },
       );
       if (!response.ok) {
-        await this.emailService.sendError(String('Unable to create user: ' + JSON.stringify(response, null, 2)));
+        await this.emailService.sendError(
+          String('Unable to create user: ' + JSON.stringify(response, null, 2)),
+        );
         throw new HttpErrors.InternalServerError('Unable to create user');
       }
     } catch (error) {
@@ -103,28 +114,44 @@ export class VaultService {
   }
 
   async createUserPolicy(id: string): Promise<void> {
+    const policyData = {
+      name: '{{id}}',
+      policy: `path "transit/encrypt/{{id}}/*" {
+  capabilities = ["create", "read"]
+}
+path "transit/decrypt/{{id}}/*" {
+  capabilities = ["create", "read"]
+}
+path "auth/token/renew-self" {
+  capabilities = ["update"]
+}
+path "auth/userpass/login/*" {
+  capabilities = ["create"]
+}`,
+    };
+    policyData.name = policyData.name.replace(/{{id}}/g, id);
+    policyData.policy = policyData.policy.replace(/{{id}}/g, id);
     try {
-      let policyData = fs.readFileSync(
-        `./src/services/example-user-policy.hcl`,
-        'utf-8',
-      );
-      policyData = policyData.replace('{{id}}', id);
       const response = await fetch(
-        `${this.vaultEndpoint}/v1/sys/policy/${id}`,
+        `${this.vaultEndpoint}/v1/sys/policy/acl/${id}`,
         {
           method: 'POST',
           headers: {
             'X-Vault-Token': this.rootToken,
           },
-          body: JSON.stringify({data: policyData}),
+          body: JSON.stringify(policyData),
         },
       );
       if (!response.ok) {
-        await this.emailService.sendError(String('Unable to create policy: ' + JSON.stringify(response, null, 2)));
+        await this.emailService.sendError(
+          String(
+            'Unable to create policy: ' + JSON.stringify(response, null, 2),
+          ),
+        );
         throw new HttpErrors.InternalServerError('Unable to create policy');
       }
     } catch (error) {
-      await this.emailService.sendError('Unable to create policy' + error);
+      await this.emailService.sendError('Unable to create policy: ' + error);
       throw new HttpErrors.InternalServerError('Unable to create policy');
     }
   }
@@ -141,7 +168,9 @@ export class VaultService {
         },
       );
       if (!response.ok) {
-        await this.emailService.sendError(String('Unable to create key: ' + JSON.stringify(response, null, 2)));
+        await this.emailService.sendError(
+          String('Unable to create key: ' + JSON.stringify(response, null, 2)),
+        );
         throw new HttpErrors.InternalServerError('Unable to create key');
       }
     } catch (error) {
@@ -150,7 +179,7 @@ export class VaultService {
     }
   }
 
-  async updatePassword(password: string, id: string): Promise<void> {
+  async updatePassword(id: string, password: string): Promise<void> {
     try {
       const data = {
         password: password,
@@ -166,7 +195,11 @@ export class VaultService {
         },
       );
       if (!response.ok) {
-        await this.emailService.sendError(String('Unable to update password: ' + JSON.stringify(response, null, 2)));
+        await this.emailService.sendError(
+          String(
+            'Unable to update password: ' + JSON.stringify(response, null, 2),
+          ),
+        );
         throw new HttpErrors.InternalServerError('Unable to update password');
       }
     } catch (error) {
@@ -187,7 +220,9 @@ export class VaultService {
         },
       );
       if (!response.ok) {
-        await this.emailService.sendError(String('Unable to delete user: ' + JSON.stringify(response, null, 2)));
+        await this.emailService.sendError(
+          String('Unable to delete user: ' + JSON.stringify(response, null, 2)),
+        );
         throw new HttpErrors.InternalServerError('Unable to delete user');
       }
     } catch (error) {
@@ -199,7 +234,7 @@ export class VaultService {
   async deleteUserPolicy(id: string): Promise<void> {
     try {
       const response = await fetch(
-        `${this.vaultEndpoint}/v1/sys/policy/${id}`,
+        `${this.vaultEndpoint}/v1/sys/policy/acl/${id}`,
         {
           method: 'DELETE',
           headers: {
@@ -208,7 +243,11 @@ export class VaultService {
         },
       );
       if (!response.ok) {
-        await this.emailService.sendError(String('Unable to delete policy: ' + JSON.stringify(response, null, 2)));
+        await this.emailService.sendError(
+          String(
+            'Unable to delete policy: ' + JSON.stringify(response, null, 2),
+          ),
+        );
         throw new HttpErrors.InternalServerError('Unable to delete policy');
       }
     } catch (error) {
@@ -229,7 +268,9 @@ export class VaultService {
         },
       );
       if (!response.ok) {
-        await this.emailService.sendError(String('Unable to delete key: ' + JSON.stringify(response, null, 2)));
+        await this.emailService.sendError(
+          String('Unable to delete key: ' + JSON.stringify(response, null, 2)),
+        );
         throw new HttpErrors.InternalServerError('Unable to delete key');
       }
     } catch (error) {

@@ -12,7 +12,7 @@ export class ImgurService {
   constructor(
     @inject('services.email')
     public emailService: EmailService,
-  ) { }
+  ) {}
 
   async savePicture(
     request: Request,
@@ -29,7 +29,9 @@ export class ImgurService {
       });
       const imgurData = await imgurResponse.json();
       if (!imgurData.success) {
-        await this.emailService.sendError('Error in save picture: ' + JSON.stringify(imgurData, null, 2));
+        await this.emailService.sendError(
+          'Error in save picture: ' + JSON.stringify(imgurData, null, 2),
+        );
         throw new HttpErrors.InternalServerError('Error in save picture');
       }
       return {link: imgurData.data.link, deletehash: imgurData.data.deletehash};
@@ -52,7 +54,9 @@ export class ImgurService {
       );
       const imgurData = await imgurResponse.json();
       if (!imgurData.success) {
-        await this.emailService.sendError('Error in delete picture: ' + JSON.stringify(imgurData, null, 2));
+        await this.emailService.sendError(
+          'Error in delete picture: ' + JSON.stringify(imgurData, null, 2),
+        );
         throw new HttpErrors.InternalServerError('Error in delete picture');
       }
       return true;
@@ -76,7 +80,9 @@ export class ImgurService {
         if (file.mimetype.startsWith('image/')) {
           cb(null, true);
         } else {
-          cb(new HttpErrors.UnprocessableEntity('Only image files are allowed'));
+          cb(
+            new HttpErrors.UnprocessableEntity('Only image files are allowed'),
+          );
         }
       },
     }).single('image');

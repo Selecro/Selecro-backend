@@ -1,7 +1,5 @@
 import {authenticate} from '@loopback/authentication';
-import {
-  JWTService
-} from '@loopback/authentication-jwt';
+import {JWTService} from '@loopback/authentication-jwt';
 import {inject} from '@loopback/context';
 import {repository} from '@loopback/repository';
 import {
@@ -11,14 +9,14 @@ import {
   param,
   patch,
   post,
-  requestBody
+  requestBody,
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import {Progress, ProgressRelations} from '../models';
 import {
   InstructionRepository,
   ProgressRepository,
-  UserRepository
+  UserRepository,
 } from '../repositories';
 
 export class UserProgressController {
@@ -32,7 +30,7 @@ export class UserProgressController {
     @repository(UserRepository) protected userRepository: UserRepository,
     @repository(UserRepository)
     protected progressRepository: ProgressRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/progresses/{progressId}', {

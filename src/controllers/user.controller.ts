@@ -63,7 +63,7 @@ export class UserController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserLinkRepository)
     public userLinkRepository: UserLinkRepository,
-  ) { }
+  ) {}
 
   @post('/login', {
     responses: {
@@ -139,36 +139,33 @@ export class UserController {
             properties: {
               token: {type: 'string'},
             },
-            required: [
-              'token',
-            ],
+            required: ['token'],
           },
         },
       },
     })
-    requestBody: {refreshToken: string},
+    requestBodyRefreshToken: {
+      refreshToken: string;
+    },
   ): Promise<TokenObject> {
     try {
-      const {refreshToken} = requestBody;
+      const {refreshToken} = requestBodyRefreshToken;
       if (!refreshToken) {
         throw new HttpErrors.Unauthorized(
           'Error verifying token: refresh token is null',
         );
       }
       const userRefreshData = await this.jwtService.verifyToken(refreshToken);
-      const user = await this.userRepository.findById(
-        userRefreshData.userId,
-      );
-      const userProfile: UserProfile = this.userService.convertToUserProfile(user);
+      const user = await this.userRepository.findById(userRefreshData.userId);
+      const userProfile: UserProfile =
+        this.userService.convertToUserProfile(user);
       const token = await this.jwtService.generateToken(userProfile);
       return {
         accessToken: token,
       };
     } catch (error) {
       await this.emailService.sendError('Error verifying token: ' + error);
-      throw new HttpErrors.Unauthorized(
-        'Error verifying token',
-      );
+      throw new HttpErrors.Unauthorized('Error verifying token');
     }
   }
 
@@ -182,6 +179,7 @@ export class UserController {
               type: 'object',
               properties: {
                 token: {type: 'string'},
+                userId: {type: 'string'},
               },
             },
           },
@@ -218,7 +216,7 @@ export class UserController {
       },
     })
     credentials: UserCredentials,
-  ): Promise<{token: string, userId: string}> {
+  ): Promise<{token: string; userId: string}> {
     validateCredentials(
       _.pick(credentials, ['email', 'password0', 'password1', 'username']),
     );
@@ -246,10 +244,7 @@ export class UserController {
     });
     const dbUser = await this.userRepository.create(newUser);
     await this.vaultService.createUserPolicy(dbUser.id);
-    await this.vaultService.createUser(
-      dbUser.id,
-      credentials.password0,
-    );
+    await this.vaultService.createUser(dbUser.id, credentials.password0);
     await this.vaultService.createUserKey(dbUser.id);
     await this.emailService.sendRegistrationEmail(dbUser);
     const secret = process.env.JWT_SECRET_SIGNUP ?? '';
@@ -317,7 +312,9 @@ export class UserController {
       });
       return true;
     } catch (error) {
-      await this.emailService.sendError('Failed to update user email verification status: ' + error);
+      await this.emailService.sendError(
+        'Failed to update user email verification status: ' + error,
+      );
       if (error.name === 'TokenExpiredError') {
         throw new HttpErrors.UnprocessableEntity(
           'Verification token has expired',
@@ -381,7 +378,9 @@ export class UserController {
       await this.userRepository.updateById(user.id, {emailVerified: true});
       return true;
     } catch (error) {
-      await this.emailService.sendError('Failed to update user email verification status: ' + error);
+      await this.emailService.sendError(
+        'Failed to update user email verification status: ' + error,
+      );
       if (error.name === 'TokenExpiredError') {
         throw new HttpErrors.UnprocessableEntity(
           'Verification token has expired',
@@ -493,16 +492,15 @@ export class UserController {
         throw new HttpErrors.UnprocessableEntity('Passwords are not matching');
       }
       await this.emailService.sendSuccessfulyPasswordChange(user);
-      await this.vaultService.updatePassword(
-        user.id,
-        request.password0,
-      );
+      await this.vaultService.updatePassword(user.id, request.password0);
       await this.userRepository.updateById(user.id, {
         passwordHash: await this.hasher.hashPassword(request.password0),
       });
       return true;
     } catch (error) {
-      await this.emailService.sendError('Failed to update user email verification status: ' + error);
+      await this.emailService.sendError(
+        'Failed to update user email verification status: ' + error,
+      );
       if (error.name === 'TokenExpiredError') {
         throw new HttpErrors.UnprocessableEntity(
           'Verification token has expired',
@@ -550,12 +548,7 @@ export class UserController {
       },
     },
   })
-  async getUser(): Promise<
-    Omit<
-      User,
-      'passwordHash' | 'deleteHash'
-    >
-  > {
+  async getUser(): Promise<Omit<User, 'passwordHash' | 'deleteHash'>> {
     const user = await this.userRepository.findById(this.user.id, {
       fields: {
         passwordHash: false,
@@ -899,9 +892,7 @@ export class UserController {
       },
     },
   })
-  async getUserDetail(
-    @param.path.string('userId') userId: string,
-  ): Promise<{
+  async getUserDetail(@param.path.string('userId') userId: string): Promise<{
     user: Omit<
       User,
       | 'email'
