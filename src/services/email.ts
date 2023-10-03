@@ -10,7 +10,7 @@ dotenv.config();
 export class EmailService {
   constructor() {}
 
-  public generateVerificationToken(userId: number): string {
+  private generateVerificationToken(userId: string): string {
     const secret = process.env.JWT_SECRET_EMAIL ?? '';
     const token = jwt.sign({userId}, secret, {
       expiresIn: '1h',
@@ -87,6 +87,15 @@ export class EmailService {
       to: user.email,
       subject: 'Selecro: Successfuly changed password',
       html: body,
+    });
+  }
+
+  async sendError(error: string): Promise<void> {
+    await EmailDataSource.sendMail({
+      from: process.env.EMAIL_USER,
+      to: 'error@selecro.cz',
+      subject: 'Selecro: error',
+      html: error,
     });
   }
 }

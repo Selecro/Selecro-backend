@@ -5,8 +5,9 @@ import {Entity, model, property} from '@loopback/repository';
 })
 export class Progress extends Entity {
   @property({
+    type: 'string',
     id: true,
-    generated: true,
+    defaultFn: 'uuidv4',
     postgresql: {
       columnName: 'id',
       dataLength: null,
@@ -15,49 +16,49 @@ export class Progress extends Entity {
       nullable: 'NO',
     },
   })
-  id: number;
+  id: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
     postgresql: {
       columnName: 'instruction_id',
-      dataType: 'integer',
+      dataType: 'text',
       dataLength: null,
       dataPrecision: null,
       dataScale: null,
       nullable: 'NO',
     },
   })
-  instructionId: number;
+  instructionId: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
     postgresql: {
       columnName: 'step_id',
-      dataType: 'integer',
+      dataType: 'text',
       dataLength: null,
       dataPrecision: null,
       dataScale: null,
       nullable: 'NO',
     },
   })
-  stepId: number;
+  stepId: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
     postgresql: {
       columnName: 'description_id',
-      dataType: 'integer',
+      dataType: 'text',
       dataLength: null,
       dataPrecision: null,
       dataScale: null,
       nullable: 'NO',
     },
   })
-  descriptionId: number;
+  descriptionId: string;
 
   @property({
     type: 'number',
@@ -74,9 +75,9 @@ export class Progress extends Entity {
   time: number;
 
   @property({
-    type: 'number',
+    type: 'string',
   })
-  userId: number;
+  userId: string;
 
   constructor(data?: Partial<Progress>) {
     super(data);

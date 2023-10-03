@@ -31,7 +31,7 @@ export class InstructionStepController {
     @repository(InstructionRepository)
     public instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}/steps/{stepId}', {
@@ -49,7 +49,7 @@ export class InstructionStepController {
     },
   })
   async createStep(
-    @param.path.number('instructionId') instructionId: number,
+    @param.path.string('instructionId') instructionId: string,
     @requestBody({
       content: {
         'application/json': {
@@ -111,8 +111,8 @@ export class InstructionStepController {
     },
   })
   async patchStep(
-    @param.path.number('instructionId') instructionId: number,
-    @param.path.number('stepId') stepId: number,
+    @param.path.string('instructionId') instructionId: string,
+    @param.path.string('stepId') stepId: string,
     @requestBody({
       content: {
         'application/json': {
@@ -175,8 +175,8 @@ export class InstructionStepController {
     },
   })
   async deleteStep(
-    @param.path.number('instructionId') instructionId: number,
-    @param.path.number('stepId') stepId: number,
+    @param.path.string('instructionId') instructionId: string,
+    @param.path.string('stepId') stepId: string,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
@@ -213,7 +213,7 @@ export class InstructionStepController {
                 steps: {
                   type: 'object',
                   items: {
-                    id: {type: 'number'},
+                    id: {type: 'string'},
                     titleCz: {type: 'string'},
                     titleEn: {type: 'string'},
                     descriptionCz: {
@@ -240,7 +240,7 @@ export class InstructionStepController {
     },
   })
   async getSteps(
-    @param.path.number('instructionId') instructionId: number,
+    @param.path.string('instructionId') instructionId: string,
   ): Promise<Omit<Step, 'deleteHash'>[]> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
@@ -275,8 +275,8 @@ export class InstructionStepController {
     },
   })
   async uploadStepsPicture(
-    @param.path.number('instructionId') instructionId: number,
-    @param.path.number('stepId') stepId: number,
+    @param.path.string('instructionId') instructionId: string,
+    @param.path.string('stepId') stepId: string,
     @requestBody({
       content: {
         'multipart/form-data': {
@@ -336,8 +336,8 @@ export class InstructionStepController {
     },
   })
   async deleteStepPicture(
-    @param.path.number('instructionId') instructionId: number,
-    @param.path.number('stepId') stepId: number,
+    @param.path.string('instructionId') instructionId: string,
+    @param.path.string('stepId') stepId: string,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
@@ -378,7 +378,7 @@ export class InstructionStepController {
                 steps: {
                   type: 'object',
                   items: {
-                    id: {type: 'number'},
+                    id: {type: 'string'},
                     titleCz: {type: 'string'},
                     titleEn: {type: 'string'},
                     descriptionCz: {
@@ -394,7 +394,7 @@ export class InstructionStepController {
                       },
                     },
                     link: {type: 'string'},
-                    instructionId: {type: 'number'},
+                    instructionId: {type: 'string'},
                   },
                 },
               },
@@ -405,7 +405,7 @@ export class InstructionStepController {
     },
   })
   async getPremiumInstructionDetail(
-    @param.path.number('instructionId') instructionId: number,
+    @param.path.string('instructionId') instructionId: string,
   ): Promise<Omit<Step, 'deleteHash'>[]> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
@@ -438,7 +438,7 @@ export class InstructionStepController {
   }
 
   private validateInstructionOwnership(instruction: Instruction): void {
-    if (Number(instruction.userId) !== Number(this.user.id)) {
+    if (instruction.userId !== this.user.id) {
       throw new HttpErrors.Forbidden(
         'You are not authorized to this instruction',
       );
@@ -446,7 +446,7 @@ export class InstructionStepController {
   }
 
   private validateStepOwnership(step: Step, instruction: Instruction): void {
-    if (Number(step.instructionId) !== Number(instruction.id)) {
+    if (step.instructionId !== instruction.id) {
       throw new HttpErrors.Forbidden(
         'You are not authorized to this instruction',
       );

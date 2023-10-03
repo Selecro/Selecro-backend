@@ -41,7 +41,7 @@ export class UserInstructionController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserRepository)
     protected progressRepository: ProgressRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}', {
@@ -125,7 +125,7 @@ export class UserInstructionController {
     },
   })
   async patchInstruction(
-    @param.path.number('instructionId') instructionId: number,
+    @param.path.string('instructionId') instructionId: string,
     @requestBody({
       content: {
         'application/json': {
@@ -182,7 +182,7 @@ export class UserInstructionController {
     },
   })
   async deleteInstruction(
-    @param.path.number('instructionId') instructionId: number,
+    @param.path.string('instructionId') instructionId: string,
   ): Promise<boolean> {
     const userOriginal = await this.userRepository.findById(this.user.id);
     if (!userOriginal) {
@@ -240,7 +240,7 @@ export class UserInstructionController {
                 instructions: {
                   type: 'object',
                   items: {
-                    id: {type: 'number'},
+                    id: {type: 'string'},
                     titleCz: {type: 'string'},
                     titleEn: {type: 'string'},
                     difficulty: {enum: Object.values(Difficulty)},
@@ -252,7 +252,7 @@ export class UserInstructionController {
                     steps: {
                       type: 'object',
                       items: {
-                        id: {type: 'number'},
+                        id: {type: 'string'},
                         titleCz: {type: 'string'},
                         titleEn: {type: 'string'},
                         descriptionCz: {
@@ -330,7 +330,7 @@ export class UserInstructionController {
     },
   })
   async uploadInstructionPicture(
-    @param.path.number('instructionId') instructionId: number,
+    @param.path.string('instructionId') instructionId: string,
     @requestBody({
       content: {
         'multipart/form-data': {
@@ -385,7 +385,7 @@ export class UserInstructionController {
     },
   })
   async deleteInstructionPicture(
-    @param.path.number('instructionId') instructionId: number,
+    @param.path.string('instructionId') instructionId: string,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
@@ -424,7 +424,7 @@ export class UserInstructionController {
     },
   })
   async setPremiumInstruction(
-    @param.path.number('instructionId') instructionId: number,
+    @param.path.string('instructionId') instructionId: string,
     @requestBody({
       content: {
         'application/json': {
@@ -495,8 +495,8 @@ export class UserInstructionController {
     },
   })
   async authorizeUserToPremiumInstruction(
-    @param.path.number('instructionId') instructionId: number,
-    @param.path.number('userId') userId: number,
+    @param.path.string('instructionId') instructionId: string,
+    @param.path.string('userId') userId: string,
     @requestBody({
       content: {
         'application/json': {
@@ -553,7 +553,7 @@ export class UserInstructionController {
                 instructions: {
                   type: 'object',
                   items: {
-                    id: {type: 'number'},
+                    id: {type: 'string'},
                     titleCz: {type: 'string'},
                     titleEn: {type: 'string'},
                     difficulty: {enum: Object.values(Difficulty)},
@@ -561,11 +561,11 @@ export class UserInstructionController {
                     private: {type: 'boolean'},
                     premium: {type: 'boolean'},
                     date: {type: 'string'},
-                    userId: {type: 'number'},
+                    userId: {type: 'string'},
                     steps: {
                       type: 'object',
                       items: {
-                        id: {type: 'number'},
+                        id: {type: 'string'},
                         titleCz: {type: 'string'},
                         titleEn: {type: 'string'},
                         descriptionCz: {
@@ -668,7 +668,7 @@ export class UserInstructionController {
                 instructions: {
                   type: 'object',
                   items: {
-                    id: {type: 'number'},
+                    id: {type: 'string'},
                     titleCz: {type: 'string'},
                     titleEn: {type: 'string'},
                     difficulty: {enum: Object.values(Difficulty)},
@@ -676,7 +676,7 @@ export class UserInstructionController {
                     private: {type: 'boolean'},
                     premium: {type: 'boolean'},
                     date: {type: 'string'},
-                    userId: {type: 'number'},
+                    userId: {type: 'string'},
                   },
                 },
               },
@@ -706,7 +706,7 @@ export class UserInstructionController {
   }
 
   private validateInstructionOwnership(instruction: Instruction): void {
-    if (Number(instruction.userId) !== Number(this.user.id)) {
+    if (instruction.userId !== this.user.id) {
       throw new HttpErrors.Forbidden(
         'You are not authorized to this instruction',
       );

@@ -1,7 +1,5 @@
 import {authenticate} from '@loopback/authentication';
-import {
-  JWTService
-} from '@loopback/authentication-jwt';
+import {JWTService} from '@loopback/authentication-jwt';
 import {inject} from '@loopback/context';
 import {repository} from '@loopback/repository';
 import {
@@ -11,14 +9,14 @@ import {
   param,
   patch,
   post,
-  requestBody
+  requestBody,
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import {Progress, ProgressRelations} from '../models';
 import {
   InstructionRepository,
   ProgressRepository,
-  UserRepository
+  UserRepository,
 } from '../repositories';
 
 export class UserProgressController {
@@ -32,7 +30,7 @@ export class UserProgressController {
     @repository(UserRepository) protected userRepository: UserRepository,
     @repository(UserRepository)
     protected progressRepository: ProgressRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/progresses/{progressId}', {
@@ -56,9 +54,9 @@ export class UserProgressController {
           schema: {
             type: 'object',
             properties: {
-              instructionId: {type: 'number'},
-              stepId: {type: 'number'},
-              descriptionId: {type: 'number'},
+              instructionId: {type: 'string'},
+              stepId: {type: 'string'},
+              descriptionId: {type: 'string'},
               time: {type: 'number'},
             },
             required: ['instructionId', 'stepId', 'descriptionId', 'time'],
@@ -106,15 +104,15 @@ export class UserProgressController {
     },
   })
   async patchProgress(
-    @param.path.number('instructionId') instructionId: number,
+    @param.path.string('instructionId') instructionId: string,
     @requestBody({
       content: {
         'application/json': {
           schema: {
             type: 'object',
             properties: {
-              stepId: {type: 'number'},
-              descriptionId: {type: 'number'},
+              stepId: {type: 'string'},
+              descriptionId: {type: 'string'},
               time: {type: 'number'},
             },
           },
@@ -157,7 +155,7 @@ export class UserProgressController {
     },
   })
   async deleteProgress(
-    @param.path.number('instructionId') instructionId: number,
+    @param.path.string('instructionId') instructionId: string,
   ): Promise<boolean> {
     const userOriginal = await this.userRepository.findById(this.user.id);
     if (!userOriginal) {
@@ -187,11 +185,11 @@ export class UserProgressController {
             schema: {
               type: 'object',
               properties: {
-                id: {type: 'number'},
-                instructionId: {type: 'number'},
-                stepId: {type: 'number'},
-                descriptionId: {type: 'number'},
-                userId: {type: 'number'},
+                id: {type: 'string'},
+                instructionId: {type: 'string'},
+                stepId: {type: 'string'},
+                descriptionId: {type: 'string'},
+                userId: {type: 'string'},
               },
             },
           },
@@ -200,7 +198,7 @@ export class UserProgressController {
     },
   })
   async getProgress(
-    @param.path.number('instructionId') instructionId: number,
+    @param.path.string('instructionId') instructionId: string,
   ): Promise<Progress & ProgressRelations> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
@@ -219,7 +217,7 @@ export class UserProgressController {
   }
 
   private validateProgressOwnership(progress: Progress): void {
-    if (Number(progress.userId) !== Number(this.user.id)) {
+    if (progress.userId !== this.user.id) {
       throw new HttpErrors.Forbidden('You are not authorized to this progress');
     }
   }

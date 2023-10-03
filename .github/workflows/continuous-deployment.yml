@@ -101,7 +101,6 @@ jobs:
             -e EMAIL_USER="${{ secrets.EMAIL_USER }}" \
             -e EMAIL_PASSWORD="${{ secrets.EMAIL_PASSWORD }}" \
             -e VAULT_URL="${{ secrets.VAULT_URL }}" \
-            -e VAULT_URL="${{ secrets.VAULT_URL }}" \
             -e VAULT_PORT="${{ env.VAULT_PORT }}" \
             -e UNSEAL_KEY_1="${{ env.UNSEAL_KEY_1 }}" \
             -e UNSEAL_KEY_2="${{ env.UNSEAL_KEY_2 }}" \

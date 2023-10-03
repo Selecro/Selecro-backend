@@ -10,9 +10,8 @@ import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {UserProfile, securityId} from '@loopback/security';
 import {promisify} from 'util';
-import {
-  UserRepository
-} from '../repositories';
+import {EmailService} from '.';
+import {UserRepository} from '../repositories';
 import {MyUserService} from './user-service';
 
 const jwt = require('jsonwebtoken');
@@ -25,10 +24,12 @@ export class JWTService implements TokenService {
     private jwtSecret: string,
     @inject('authentication.jwt.expiresIn')
     private jwtExpiresIn: string,
+    @inject('services.email')
+    public emailService: EmailService,
     @inject('services.user.service')
     public userService: MyUserService,
     @repository(UserRepository) protected userRepository: UserRepository,
-  ) { }
+  ) {}
 
   async verifyToken(token: string): Promise<UserProfile> {
     if (!token) {
@@ -50,9 +51,8 @@ export class JWTService implements TokenService {
         },
       );
     } catch (error) {
-      throw new HttpErrors.Unauthorized(
-        `Error verifying token : ${error.message}`,
-      );
+      await this.emailService.sendError('Error verifying token:' + error);
+      throw new HttpErrors.Unauthorized(`Error verifying token`);
     }
     return userProfile;
   }
@@ -75,7 +75,8 @@ export class JWTService implements TokenService {
         expiresIn: this.jwtExpiresIn,
       });
     } catch (error) {
-      throw new HttpErrors.Unauthorized(`Error encoding token : ${error}`);
+      await this.emailService.sendError('Error encoding token:' + error);
+      throw new HttpErrors.Unauthorized(`Error encoding token`);
     }
     return token;
   }
@@ -99,9 +100,8 @@ export class JWTService implements TokenService {
         accessToken: token,
       };
     } catch (error) {
-      throw new HttpErrors.Unauthorized(
-        `Error verifying token : ${error.message}`,
-      );
+      await this.emailService.sendError(`Error verifying token: ` + error);
+      throw new HttpErrors.Unauthorized(`Error verifying token`);
     }
   }
 }
