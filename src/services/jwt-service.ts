@@ -11,9 +11,7 @@ import {HttpErrors} from '@loopback/rest';
 import {UserProfile, securityId} from '@loopback/security';
 import {promisify} from 'util';
 import {EmailService} from '.';
-import {
-  UserRepository
-} from '../repositories';
+import {UserRepository} from '../repositories';
 import {MyUserService} from './user-service';
 
 const jwt = require('jsonwebtoken');
@@ -31,7 +29,7 @@ export class JWTService implements TokenService {
     @inject('services.user.service')
     public userService: MyUserService,
     @repository(UserRepository) protected userRepository: UserRepository,
-  ) { }
+  ) {}
 
   async verifyToken(token: string): Promise<UserProfile> {
     if (!token) {
@@ -54,9 +52,7 @@ export class JWTService implements TokenService {
       );
     } catch (error) {
       await this.emailService.sendError('Error verifying token:' + error);
-      throw new HttpErrors.Unauthorized(
-        `Error verifying token`,
-      );
+      throw new HttpErrors.Unauthorized(`Error verifying token`);
     }
     return userProfile;
   }
@@ -105,9 +101,7 @@ export class JWTService implements TokenService {
       };
     } catch (error) {
       await this.emailService.sendError(`Error verifying token: ` + error);
-      throw new HttpErrors.Unauthorized(
-        `Error verifying token`,
-      );
+      throw new HttpErrors.Unauthorized(`Error verifying token`);
     }
   }
 }
