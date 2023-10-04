@@ -63,7 +63,7 @@ export class UserController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserLinkRepository)
     public userLinkRepository: UserLinkRepository,
-  ) {}
+  ) { }
 
   @post('/login', {
     responses: {
@@ -312,9 +312,6 @@ export class UserController {
       });
       return true;
     } catch (error) {
-      await this.emailService.sendError(
-        'Failed to update user email verification status: ' + error,
-      );
       if (error.name === 'TokenExpiredError') {
         throw new HttpErrors.UnprocessableEntity(
           'Verification token has expired',
@@ -322,8 +319,11 @@ export class UserController {
       } else if (error.name === 'JsonWebTokenError') {
         throw new HttpErrors.UnprocessableEntity('Invalid verification token');
       } else {
+        await this.emailService.sendError(
+          'Failed to save wrapped DEK: ' + error,
+        );
         throw new HttpErrors.UnprocessableEntity(
-          'Failed to update user email verification status',
+          'Failed to save wrapped DEK',
         );
       }
     }
@@ -378,9 +378,6 @@ export class UserController {
       await this.userRepository.updateById(user.id, {emailVerified: true});
       return true;
     } catch (error) {
-      await this.emailService.sendError(
-        'Failed to update user email verification status: ' + error,
-      );
       if (error.name === 'TokenExpiredError') {
         throw new HttpErrors.UnprocessableEntity(
           'Verification token has expired',
@@ -388,6 +385,9 @@ export class UserController {
       } else if (error.name === 'JsonWebTokenError') {
         throw new HttpErrors.UnprocessableEntity('Invalid verification token');
       } else {
+        await this.emailService.sendError(
+          'Failed to update user email verification status: ' + error,
+        );
         throw new HttpErrors.UnprocessableEntity(
           'Failed to update user email verification status',
         );
@@ -498,9 +498,6 @@ export class UserController {
       });
       return true;
     } catch (error) {
-      await this.emailService.sendError(
-        'Failed to update user email verification status: ' + error,
-      );
       if (error.name === 'TokenExpiredError') {
         throw new HttpErrors.UnprocessableEntity(
           'Verification token has expired',
@@ -508,6 +505,9 @@ export class UserController {
       } else if (error.name === 'JsonWebTokenError') {
         throw new HttpErrors.UnprocessableEntity('Invalid verification token');
       } else {
+        await this.emailService.sendError(
+          'Failed to update user password: ' + error,
+        );
         throw new HttpErrors.UnprocessableEntity('Failed to change password');
       }
     }
