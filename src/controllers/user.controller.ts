@@ -107,7 +107,7 @@ export class UserController {
       where: {or: [{email: credentials.email}, {username: credentials.email}]},
     });
     if (!existingUser?.emailVerified) {
-      throw new HttpErrors.UnprocessableEntity('email is not verified');
+      throw new HttpErrors.UnprocessableEntity('Email is not verified');
     }
     const token = await this.jwtService.generateToken(userProfile);
     return token;
@@ -433,7 +433,7 @@ export class UserController {
       },
     });
     if (!user) {
-      throw new HttpErrors.UnprocessableEntity('email not recognized');
+      return true;
     }
     await this.emailService.sendPasswordChange(user);
     return true;
@@ -608,7 +608,7 @@ export class UserController {
     }
     if (user.email && user.email !== user.email) {
       if (!isEmail.validate(user.email)) {
-        throw new HttpErrors.UnprocessableEntity('invalid email');
+        throw new HttpErrors.UnprocessableEntity('Invalid email');
       }
       await this.emailService.sendResetEmail(userOriginal, user.email);
       await this.userRepository.updateById(this.user.id, {
