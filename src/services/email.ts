@@ -8,7 +8,16 @@ dotenv.config();
 
 @bind({scope: BindingScope.TRANSIENT})
 export class EmailService {
+  readonly domain: string =
+    process.env.DEFAULT_PORT === '3002'
+      ? 'https://develop.selecro.cz'
+      : 'https://selecro.cz';
+
   constructor() {}
+
+  xdd() {
+    console.log(this.domain);
+  }
 
   private generateVerificationToken(userId: string): string {
     const secret = process.env.JWT_SECRET_EMAIL ?? '';
@@ -21,7 +30,7 @@ export class EmailService {
 
   async sendRegistrationEmail(user: User): Promise<void> {
     const token = this.generateVerificationToken(user.id);
-    const url = `https://selecro.cz/verification?token=${token}`;
+    const url = `${this.domain}/verification?token=${token}`;
     let body = fs.readFileSync(
       `./src/html/registration${user.language}.html`,
       'utf-8',
@@ -37,7 +46,7 @@ export class EmailService {
 
   async sendResetEmail(user: User, email: string | undefined): Promise<void> {
     const token = this.generateVerificationToken(user.id);
-    const url = `https://selecro.cz/verication?token=${token}`;
+    const url = `${this.domain}/verication?token=${token}`;
     let body0 = fs.readFileSync(
       `./src/html/verification${user.language}.html`,
       'utf-8',
@@ -63,7 +72,7 @@ export class EmailService {
 
   async sendPasswordChange(user: User): Promise<void> {
     const token = this.generateVerificationToken(user.id);
-    const url = `https://selecro.cz/passwdchange?token=${token}`;
+    const url = `${this.domain}/passwdchange?token=${token}`;
     let body = fs.readFileSync(
       `./src/html/passwordChange${user.language}.html`,
       'utf-8',
