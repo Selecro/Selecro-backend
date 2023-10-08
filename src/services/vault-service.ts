@@ -89,7 +89,7 @@ export class VaultService {
     try {
       const data = {
         password: password,
-        policies: [String(id)],
+        policies: ['acl/' + id],
       };
       const response = await fetch(
         `${this.vaultEndpoint}/v1/auth/userpass/users/${id}`,
