@@ -227,7 +227,7 @@ export class UserController {
     });
     if (existingUser) {
       throw new HttpErrors.BadRequest(
-        'User with this email or username already exists.',
+        'User with this email or username already exists',
       );
     }
     const hashedPassword = await this.hasher.hashPassword(
