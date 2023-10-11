@@ -89,7 +89,7 @@ export class VaultService {
     try {
       const data = {
         password: password,
-        policies: [String(id)],
+        policies: [`acl/${id}`],
       };
       const response = await fetch(
         `${this.vaultEndpoint}/v1/auth/userpass/users/${id}`,
@@ -116,11 +116,11 @@ export class VaultService {
   async createUserPolicy(id: string): Promise<void> {
     const policyData = {
       name: '{{id}}',
-      policy: `path "transit/encrypt/{{id}}/*" {
-  capabilities = ["create", "read"]
+      policy: `path "transit/encrypt/{{id}}" {
+  capabilities = ["update"]
 }
-path "transit/decrypt/{{id}}/*" {
-  capabilities = ["create", "read"]
+path "transit/decrypt/{{id}}" {
+  capabilities = ["update"]
 }
 path "auth/token/renew-self" {
   capabilities = ["update"]

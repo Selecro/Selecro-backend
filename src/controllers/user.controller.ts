@@ -100,7 +100,7 @@ export class UserController {
       },
     })
     credentials: Credentials,
-  ): Promise<string> {
+  ): Promise<{token: string}> {
     const user = await this.userService.verifyCredentials(credentials);
     const userProfile = this.userService.convertToUserProfile(user);
     const existingUser = await this.userRepository.findOne({
@@ -110,7 +110,9 @@ export class UserController {
       throw new HttpErrors.UnprocessableEntity('Email is not verified');
     }
     const token = await this.jwtService.generateToken(userProfile);
-    return token;
+    return {
+      token: token
+    };
   }
 
   @post('/refresh-token', {
@@ -227,7 +229,7 @@ export class UserController {
     });
     if (existingUser) {
       throw new HttpErrors.BadRequest(
-        'User with this email or username already exists.',
+        'User with this email or username already exists',
       );
     }
     const hashedPassword = await this.hasher.hashPassword(
