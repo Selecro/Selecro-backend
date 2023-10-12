@@ -201,6 +201,7 @@ export class UserController {
               password0: {type: 'string'},
               password1: {type: 'string'},
               language: {enum: Object.values(Language)},
+              darkmode: {type: 'boolean'},
               kekSalt: {type: 'string'},
               initializationVector: {type: 'string'},
             },
@@ -210,6 +211,7 @@ export class UserController {
               'password0',
               'password1',
               'language',
+              'darkmode',
               'kekSalt',
               'initializationVector',
             ],
@@ -243,6 +245,7 @@ export class UserController {
       kekSalt: credentials.kekSalt,
       initializationVector: credentials.initializationVector,
       language: credentials.language,
+      darkmode: credentials.darkmode,
     });
     const dbUser = await this.userRepository.create(newUser);
     await this.vaultService.createUserPolicy(dbUser.id);
