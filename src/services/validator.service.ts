@@ -10,22 +10,22 @@ export function validateCredentials(credentials: {
   username: string;
 }) {
   if (!isEmail.validate(credentials.email)) {
-    throw new HttpErrors.UnprocessableEntity('invalid Email');
+    throw new HttpErrors.UnprocessableEntity('Invalid Email');
   }
 
   if (credentials.password0 !== credentials.password1) {
-    throw new HttpErrors.UnprocessableEntity('passwords do not match');
+    throw new HttpErrors.UnprocessableEntity('Passwords do not match');
   }
 
   if (credentials.password0.length <= 8 && credentials.password1.length <= 8) {
     throw new HttpErrors.UnprocessableEntity(
-      'password length should be greater than 8',
+      'Password length should be greater than 8',
     );
   }
 
   if (credentials.username.length <= 4) {
     throw new HttpErrors.UnprocessableEntity(
-      'username length should be greater than 4',
+      'Username length should be greater than 4',
     );
   }
 }
