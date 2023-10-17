@@ -14,7 +14,7 @@ export class MyUserService implements UserService<User, Credentials> {
     public userRepository: UserRepository,
     @inject('services.hasher')
     public hasher: BcryptHasher,
-  ) {}
+  ) { }
 
   async verifyCredentials(credentials: Credentials): Promise<User> {
     const foundUser0 = await this.userRepository.findOne({
@@ -29,26 +29,26 @@ export class MyUserService implements UserService<User, Credentials> {
     });
     if (credentials.email.includes('@')) {
       if (!foundUser0) {
-        throw new HttpErrors.NotFound(`user not found`);
+        throw new HttpErrors.NotFound(`User not found`);
       }
       const passwordMatched = await this.hasher.comparePassword(
         credentials.password,
         foundUser0.passwordHash,
       );
       if (!passwordMatched) {
-        throw new HttpErrors.Unauthorized('password is not valid');
+        throw new HttpErrors.Unauthorized('Password is not valid');
       }
       return foundUser0;
     } else {
       if (!foundUser1) {
-        throw new HttpErrors.NotFound(`user not found`);
+        throw new HttpErrors.NotFound(`User not found`);
       }
       const passwordMatched = await this.hasher.comparePassword(
         credentials.password,
         foundUser1.passwordHash,
       );
       if (!passwordMatched) {
-        throw new HttpErrors.Unauthorized('password is not valid');
+        throw new HttpErrors.Unauthorized('Password is not valid');
       }
       return foundUser1;
     }
