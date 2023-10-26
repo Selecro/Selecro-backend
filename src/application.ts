@@ -1,5 +1,5 @@
 import {AuthenticationComponent} from '@loopback/authentication';
-import {JWTAuthenticationComponent} from '@loopback/authentication-jwt';
+import {JWTAuthenticationComponent, JWTService} from '@loopback/authentication-jwt';
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
@@ -31,7 +31,6 @@ import {MySequence} from './sequence';
 import {ImgurService, MyUserService, VaultService} from './services';
 import {EmailService} from './services/email';
 import {BcryptHasher} from './services/hash.password';
-import {JWTService} from './services/jwt-service';
 dotenv.config();
 
 export {ApplicationConfig};

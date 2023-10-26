@@ -1,5 +1,8 @@
 import {authenticate} from '@loopback/authentication';
-import {inject} from '@loopback/core';
+import {
+  JWTService
+} from '@loopback/authentication-jwt';
+import {inject} from '@loopback/context';
 import {repository} from '@loopback/repository';
 import {
   HttpErrors,
@@ -20,9 +23,12 @@ import {
   InstructionRepository,
   ProgressRepository,
   StepRepository,
-  UserRepository,
+  UserRepository
 } from '../repositories';
-import {BcryptHasher, ImgurService, JWTService} from '../services';
+import {
+  BcryptHasher,
+  ImgurService
+} from '../services';
 dotenv.config();
 
 export class UserInstructionController {
@@ -41,7 +47,7 @@ export class UserInstructionController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserRepository)
     protected progressRepository: ProgressRepository,
-  ) {}
+  ) { }
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}', {
@@ -86,7 +92,7 @@ export class UserInstructionController {
       Instruction,
       'id' | 'userId' | 'date' | 'link' | 'deleteHash'
     >,
-    key?: string,
+    @param.query.string('key') key: string | undefined,
   ): Promise<Instruction> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
@@ -558,7 +564,6 @@ export class UserInstructionController {
                     titleEn: {type: 'string'},
                     difficulty: {enum: Object.values(Difficulty)},
                     link: {type: 'string'},
-                    private: {type: 'boolean'},
                     premium: {type: 'boolean'},
                     date: {type: 'string'},
                     userId: {type: 'string'},
@@ -621,6 +626,7 @@ export class UserInstructionController {
         },
       ],
       fields: {
+        private: false,
         deleteHash: false,
         premiumUserIds: false,
       },
@@ -673,7 +679,6 @@ export class UserInstructionController {
                     titleEn: {type: 'string'},
                     difficulty: {enum: Object.values(Difficulty)},
                     link: {type: 'string'},
-                    private: {type: 'boolean'},
                     premium: {type: 'boolean'},
                     date: {type: 'string'},
                     userId: {type: 'string'},
@@ -696,6 +701,7 @@ export class UserInstructionController {
         premium: true,
       },
       fields: {
+        private: false,
         deleteHash: false,
         premiumUserIds: false,
       },
