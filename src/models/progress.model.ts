@@ -33,18 +33,18 @@ export class Progress extends Entity {
   instructionId: string;
 
   @property({
-    type: 'string',
+    type: 'number',
     required: true,
     postgresql: {
       columnName: 'step_id',
-      dataType: 'text',
+      dataType: 'integer',
       dataLength: null,
       dataPrecision: null,
       dataScale: null,
       nullable: 'NO',
     },
   })
-  stepId: string;
+  stepId: number;
 
   @property({
     type: 'string',

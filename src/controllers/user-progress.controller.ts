@@ -30,7 +30,7 @@ export class UserProgressController {
     @repository(UserRepository) protected userRepository: UserRepository,
     @repository(UserRepository)
     protected progressRepository: ProgressRepository,
-  ) {}
+  ) { }
 
   @authenticate('jwt')
   @post('/users/{id}/progresses/{progressId}', {
@@ -49,13 +49,15 @@ export class UserProgressController {
   })
   async createProgress(
     @requestBody({
+      description: 'Create Progress of Instruction',
+      required: true,
       content: {
         'application/json': {
           schema: {
             type: 'object',
             properties: {
               instructionId: {type: 'string'},
-              stepId: {type: 'string'},
+              stepId: {type: 'number'},
               descriptionId: {type: 'string'},
               time: {type: 'number'},
             },
@@ -106,12 +108,14 @@ export class UserProgressController {
   async patchProgress(
     @param.path.string('instructionId') instructionId: string,
     @requestBody({
+      description: 'Update Progressof Instruction',
+      required: true,
       content: {
         'application/json': {
           schema: {
             type: 'object',
             properties: {
-              stepId: {type: 'string'},
+              stepId: {type: 'number'},
               descriptionId: {type: 'string'},
               time: {type: 'number'},
             },
@@ -187,7 +191,7 @@ export class UserProgressController {
               properties: {
                 id: {type: 'string'},
                 instructionId: {type: 'string'},
-                stepId: {type: 'string'},
+                stepId: {type: 'number'},
                 descriptionId: {type: 'string'},
                 userId: {type: 'string'},
               },

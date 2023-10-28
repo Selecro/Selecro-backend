@@ -31,7 +31,7 @@ export class InstructionStepController {
     @repository(InstructionRepository)
     public instructionRepository: InstructionRepository,
     @repository(StepRepository) public stepRepository: StepRepository,
-  ) {}
+  ) { }
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}/steps/{stepId}', {
@@ -51,6 +51,8 @@ export class InstructionStepController {
   async createStep(
     @param.path.string('instructionId') instructionId: string,
     @requestBody({
+      description: 'Create Step',
+      required: true,
       content: {
         'application/json': {
           schema: {
@@ -112,8 +114,10 @@ export class InstructionStepController {
   })
   async patchStep(
     @param.path.string('instructionId') instructionId: string,
-    @param.path.string('stepId') stepId: string,
+    @param.path.string('stepId') stepId: number,
     @requestBody({
+      description: 'Update Step',
+      required: true,
       content: {
         'application/json': {
           schema: {
@@ -176,7 +180,7 @@ export class InstructionStepController {
   })
   async deleteStep(
     @param.path.string('instructionId') instructionId: string,
-    @param.path.string('stepId') stepId: string,
+    @param.path.string('stepId') stepId: number,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
@@ -213,7 +217,7 @@ export class InstructionStepController {
                 steps: {
                   type: 'object',
                   items: {
-                    id: {type: 'string'},
+                    id: {type: 'number'},
                     titleCz: {type: 'string'},
                     titleEn: {type: 'string'},
                     descriptionCz: {
@@ -276,8 +280,10 @@ export class InstructionStepController {
   })
   async uploadStepsPicture(
     @param.path.string('instructionId') instructionId: string,
-    @param.path.string('stepId') stepId: string,
+    @param.path.string('stepId') stepId: number,
     @requestBody({
+      description: 'Upload picture',
+      required: true,
       content: {
         'multipart/form-data': {
           'x-parser': 'stream',
@@ -286,7 +292,6 @@ export class InstructionStepController {
             properties: {
               image: {type: 'string', format: 'binary'},
             },
-            required: ['image'],
           },
         },
       },
@@ -337,7 +342,7 @@ export class InstructionStepController {
   })
   async deleteStepPicture(
     @param.path.string('instructionId') instructionId: string,
-    @param.path.string('stepId') stepId: string,
+    @param.path.string('stepId') stepId: number,
   ): Promise<boolean> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
@@ -378,7 +383,7 @@ export class InstructionStepController {
                 steps: {
                   type: 'object',
                   items: {
-                    id: {type: 'string'},
+                    id: {type: 'number'},
                     titleCz: {type: 'string'},
                     titleEn: {type: 'string'},
                     descriptionCz: {
