@@ -5,9 +5,8 @@ import {Entity, model, property} from '@loopback/repository';
 })
 export class Step extends Entity {
   @property({
-    type: 'string',
     id: true,
-    defaultFn: 'uuidv4',
+    generated: true,
     postgresql: {
       columnName: 'id',
       dataLength: null,
@@ -16,7 +15,7 @@ export class Step extends Entity {
       nullable: 'NO',
     },
   })
-  id: string;
+  id: number;
 
   @property({
     type: 'string',
