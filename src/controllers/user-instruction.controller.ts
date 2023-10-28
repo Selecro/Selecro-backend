@@ -42,7 +42,7 @@ export class UserInstructionController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserRepository)
     protected progressRepository: ProgressRepository,
-  ) {}
+  ) { }
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}', {
@@ -257,7 +257,7 @@ export class UserInstructionController {
                     steps: {
                       type: 'object',
                       items: {
-                        id: {type: 'string'},
+                        id: {type: 'number'},
                         titleCz: {type: 'string'},
                         titleEn: {type: 'string'},
                         descriptionCz: {
@@ -574,7 +574,7 @@ export class UserInstructionController {
                     steps: {
                       type: 'object',
                       items: {
-                        id: {type: 'string'},
+                        id: {type: 'number'},
                         titleCz: {type: 'string'},
                         titleEn: {type: 'string'},
                         descriptionCz: {
@@ -678,7 +678,7 @@ export class UserInstructionController {
                 instructions: {
                   type: 'object',
                   items: {
-                    id: {type: 'string'},
+                    id: {type: 'number'},
                     titleCz: {type: 'string'},
                     titleEn: {type: 'string'},
                     difficulty: {enum: Object.values(Difficulty)},

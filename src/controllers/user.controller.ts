@@ -63,7 +63,7 @@ export class UserController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserLinkRepository)
     public userLinkRepository: UserLinkRepository,
-  ) {}
+  ) { }
 
   @post('/login', {
     responses: {
@@ -885,7 +885,7 @@ export class UserController {
                     steps: {
                       type: 'object',
                       items: {
-                        id: {type: 'string'},
+                        id: {type: 'number'},
                         titleCz: {type: 'string'},
                         titleEn: {type: 'string'},
                         descriptionCz: {
@@ -912,7 +912,11 @@ export class UserController {
       },
     },
   })
-  async getUserDetail(@param.path.string('userId') userId: string): Promise<{
+  async getUserDetail(
+    @param.path.string('userId') userId: string,
+    @param.query.number('limit') limit: number = 10,
+    @param.query.number('offset') offset: number = 0,
+  ): Promise<{
     user: Omit<
       User,
       | 'email'
@@ -951,6 +955,8 @@ export class UserController {
       throw new HttpErrors.NotFound('User not found');
     }
     const instructions = await this.instructionRepository.find({
+      limit,
+      skip: offset,
       where: {
         userId: userId,
         private: false,
