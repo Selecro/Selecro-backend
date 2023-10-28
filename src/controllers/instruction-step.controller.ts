@@ -51,6 +51,8 @@ export class InstructionStepController {
   async createStep(
     @param.path.string('instructionId') instructionId: string,
     @requestBody({
+      description: 'Create Step',
+      required: true,
       content: {
         'application/json': {
           schema: {
@@ -114,6 +116,8 @@ export class InstructionStepController {
     @param.path.string('instructionId') instructionId: string,
     @param.path.string('stepId') stepId: string,
     @requestBody({
+      description: 'Update Step',
+      required: true,
       content: {
         'application/json': {
           schema: {
@@ -278,6 +282,8 @@ export class InstructionStepController {
     @param.path.string('instructionId') instructionId: string,
     @param.path.string('stepId') stepId: string,
     @requestBody({
+      description: 'Upload picture',
+      required: true,
       content: {
         'multipart/form-data': {
           'x-parser': 'stream',
@@ -286,7 +292,6 @@ export class InstructionStepController {
             properties: {
               image: {type: 'string', format: 'binary'},
             },
-            required: ['image'],
           },
         },
       },

@@ -1,23 +1,12 @@
 import {authenticate} from '@loopback/authentication';
-import {
-  JWTService
-} from '@loopback/authentication-jwt';
+import {JWTService} from '@loopback/authentication-jwt';
 import {inject} from '@loopback/context';
 import {repository} from '@loopback/repository';
-import {
-  HttpErrors,
-  del,
-  get,
-  param,
-  post
-} from '@loopback/rest';
+import {HttpErrors, del, get, param, post} from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import * as dotenv from 'dotenv';
 import {User} from '../models';
-import {
-  UserLinkRepository,
-  UserRepository
-} from '../repositories';
+import {UserLinkRepository, UserRepository} from '../repositories';
 dotenv.config();
 
 export class UserLinkController {
@@ -29,7 +18,7 @@ export class UserLinkController {
     @repository(UserRepository) public userRepository: UserRepository,
     @repository(UserLinkRepository)
     public userLinkRepository: UserLinkRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/follow/{followeeId}', {
