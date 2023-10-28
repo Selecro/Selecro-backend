@@ -49,6 +49,8 @@ export class UserProgressController {
   })
   async createProgress(
     @requestBody({
+      description: 'Create Progress of Instruction',
+      required: true,
       content: {
         'application/json': {
           schema: {
@@ -106,6 +108,8 @@ export class UserProgressController {
   async patchProgress(
     @param.path.string('instructionId') instructionId: string,
     @requestBody({
+      description: 'Update Progressof Instruction',
+      required: true,
       content: {
         'application/json': {
           schema: {

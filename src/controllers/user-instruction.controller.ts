@@ -1,7 +1,5 @@
 import {authenticate} from '@loopback/authentication';
-import {
-  JWTService
-} from '@loopback/authentication-jwt';
+import {JWTService} from '@loopback/authentication-jwt';
 import {inject} from '@loopback/context';
 import {repository} from '@loopback/repository';
 import {
@@ -23,12 +21,9 @@ import {
   InstructionRepository,
   ProgressRepository,
   StepRepository,
-  UserRepository
+  UserRepository,
 } from '../repositories';
-import {
-  BcryptHasher,
-  ImgurService
-} from '../services';
+import {BcryptHasher, ImgurService} from '../services';
 dotenv.config();
 
 export class UserInstructionController {
@@ -47,7 +42,7 @@ export class UserInstructionController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserRepository)
     protected progressRepository: ProgressRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/instructions/{instructionId}', {
@@ -66,6 +61,8 @@ export class UserInstructionController {
   })
   async createInstruction(
     @requestBody({
+      description: 'Create Instruction',
+      required: true,
       content: {
         'application/json': {
           schema: {
@@ -133,6 +130,8 @@ export class UserInstructionController {
   async patchInstruction(
     @param.path.string('instructionId') instructionId: string,
     @requestBody({
+      description: 'Update Instruction',
+      required: true,
       content: {
         'application/json': {
           schema: {
@@ -338,6 +337,8 @@ export class UserInstructionController {
   async uploadInstructionPicture(
     @param.path.string('instructionId') instructionId: string,
     @requestBody({
+      description: 'Upload picture',
+      required: true,
       content: {
         'multipart/form-data': {
           'x-parser': 'stream',
@@ -346,14 +347,13 @@ export class UserInstructionController {
             properties: {
               image: {type: 'string', format: 'binary'},
             },
-            required: ['image'],
           },
         },
       },
     })
     request: Request,
     @inject(RestBindings.Http.RESPONSE) response: Response,
-  ): Promise<boolean> {
+  ): Promise<string> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
@@ -372,7 +372,7 @@ export class UserInstructionController {
       link: data.link,
       deleteHash: data.deletehash,
     });
-    return true;
+    return data.link;
   }
 
   @authenticate('jwt')
@@ -432,6 +432,8 @@ export class UserInstructionController {
   async setPremiumInstruction(
     @param.path.string('instructionId') instructionId: string,
     @requestBody({
+      description: 'Set premium Instruction',
+      required: true,
       content: {
         'application/json': {
           schema: {
@@ -504,6 +506,8 @@ export class UserInstructionController {
     @param.path.string('instructionId') instructionId: string,
     @param.path.string('userId') userId: string,
     @requestBody({
+      description: 'Authorize user for premium instructions',
+      required: true,
       content: {
         'application/json': {
           schema: {

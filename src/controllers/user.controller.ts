@@ -63,12 +63,12 @@ export class UserController {
     @repository(StepRepository) public stepRepository: StepRepository,
     @repository(UserLinkRepository)
     public userLinkRepository: UserLinkRepository,
-  ) { }
+  ) {}
 
   @post('/login', {
     responses: {
       '200': {
-        description: 'Token',
+        description: 'Login',
         content: {
           'application/json': {
             schema: {
@@ -86,6 +86,8 @@ export class UserController {
   })
   async login(
     @requestBody({
+      description: 'Login',
+      required: true,
       content: {
         'application/json': {
           schema: {
@@ -111,7 +113,7 @@ export class UserController {
     }
     const token = await this.jwtService.generateToken(userProfile);
     return {
-      token: token
+      token: token,
     };
   }
 
@@ -134,6 +136,8 @@ export class UserController {
   })
   async refreshToken(
     @requestBody({
+      description: 'Refresh token',
+      required: true,
       content: {
         'application/json': {
           schema: {
@@ -191,6 +195,8 @@ export class UserController {
   })
   async signup(
     @requestBody({
+      description: 'Signup',
+      required: true,
       content: {
         'application/json': {
           schema: {
@@ -264,7 +270,7 @@ export class UserController {
   @post('/save-Wrapped-DEK', {
     responses: {
       '200': {
-        description: 'Save Wrapped DEK',
+        description: 'Save wrapped DEK',
         content: {
           'application/json': {
             schema: {
@@ -277,6 +283,8 @@ export class UserController {
   })
   async saveWrappedDEK(
     @requestBody({
+      description: 'Save wrapped DEK',
+      required: true,
       content: {
         'application/json': {
           schema: {
@@ -327,9 +335,7 @@ export class UserController {
         await this.emailService.sendError(
           'Failed to save wrapped DEK: ' + error,
         );
-        throw new HttpErrors.UnprocessableEntity(
-          'Failed to save wrapped DEK',
-        );
+        throw new HttpErrors.UnprocessableEntity('Failed to save wrapped DEK');
       }
     }
   }
@@ -337,7 +343,7 @@ export class UserController {
   @post('/verify-email', {
     responses: {
       '200': {
-        description: 'Verify',
+        description: 'Verify email',
         content: {
           'application/json': {
             schema: {
@@ -350,6 +356,8 @@ export class UserController {
   })
   async verifyEmail(
     @requestBody({
+      description: 'Verify email',
+      required: true,
       content: {
         'application/json': {
           schema: {
@@ -403,7 +411,7 @@ export class UserController {
   @post('/send-password-change', {
     responses: {
       '200': {
-        description: 'Verify',
+        description: 'Send password change',
         content: {
           'application/json': {
             schema: {
@@ -416,6 +424,8 @@ export class UserController {
   })
   async sendPasswordChange(
     @requestBody({
+      description: 'Send password change',
+      required: true,
       content: {
         'application/json': {
           schema: {
@@ -447,7 +457,7 @@ export class UserController {
   @post('/password-change', {
     responses: {
       '200': {
-        description: 'Verify',
+        description: 'Password change',
         content: {
           'application/json': {
             schema: {
@@ -460,6 +470,8 @@ export class UserController {
   })
   async changePassword(
     @requestBody({
+      description: 'Password change',
+      required: true,
       content: {
         'application/json': {
           schema: {
@@ -583,6 +595,8 @@ export class UserController {
   })
   async patchUser(
     @requestBody({
+      description: 'Update user',
+      required: true,
       content: {
         'application/json': {
           schema: {
@@ -741,6 +755,8 @@ export class UserController {
   })
   async uploadProfilePicture(
     @requestBody({
+      description: 'Update profile picture',
+      required: true,
       content: {
         'multipart/form-data': {
           'x-parser': 'stream',
@@ -749,14 +765,13 @@ export class UserController {
             properties: {
               image: {type: 'string', format: 'binary'},
             },
-            required: ['image'],
           },
         },
       },
     })
     request: Request,
     @inject(RestBindings.Http.RESPONSE) response: Response,
-  ): Promise<boolean> {
+  ): Promise<string> {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
@@ -769,7 +784,7 @@ export class UserController {
       link: data.link,
       deleteHash: data.deletehash,
     });
-    return true;
+    return data.link;
   }
 
   @authenticate('jwt')

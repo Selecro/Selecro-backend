@@ -1,5 +1,8 @@
 import {AuthenticationComponent} from '@loopback/authentication';
-import {JWTAuthenticationComponent, JWTService} from '@loopback/authentication-jwt';
+import {
+  JWTAuthenticationComponent,
+  JWTService,
+} from '@loopback/authentication-jwt';
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
