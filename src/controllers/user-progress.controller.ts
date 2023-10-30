@@ -30,7 +30,7 @@ export class UserProgressController {
     @repository(UserRepository) protected userRepository: UserRepository,
     @repository(UserRepository)
     protected progressRepository: ProgressRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @post('/users/{id}/progresses/{progressId}', {
