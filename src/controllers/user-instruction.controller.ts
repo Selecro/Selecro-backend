@@ -16,7 +16,7 @@ import {
 } from '@loopback/rest';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import * as dotenv from 'dotenv';
-import {Difficulty, Instruction, Progress, ProgressRelations} from '../models';
+import {Difficulty, Instruction} from '../models';
 import {
   InstructionRepository,
   ProgressRepository,
@@ -284,10 +284,9 @@ export class UserInstructionController {
       },
     },
   })
-  async getUsersInstructions(): Promise<{
-    instructions: Omit<Instruction, 'deleteHash' | 'premiumUserIds'>[];
-    progress: (Progress & ProgressRelations)[];
-  }> {
+  async getUsersInstructions(): Promise<
+    Omit<Instruction, 'deleteHash' | 'premiumUserIds'>[]
+  > {
     const user = await this.userRepository.findById(this.user.id);
     if (!user) {
       throw new HttpErrors.NotFound('User not found');
@@ -311,12 +310,7 @@ export class UserInstructionController {
         premiumUserIds: false,
       },
     });
-    const progress = await this.progressRepository.find({
-      where: {
-        userId: this.user.id,
-      },
-    });
-    return {instructions, progress};
+    return instructions;
   }
 
   @authenticate('jwt')
