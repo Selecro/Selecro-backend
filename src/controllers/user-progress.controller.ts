@@ -220,6 +220,44 @@ export class UserProgressController {
     return progress;
   }
 
+  @authenticate('jwt')
+  @get('/users/{id}/progresses', {
+    responses: {
+      '200': {
+        description: 'Progress model instance',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                id: {type: 'string'},
+                instructionId: {type: 'string'},
+                stepId: {type: 'number'},
+                descriptionId: {type: 'string'},
+                userId: {type: 'string'},
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getAllProgress(): Promise<Progress[]> {
+    const user = await this.userRepository.findById(this.user.id);
+    if (!user) {
+      throw new HttpErrors.NotFound('User not found');
+    }
+    const progress = await this.progressRepository.find({
+      where: {
+        userId: this.user.id,
+      },
+    });
+    if (!progress) {
+      throw new HttpErrors.NotFound('Progress not found');
+    }
+    return progress;
+  }
+
   private validateProgressOwnership(progress: Progress): void {
     if (progress.userId !== this.user.id) {
       throw new HttpErrors.Forbidden('You are not authorized to this progress');

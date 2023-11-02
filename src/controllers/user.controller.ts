@@ -6,7 +6,7 @@ import {
   UserCredentials,
 } from '@loopback/authentication-jwt';
 import {inject} from '@loopback/context';
-import {repository} from '@loopback/repository';
+import {Count, repository} from '@loopback/repository';
 import {
   HttpErrors,
   Request,
@@ -905,6 +905,20 @@ export class UserController {
                     },
                   },
                 },
+                instructionsPremium: {
+                  type: 'object',
+                  items: {
+                    id: {type: 'string'},
+                    titleCz: {type: 'string'},
+                    titleEn: {type: 'string'},
+                    difficulty: {enum: Object.values(Difficulty)},
+                    link: {type: 'string'},
+                    private: {type: 'boolean'},
+                    premium: {type: 'boolean'},
+                    date: {type: 'string'},
+                  },
+                },
+                instructionCount: {type: 'number'},
               },
             },
           },
@@ -931,10 +945,11 @@ export class UserController {
       | 'deleteHash'
       | 'favorites'
     >;
-    followerCount: number;
-    followeeCount: number;
+    followerCount: Count;
+    followeeCount: Count;
     instructions: Omit<Instruction, 'deleteHash'>[] | null;
     instructionsPremium: Omit<Instruction, 'deleteHash'>[] | null;
+    instructionCount: Count;
   }> {
     const user = await this.userRepository.findById(userId, {
       fields: {
@@ -980,24 +995,22 @@ export class UserController {
         premium: true,
       },
     });
-    const userForFollower = await this.userLinkRepository.find({
-      where: {
-        followerId: userId,
-      },
+    const instructionCount = await this.instructionRepository.count({
+      userId: userId,
     });
-    const followerCount = userForFollower.length;
-    const userForFollowee = await this.userLinkRepository.find({
-      where: {
-        followeeId: userId,
-      },
+    const followerCount = await this.userLinkRepository.count({
+      followerId: userId,
     });
-    const followeeCount = userForFollowee.length;
+    const followeeCount = await this.userLinkRepository.count({
+      followeeId: userId,
+    });
     return {
       user,
       followerCount,
       followeeCount,
       instructions,
       instructionsPremium,
+      instructionCount,
     };
   }
 }
