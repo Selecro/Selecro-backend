@@ -68,7 +68,7 @@ jobs:
 
       - name: Connect to OpenVPN
         run: |
-          sudo nohup openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt &
+          sudo nohup openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt > /dev/null 2>&1 &
 
       - name: Wait for VPN Connection
         run: |
