@@ -112,7 +112,7 @@ jobs:
             -e INSTRUCTION_KEY_PREMIUM_PERMISSIONS="${{ secrets.INSTRUCTION_KEY_PREMIUM_PERMISSIONS }}" \
             --name ${{ env.IMAGE }} -dp ${{ env.DEFAULT_PORT }}:${{ env.DEFAULT_PORT }} \
             selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && \
-            docker update --restart unless-stopped ${{ env.IMAGE }} && exit
+            docker update --restart unless-stopped ${{ env.IMAGE }}
 
       - name: Cleanup
         run: rm -rf ~/.ssh
