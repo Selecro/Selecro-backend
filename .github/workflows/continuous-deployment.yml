@@ -64,14 +64,15 @@ jobs:
       - name: Configure OpenVPN
         run: |
           echo "${{ secrets.OPENVPN_CONFIG }}" > ~/openvpn-config.ovpn
+          echo "${{ secrets.OPENVPN_PASSWORD }}" > ~/openvpn.txt
 
       - name: Connect to OpenVPN
         run: |
-          sudo openvpn --config ~/openvpn-config.ovpn &
+          sudo nohup openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt > /dev/null 2>&1 &
 
       - name: Wait for VPN Connection
         run: |
-          sleep 20
+          while ! pgrep -x "openvpn" > /dev/null; do sleep 1; done
 
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
@@ -109,9 +110,14 @@ jobs:
             -e IMGUR_CLIENT_ID="${{ secrets.IMGUR_CLIENT_ID }}" \
             -e INSTRUCTION_KEY_PREMIUM="${{ secrets.INSTRUCTION_KEY_PREMIUM }}" \
             -e INSTRUCTION_KEY_PREMIUM_PERMISSIONS="${{ secrets.INSTRUCTION_KEY_PREMIUM_PERMISSIONS }}" \
-            --name ${{ env.IMAGE }} -dp ${{ env.DEFAULT_PORT }}:${{ env.DEFAULT_PORT }} \
+            --name ${{ env.IMAGE }} -d -p ${{ env.DEFAULT_PORT }}:${{ env.DEFAULT_PORT }} \
             selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && \
             docker update --restart unless-stopped ${{ env.IMAGE }} && exit
 
-      - name: Cleanup
-        run: rm -rf ~/.ssh
+      - name: Close OpenVPN Connection
+        run: |
+          sudo pkill openvpn
+
+      - name: Clean up SSH Configuration
+        run: |
+          rm -rf ~/.ssh
