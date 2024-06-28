@@ -74,6 +74,14 @@ jobs:
         run: |
           while ! pgrep -x "openvpn" > /dev/null; do sleep 1; done
 
+      - name: ifconfig
+        run: |
+          ifconfig
+
+      - name: ping
+        run: |
+          ping 10.8.0.1
+
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
         with:
