@@ -73,6 +73,7 @@ jobs:
       - name: Wait for VPN Connection
         run: |
           while ! pgrep -x "openvpn" > /dev/null; do sleep 1; done
+          ping ${{ secrets.SERVER_IP }}
 
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
