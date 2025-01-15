@@ -70,14 +70,18 @@ jobs:
         run: |
           sudo nohup openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt > /dev/null 2>&1 &
 
-      - name: Wait for VPN Connection
-        run: |
-          timeout 60s bash -c '
-            while ! pgrep -x "openvpn" > /dev/null; do sleep 1; done
-          ' || { echo "VPN connection timed out"; exit 1; }
+          - name: Wait for VPN Connection
+          run: |
+            timeout 120s bash -c '
+              while ! pgrep -x "openvpn" > /dev/null; do sleep 1; done
+            ' || { echo "VPN connection timed out"; exit 1; }
 
-          echo "VPN connected. Checking server IP..."
-          ping -c 4 ${{ secrets.SERVER_IP }} || { echo "Ping failed"; exit 1; }
+            echo "VPN connected. Checking interface IP..."
+            ifconfig tun0 || { echo "Interface tun0 not found"; exit 1; }
+
+      - name: Test Server Connection
+        run: |
+          curl -v http://${{ secrets.SERVER_IP }} || { echo "Server connection failed"; exit 1; }
 
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
