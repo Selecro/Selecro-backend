@@ -66,7 +66,8 @@ jobs:
           sudo nohup openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt > /dev/null 2>&1 &
       - name: Check ping
         run: |
-          ping ${{ secrets.SERVER_IP }} -n 20
+          ping ${{ secrets.SERVER_IP }} -c 20 -v || echo "Ping failed"
+          echo ${{ secrets.SERVER_IP }}
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
         with:
