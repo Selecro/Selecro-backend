@@ -41,7 +41,6 @@ jobs:
           else
             echo "Invalid branch for deployment" && exit 1
           fi
-
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -51,29 +50,23 @@ jobs:
       - name: Get the short SHA hash of the commit
         run: |
           echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-
       - name: Build and push Docker image
         run: |
           docker build -t selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} .
           docker push selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }}
-
       - name: Install OpenVPN
         run: |
           sudo apt-get update && sudo apt-get install openvpn -y
-
       - name: Configure OpenVPN
         run: |
           echo "${{ secrets.OPENVPN_CONFIG }}" > ~/openvpn-config.ovpn
           echo "${{ secrets.OPENVPN_PASSWORD }}" > ~/openvpn.txt
-
       - name: Connect to OpenVPN
         run: |
           sudo nohup openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt > /dev/null 2>&1 &
-
       - name: Wait for VPN Connection
         run: |
           while ! pgrep -x "openvpn" > /dev/null; do sleep 1; done
-
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -113,11 +106,9 @@ jobs:
             --name ${{ env.IMAGE }} -d -p ${{ env.DEFAULT_PORT }}:${{ env.DEFAULT_PORT }} \
             selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && \
             docker update --restart unless-stopped ${{ env.IMAGE }} && exit
-
       - name: Close OpenVPN Connection
         run: |
           sudo pkill openvpn
-
       - name: Clean up SSH Configuration
         run: |
           rm -rf ~/.ssh
