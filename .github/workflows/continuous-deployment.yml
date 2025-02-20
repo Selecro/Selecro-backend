@@ -50,30 +50,33 @@ jobs:
           docker push selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }}
 
       - name: Install OpenVPN
-        run: sudo apt-get update && sudo apt-get install openvpn -y
+        run: |
+          sudo apt-get update && sudo apt-get install openvpn -y
+          openvpn --version
+
+      - name: Load tun Kernel Module
+        run: |
+          sudo modprobe tun
+          lsmod | grep tun || echo "tun module missing!"
 
       - name: Configure OpenVPN
         run: |
           echo "${{ secrets.OPENVPN_CONFIG }}" > ~/openvpn-config.ovpn
           echo "${{ secrets.OPENVPN_PASSWORD }}" > ~/openvpn.txt
+          chmod 600 ~/openvpn.txt
 
-      - name: Connect to OpenVPN (Proper Logging & Wait)
+      - name: Connect to OpenVPN (With Verbosity)
         run: |
-          sudo nohup openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt > openvpn.log 2>&1 &
-          sleep 15
-          tail -n 20 openvpn.log
+          sudo openvpn --config ~/openvpn-config.ovpn --verb 4 --auth-nocache --askpass ~/openvpn.txt --daemon
 
-      - name: Verify VPN Connection
+      - name: Check VPN Connection
         run: |
-          if ! ip a | grep "tun0"; then
-            echo "VPN connection failed!"
-            cat openvpn.log
-            exit 1
-          fi
+          sleep 5  # Wait for OpenVPN to establish the connection
+          ip a | grep tun0 || (echo "VPN connection failed!" && exit 1)
 
-      - name: Check network connectivity (netcat)
+      - name: Check OpenVPN Logs
         run: |
-          nc -zv ${{ secrets.SERVER_IP }} ${{ secrets.SSH_PORT }} || (echo "Connection failed" && exit 1)
+          cat openvpn.log
 
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
