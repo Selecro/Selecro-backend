@@ -64,9 +64,6 @@ jobs:
       - name: Connect to OpenVPN
         run: |
           sudo nohup openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt > /dev/null 2>&1 &
-      - name: Wait for VPN Connection
-        run: |
-          while ! pgrep -x "openvpn" > /dev/null; do sleep 1; done
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
         with:
