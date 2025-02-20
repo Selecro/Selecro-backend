@@ -40,6 +40,10 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Update DNS settings
+        run: |
+          echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+
       - name: Get the short SHA hash of the commit
         run: |
           echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
@@ -78,6 +82,16 @@ jobs:
             cat openvpn.log
             exit 1
           fi
+          echo "VPN connection established!"
+
+      - name: Pull Docker image with retries
+        run: |
+          RETRIES=5
+          for i in $(seq 1 $RETRIES); do
+            docker pull selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && break
+            echo "Retrying... attempt $i of $RETRIES"
+            sleep 10
+          done
 
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
