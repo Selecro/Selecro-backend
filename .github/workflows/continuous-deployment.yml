@@ -25,22 +25,15 @@ jobs:
             echo "DEFAULT_PORT=${{ secrets.DEFAULT_PORT_DEV }}" >> $GITHUB_ENV
             echo "SQL_DATABASE=${{ secrets.SQL_DATABASE_DEV }}" >> $GITHUB_ENV
             echo "VAULT_PORT=${{ secrets.VAULT_PORT_DEV }}" >> $GITHUB_ENV
-            echo "UNSEAL_KEY_1=${{ secrets.UNSEAL_KEY_1_DEV }}" >> $GITHUB_ENV
-            echo "UNSEAL_KEY_2=${{ secrets.UNSEAL_KEY_2_DEV }}" >> $GITHUB_ENV
-            echo "UNSEAL_KEY_3=${{ secrets.UNSEAL_KEY_3_DEV }}" >> $GITHUB_ENV
-            echo "ROOT_VAULT_TOKEN=${{ secrets.ROOT_VAULT_TOKEN_DEV }}" >> $GITHUB_ENV
           elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
             echo "IMAGE=backend-main" >> $GITHUB_ENV
             echo "DEFAULT_PORT=${{ secrets.DEFAULT_PORT_MAIN }}" >> $GITHUB_ENV
             echo "SQL_DATABASE=${{ secrets.SQL_DATABASE_MAIN }}" >> $GITHUB_ENV
             echo "VAULT_PORT=${{ secrets.VAULT_PORT_MAIN }}" >> $GITHUB_ENV
-            echo "UNSEAL_KEY_1=${{ secrets.UNSEAL_KEY_1_MAIN }}" >> $GITHUB_ENV
-            echo "UNSEAL_KEY_2=${{ secrets.UNSEAL_KEY_2_MAIN }}" >> $GITHUB_ENV
-            echo "UNSEAL_KEY_3=${{ secrets.UNSEAL_KEY_3_MAIN }}" >> $GITHUB_ENV
-            echo "ROOT_VAULT_TOKEN=${{ secrets.ROOT_VAULT_TOKEN_MAIN }}" >> $GITHUB_ENV
           else
             echo "Invalid branch for deployment" && exit 1
           fi
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -50,22 +43,38 @@ jobs:
       - name: Get the short SHA hash of the commit
         run: |
           echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
       - name: Build and push Docker image
         run: |
           docker build -t selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} .
           docker push selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }}
+
       - name: Install OpenVPN
-        run: |
-          sudo apt-get update && sudo apt-get install openvpn -y
+        run: sudo apt-get update && sudo apt-get install openvpn -y
+
       - name: Configure OpenVPN
         run: |
           echo "${{ secrets.OPENVPN_CONFIG }}" > ~/openvpn-config.ovpn
           echo "${{ secrets.OPENVPN_PASSWORD }}" > ~/openvpn.txt
-      - name: Connect to OpenVPN
+
+      - name: Connect to OpenVPN (Proper Logging & Wait)
         run: |
-          sudo nohup openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt > /dev/null 2>&1 &
+          sudo nohup openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt > openvpn.log 2>&1 &
+          sleep 15
+          tail -n 20 openvpn.log
+
+      - name: Verify VPN Connection
+        run: |
+          if ! ip a | grep "tun0"; then
+            echo "VPN connection failed!"
+            cat openvpn.log
+            exit 1
+          fi
+
       - name: Check network connectivity (netcat)
-        run: nc -zv ${{ secrets.SERVER_IP }} ${{ secrets.SSH_PORT }} || echo "Connection failed"
+        run: |
+          nc -zv ${{ secrets.SERVER_IP }} ${{ secrets.SSH_PORT }} || (echo "Connection failed" && exit 1)
+
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -74,40 +83,17 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            docker login || true && \
-            docker pull selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && \
-            docker ps -a | grep ${{ env.IMAGE }} && docker stop ${{ env.IMAGE }} || true && \
-            docker ps -a | grep ${{ env.IMAGE }} && docker rm ${{ env.IMAGE }} || true && \
-            docker run \
-            -e DEFAULT_HOST="${{ secrets.DEFAULT_HOST }}" \
-            -e DEFAULT_PORT="${{ env.DEFAULT_PORT }}" \
-            -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-            -e JWT_SECRET_EMAIL="${{ secrets.JWT_SECRET_EMAIL }}" \
-            -e JWT_SECRET_SIGNUP="${{ secrets.JWT_SECRET_SIGNUP }}" \
-            -e SQL_HOST="${{ secrets.SQL_HOST }}" \
-            -e SQL_PORT="${{ secrets.SQL_PORT }}" \
-            -e SQL_USER="${{ secrets.SQL_USER }}" \
-            -e SQL_PASSWORD="${{ secrets.SQL_PASSWORD }}" \
-            -e SQL_DATABASE="${{ env.SQL_DATABASE }}" \
-            -e EMAIL_HOST="${{ secrets.EMAIL_HOST }}" \
-            -e EMAIL_PORT="${{ secrets.EMAIL_PORT }}" \
-            -e EMAIL_USER="${{ secrets.EMAIL_USER }}" \
-            -e EMAIL_PASSWORD="${{ secrets.EMAIL_PASSWORD }}" \
-            -e VAULT_URL="${{ secrets.VAULT_URL }}" \
-            -e VAULT_PORT="${{ env.VAULT_PORT }}" \
-            -e UNSEAL_KEY_1="${{ env.UNSEAL_KEY_1 }}" \
-            -e UNSEAL_KEY_2="${{ env.UNSEAL_KEY_2 }}" \
-            -e UNSEAL_KEY_3="${{ env.UNSEAL_KEY_3 }}" \
-            -e ROOT_VAULT_TOKEN="${{ env.ROOT_VAULT_TOKEN }}" \
-            -e IMGUR_CLIENT_ID="${{ secrets.IMGUR_CLIENT_ID }}" \
-            -e INSTRUCTION_KEY_PREMIUM="${{ secrets.INSTRUCTION_KEY_PREMIUM }}" \
-            -e INSTRUCTION_KEY_PREMIUM_PERMISSIONS="${{ secrets.INSTRUCTION_KEY_PREMIUM_PERMISSIONS }}" \
-            --name ${{ env.IMAGE }} -d -p ${{ env.DEFAULT_PORT }}:${{ env.DEFAULT_PORT }} \
-            selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && \
-            docker update --restart unless-stopped ${{ env.IMAGE }} && exit
+            docker login || true
+            docker pull selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }}
+            docker ps -a | grep ${{ env.IMAGE }} && docker stop ${{ env.IMAGE }} || true
+            docker ps -a | grep ${{ env.IMAGE }} && docker rm ${{ env.IMAGE }} || true
+            docker run -d --restart unless-stopped \
+            -p ${{ env.DEFAULT_PORT }}:${{ env.DEFAULT_PORT }} \
+            --name ${{ env.IMAGE }} \
+            selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }}
+
       - name: Close OpenVPN Connection
-        run: |
-          sudo pkill openvpn
+        run: sudo pkill openvpn || true
+
       - name: Clean up SSH Configuration
-        run: |
-          rm -rf ~/.ssh
+        run: rm -rf ~/.ssh
