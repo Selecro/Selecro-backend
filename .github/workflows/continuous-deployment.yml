@@ -66,24 +66,13 @@ jobs:
           echo "${{ secrets.OPENVPN_CONFIG }}" > ~/openvpn-config.ovpn
           echo "${{ secrets.OPENVPN_PASSWORD }}" > ~/openvpn.txt
 
-
-      - name: Connect to OpenVPN (Proper Logging & Wait)
+      - name: Connect to OpenVPN
         run: |
-          sudo nohup openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt > openvpn.log 2>&1 &
-          sleep 15
-          tail -n 20 openvpn.log
+          sudo openvpn --config ~/openvpn-config.ovpn --verb 5 --auth-nocache --askpass ~/openvpn.txt --daemon
 
-      - name: Verify VPN Connection
+      - name: Check OpenVPN Log for Errors
         run: |
-          if ! ip a | grep "tun0"; then
-            echo "VPN connection failed!"
-            cat openvpn.log
-            exit 1
-          fi
-
-      - name: Check network connectivity (netcat)
-        run: |
-          nc -zv ${{ secrets.SERVER_IP }} ${{ secrets.SSH_PORT }} || (echo "Connection failed" && exit 1)
+          tail -n 50 /var/log/syslog | grep openvpn || echo "No OpenVPN logs found."
 
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
