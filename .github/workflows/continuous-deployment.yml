@@ -65,18 +65,19 @@ jobs:
           echo "${{ secrets.OPENVPN_PASSWORD }}" > ~/openvpn.txt
           chmod 600 ~/openvpn.txt
 
-      - name: Connect to OpenVPN (With Verbosity)
-        run: |
-          sudo openvpn --config ~/openvpn-config.ovpn --verb 4 --auth-nocache --askpass ~/openvpn.txt --daemon
+      - name: Connect to OpenVPN (Proper Logging & Wait)   
+        run: |     
+          sudo nohup openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt > openvpn.log 2>&1 &     
+          sleep 30     
+          tail -n 20 openvpn.log
 
-      - name: Check VPN Connection
+      - name: Verify VPN Connection
         run: |
-          sleep 15  # Wait for OpenVPN to establish the connection
-          ip a | grep tun0 || (cat /var/log/openvpn.log && echo "VPN connection failed!" && exit 1)
-
-      - name: Check OpenVPN Logs
-        run: |
-          cat openvpn.log
+          if ! ip a | grep "tun0"; then
+            echo "VPN connection failed!"
+            cat openvpn.log
+            exit 1
+          fi
 
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
