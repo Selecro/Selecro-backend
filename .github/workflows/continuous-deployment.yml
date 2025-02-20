@@ -52,16 +52,14 @@ jobs:
       - name: Install OpenVPN
         run: sudo apt-get update && sudo apt-get install openvpn -y
 
-      - name: Configure OpenVPN
+      - name: Establish VPN connection
         run: |
-          echo "${{ secrets.OPENVPN_CONFIG }}" > ~/openvpn-config.ovpn
-          echo "${{ secrets.OPENVPN_PASSWORD }}" > ~/openvpn.txt
-
-      - name: Connect to OpenVPN (Proper Logging & Wait)
-        run: |
-          sudo nohup openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt > openvpn.log 2>&1 &
-          sleep 15
-          tail -n 20 openvpn.log
+            sudo apt update
+            sudo apt install -y openvpn openvpn-systemd-resolved
+            echo "${{ secrets.OPENVPN_CONFIG }}" > vpn-config.ovpn
+            echo "${{ secrets.OPENVPN_PASSWORD }}" > vpn-credentials.txt
+            sudo openvpn --config vpn-config.ovpn --auth-user-pass vpn-credentials.txt --daemon
+            sleep 15
 
       - name: Verify VPN Connection
         run: |
