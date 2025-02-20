@@ -65,10 +65,14 @@ jobs:
         run: |
           echo "${{ secrets.OPENVPN_CONFIG }}" > ~/openvpn-config.ovpn
           echo "${{ secrets.OPENVPN_PASSWORD }}" > ~/openvpn.txt
-          
+
       - name: Connect to OpenVPN
         run: |
-          sudo openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt --daemon
+          sudo openvpn --config ~/openvpn-config.ovpn --verb 5 --auth-nocache --askpass ~/openvpn.txt --daemon
+
+      - name: Check OpenVPN Log for Errors
+        run: |
+          tail -n 50 /var/log/syslog | grep openvpn || echo "No OpenVPN logs found."
 
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
@@ -77,6 +81,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
+          debug: true
           script: |
             docker login || true && \
             docker pull selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && \
@@ -108,7 +113,7 @@ jobs:
             -e INSTRUCTION_KEY_PREMIUM_PERMISSIONS="${{ secrets.INSTRUCTION_KEY_PREMIUM_PERMISSIONS }}" \
             --name ${{ env.IMAGE }} -d -p ${{ env.DEFAULT_PORT }}:${{ env.DEFAULT_PORT }} \
             selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && \
-            docker update --restart unless-stopped ${{ env.IMAGE }} && exit
+            docker logs ${{ env.IMAGE }} || echo "No logs for ${{ env.IMAGE }}"
 
       - name: Close OpenVPN Connection
         run: |
