@@ -71,8 +71,8 @@ jobs:
 
       - name: Check VPN Connection
         run: |
-          sleep 5  # Wait for OpenVPN to establish the connection
-          ip a | grep tun0 || (echo "VPN connection failed!" && exit 1)
+          sleep 15  # Wait for OpenVPN to establish the connection
+          ip a | grep tun0 || (cat /var/log/openvpn.log && echo "VPN connection failed!" && exit 1)
 
       - name: Check OpenVPN Logs
         run: |
