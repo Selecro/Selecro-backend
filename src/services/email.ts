@@ -15,10 +15,6 @@ export class EmailService {
 
   constructor() { }
 
-  xdd() {
-    console.log(this.domain);
-  }
-
   private generateVerificationToken(userId: string): string {
     const secret = process.env.JWT_SECRET_EMAIL ?? '';
     const token = jwt.sign({userId}, secret, {
