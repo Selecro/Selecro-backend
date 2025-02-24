@@ -66,13 +66,24 @@ jobs:
           echo "${{ secrets.OPENVPN_CONFIG }}" > ~/openvpn-config.ovpn
           echo "${{ secrets.OPENVPN_PASSWORD }}" > ~/openvpn.txt
 
-      - name: Connect to OpenVPN
-        run: |
-          sudo nohup openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt > /dev/null 2>&1 &
 
-      - name: Wait for VPN Connection
+      - name: Connect to OpenVPN (Proper Logging & Wait)
         run: |
-          while ! pgrep -x "openvpn" > /dev/null; do sleep 1; done
+          sudo nohup openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt > openvpn.log 2>&1 &
+          sleep 15
+          tail -n 20 openvpn.log
+
+      - name: Verify VPN Connection
+        run: |
+          if ! ip a | grep "tun0"; then
+            echo "VPN connection failed!"
+            cat openvpn.log
+            exit 1
+          fi
+
+      - name: Check network connectivity (netcat)
+        run: |
+          nc -zv ${{ secrets.SERVER_IP }} ${{ secrets.SSH_PORT }} || (echo "Connection failed" && exit 1)
 
       - name: SSH into Your Server and Deploy
         uses: appleboy/ssh-action@v1.0.0
@@ -81,6 +92,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
+          debug: true
           script: |
             docker login || true && \
             docker pull selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && \
@@ -112,7 +124,7 @@ jobs:
             -e INSTRUCTION_KEY_PREMIUM_PERMISSIONS="${{ secrets.INSTRUCTION_KEY_PREMIUM_PERMISSIONS }}" \
             --name ${{ env.IMAGE }} -d -p ${{ env.DEFAULT_PORT }}:${{ env.DEFAULT_PORT }} \
             selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && \
-            docker update --restart unless-stopped ${{ env.IMAGE }} && exit
+            docker logs ${{ env.IMAGE }} || echo "No logs for ${{ env.IMAGE }}"
 
       - name: Close OpenVPN Connection
         run: |
