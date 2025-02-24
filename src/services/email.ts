@@ -10,10 +10,10 @@ dotenv.config();
 export class EmailService {
   readonly domain: string =
     process.env.DEFAULT_PORT === '3002'
-      ? 'https://develop.selecro.cz'
-      : 'https://selecro.cz';
+      ? 'https://develop.selecro.cz/#'
+      : 'https://selecro.cz/#';
 
-  constructor() {}
+  constructor() { }
 
   xdd() {
     console.log(this.domain);
