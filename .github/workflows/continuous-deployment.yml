@@ -68,12 +68,8 @@ jobs:
 
       - name: Create Kubernetes Secrets
         run: |
-          export KUBECONFIG=$(pwd)/kubeconfig.yaml
-          kubectl get namespace "${{ env.NAMESPACE }}" >/dev/null 2>&1 || \
-          kubectl create namespace "${{ env.NAMESPACE }}"
-          kubectl delete secret loopback-secrets --namespace="${{ env.NAMESPACE }}" --ignore-not-found
           kubectl create secret generic loopback-secrets \
-            --namespace=${{ env.NAMESPACE }} \
+            --namespace=***-dev \
             --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
             --from-literal=JWT_SECRET_EMAIL="${{ secrets.JWT_SECRET_EMAIL }}" \
             --from-literal=JWT_SECRET_SIGNUP="${{ secrets.JWT_SECRET_SIGNUP }}" \
@@ -90,7 +86,6 @@ jobs:
             --from-literal=UNSEAL_KEY_1="${{ secrets.UNSEAL_KEY_1 }}" \
             --from-literal=UNSEAL_KEY_2="${{ secrets.UNSEAL_KEY_2 }}" \
             --from-literal=UNSEAL_KEY_3="${{ secrets.UNSEAL_KEY_3 }}"
-
 
       - name: Deploy LoopBack 4 to K3s
         run: |
