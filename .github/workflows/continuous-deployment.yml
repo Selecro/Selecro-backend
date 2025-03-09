@@ -69,12 +69,13 @@ jobs:
       - name: Create Kubernetes Secrets
         run: |
           export KUBECONFIG=$(pwd)/kubeconfig.yaml
+          kubectl create namespace ${{ env.NAMESPACE }} || echo "Namespace ${{ env.NAMESPACE }} already exists"
           kubectl create secret generic loopback-secrets \
             --namespace=${{ env.NAMESPACE }} \
             --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
             --from-literal=JWT_SECRET_EMAIL="${{ secrets.JWT_SECRET_EMAIL }}" \
             --from-literal=JWT_SECRET_SIGNUP="${{ secrets.JWT_SECRET_SIGNUP }}" \
-            --from-literal=SQL_DATABASE="${{ secrets.SQL_DATABASE }}"
+            --from-literal=SQL_DATABASE="${{ secrets.SQL_DATABASE }}" \
             --from-literal=SQL_USER="${{ secrets.SQL_USER }}" \
             --from-literal=SQL_PASSWORD="${{ secrets.SQL_PASSWORD }}" \
             --from-literal=EMAIL_HOST="${{ secrets.EMAIL_HOST }}" \
@@ -86,7 +87,8 @@ jobs:
             --from-literal=ROOT_VAULT_TOKEN="${{ secrets.ROOT_VAULT_TOKEN }}" \
             --from-literal=UNSEAL_KEY_1="${{ secrets.UNSEAL_KEY_1 }}" \
             --from-literal=UNSEAL_KEY_2="${{ secrets.UNSEAL_KEY_2 }}" \
-            --from-literal=UNSEAL_KEY_3="${{ secrets.UNSEAL_KEY_3 }}" \
+            --from-literal=UNSEAL_KEY_3="${{ secrets.UNSEAL_KEY_3 }}"
+
 
       - name: Deploy LoopBack 4 to K3s
         run: |
