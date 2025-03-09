@@ -69,7 +69,9 @@ jobs:
       - name: Create Kubernetes Secrets
         run: |
           export KUBECONFIG=$(pwd)/kubeconfig.yaml
-          kubectl create namespace ${{ env.NAMESPACE }} || echo "Namespace ${{ env.NAMESPACE }} already exists"
+          kubectl get namespace "${{ env.NAMESPACE }}" >/dev/null 2>&1 || \
+          kubectl create namespace "${{ env.NAMESPACE }}"
+          kubectl delete secret loopback-secrets --namespace="${{ env.NAMESPACE }}" --ignore-not-found
           kubectl create secret generic loopback-secrets \
             --namespace=${{ env.NAMESPACE }} \
             --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
