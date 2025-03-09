@@ -97,8 +97,8 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          kubectl apply -f k8s/deployment.yaml --namespace=${{ env.NAMESPACE }}
-          kubectl apply -f k8s/service.yaml --namespace=${{ env.NAMESPACE }}
+          envsubst < k8s/deployment.yaml | kubectl apply -f - --namespace=${{ env.NAMESPACE }}
+          envsubst < k8s/service.yaml | kubectl apply -f - --namespace=${{ env.NAMESPACE }}
 
       - name: Clean up
         run: |
