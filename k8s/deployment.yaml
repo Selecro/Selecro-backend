@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: loopback4-app
-  namespace: default # Change this if needed
+  namespace: ${NAMESPACE} # This will be dynamically replaced with the actual namespace
   labels:
     app: loopback4
 spec:
@@ -58,7 +58,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: loopback4-service
-  namespace: default
+  namespace: ${NAMESPACE} # This will be dynamically replaced with the actual namespace
 spec:
   selector:
     app: loopback4
