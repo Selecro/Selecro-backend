@@ -6,10 +6,7 @@ import {EmailService} from '.';
 dotenv.config();
 
 export class VaultService {
-  private readonly vaultEndpoint =
-    process.env.VAULT_URL && process.env.VAULT_PORT
-      ? `${process.env.VAULT_URL}${process.env.VAULT_PORT}`
-      : '';
+  private readonly vaultEndpoint = process.env.VAULT_ENDPOINT ?? '';
   private readonly unsealKeys: string[] = [
     process.env.UNSEAL_KEY_1 ?? '',
     process.env.UNSEAL_KEY_2 ?? '',

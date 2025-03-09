@@ -1,4 +1,4 @@
-name: Continuous Deployment
+name: Deploy LoopBack 4 to K3s via Tailscale
 
 on:
   push:
@@ -8,12 +8,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  run_pull:
-    name: Run Pull and Deploy
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checking out code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -22,22 +21,10 @@ jobs:
         run: |
           if [ "${{ github.ref }}" = "refs/heads/dev" ]; then
             echo "IMAGE=backend-dev" >> $GITHUB_ENV
-            echo "DEFAULT_PORT=${{ secrets.DEFAULT_PORT_DEV }}" >> $GITHUB_ENV
-            echo "SQL_DATABASE=${{ secrets.SQL_DATABASE_DEV }}" >> $GITHUB_ENV
-            echo "VAULT_PORT=${{ secrets.VAULT_PORT_DEV }}" >> $GITHUB_ENV
-            echo "UNSEAL_KEY_1=${{ secrets.UNSEAL_KEY_1_DEV }}" >> $GITHUB_ENV
-            echo "UNSEAL_KEY_2=${{ secrets.UNSEAL_KEY_2_DEV }}" >> $GITHUB_ENV
-            echo "UNSEAL_KEY_3=${{ secrets.UNSEAL_KEY_3_DEV }}" >> $GITHUB_ENV
-            echo "ROOT_VAULT_TOKEN=${{ secrets.ROOT_VAULT_TOKEN_DEV }}" >> $GITHUB_ENV
+            echo "NAMESPACE=selecro-dev" >> $GITHUB_ENV
           elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
             echo "IMAGE=backend-main" >> $GITHUB_ENV
-            echo "DEFAULT_PORT=${{ secrets.DEFAULT_PORT_MAIN }}" >> $GITHUB_ENV
-            echo "SQL_DATABASE=${{ secrets.SQL_DATABASE_MAIN }}" >> $GITHUB_ENV
-            echo "VAULT_PORT=${{ secrets.VAULT_PORT_MAIN }}" >> $GITHUB_ENV
-            echo "UNSEAL_KEY_1=${{ secrets.UNSEAL_KEY_1_MAIN }}" >> $GITHUB_ENV
-            echo "UNSEAL_KEY_2=${{ secrets.UNSEAL_KEY_2_MAIN }}" >> $GITHUB_ENV
-            echo "UNSEAL_KEY_3=${{ secrets.UNSEAL_KEY_3_MAIN }}" >> $GITHUB_ENV
-            echo "ROOT_VAULT_TOKEN=${{ secrets.ROOT_VAULT_TOKEN_MAIN }}" >> $GITHUB_ENV
+            echo "NAMESPACE=selecro-main" >> $GITHUB_ENV
           else
             echo "Invalid branch for deployment" && exit 1
           fi
@@ -49,75 +36,64 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Get the short SHA hash of the commit
-        run: |
-          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       - name: Build and push Docker image
         run: |
           docker build -t selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} .
           docker push selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }}
 
-      - name: Install OpenVPN
+      - name: Install Tailscale
         run: |
-          sudo apt-get update && sudo apt-get install openvpn -y
+          curl -fsSL https://tailscale.com/install.sh | sh
 
-      - name: Configure OpenVPN
+      - name: Authenticate Tailscale
         run: |
-          echo "${{ secrets.OPENVPN_CONFIG }}" > ~/openvpn-config.ovpn
-          echo "${{ secrets.OPENVPN_PASSWORD }}" > ~/openvpn.txt
+          sudo tailscale up --auth-key=${{ secrets.TAILSCALE_AUTH_KEY }}
 
-      - name: Connect to OpenVPN
+      - name: Verify Tailscale Connection
         run: |
-          sudo nohup openvpn --config ~/openvpn-config.ovpn --auth-nocache --askpass ~/openvpn.txt > /dev/null 2>&1 &
+          sudo tailscale status
 
-      - name: Wait for VPN Connection
-        run: |
-          while ! pgrep -x "openvpn" > /dev/null; do sleep 1; done
-
-      - name: SSH into Your Server and Deploy
-        uses: appleboy/ssh-action@v1.0.0
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
         with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            docker login || true && \
-            docker pull selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && \
-            docker ps -a | grep ${{ env.IMAGE }} && docker stop ${{ env.IMAGE }} || true && \
-            docker ps -a | grep ${{ env.IMAGE }} && docker rm ${{ env.IMAGE }} || true && \
-            docker run \
-            -e DEFAULT_HOST="${{ secrets.DEFAULT_HOST }}" \
-            -e DEFAULT_PORT="${{ env.DEFAULT_PORT }}" \
-            -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-            -e JWT_SECRET_EMAIL="${{ secrets.JWT_SECRET_EMAIL }}" \
-            -e JWT_SECRET_SIGNUP="${{ secrets.JWT_SECRET_SIGNUP }}" \
-            -e SQL_HOST="${{ secrets.SQL_HOST }}" \
-            -e SQL_PORT="${{ secrets.SQL_PORT }}" \
-            -e SQL_USER="${{ secrets.SQL_USER }}" \
-            -e SQL_PASSWORD="${{ secrets.SQL_PASSWORD }}" \
-            -e SQL_DATABASE="${{ env.SQL_DATABASE }}" \
-            -e EMAIL_HOST="${{ secrets.EMAIL_HOST }}" \
-            -e EMAIL_PORT="${{ secrets.EMAIL_PORT }}" \
-            -e EMAIL_USER="${{ secrets.EMAIL_USER }}" \
-            -e EMAIL_PASSWORD="${{ secrets.EMAIL_PASSWORD }}" \
-            -e VAULT_URL="${{ secrets.VAULT_URL }}" \
-            -e VAULT_PORT="${{ env.VAULT_PORT }}" \
-            -e UNSEAL_KEY_1="${{ env.UNSEAL_KEY_1 }}" \
-            -e UNSEAL_KEY_2="${{ env.UNSEAL_KEY_2 }}" \
-            -e UNSEAL_KEY_3="${{ env.UNSEAL_KEY_3 }}" \
-            -e ROOT_VAULT_TOKEN="${{ env.ROOT_VAULT_TOKEN }}" \
-            -e IMGUR_CLIENT_ID="${{ secrets.IMGUR_CLIENT_ID }}" \
-            -e INSTRUCTION_KEY_PREMIUM="${{ secrets.INSTRUCTION_KEY_PREMIUM }}" \
-            -e INSTRUCTION_KEY_PREMIUM_PERMISSIONS="${{ secrets.INSTRUCTION_KEY_PREMIUM_PERMISSIONS }}" \
-            --name ${{ env.IMAGE }} -d -p ${{ env.DEFAULT_PORT }}:${{ env.DEFAULT_PORT }} \
-            selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} && \
-            docker update --restart unless-stopped ${{ env.IMAGE }} && exit
+          version: 'latest'
 
-      - name: Close OpenVPN Connection
+      - name: Configure kubectl
         run: |
-          sudo pkill openvpn
+          echo "${{ secrets.K3S_KUBECONFIG }}" | base64 -d > kubeconfig.yaml
+          export KUBECONFIG=$(pwd)/kubeconfig.yaml
+          kubectl config current-context
 
-      - name: Clean up SSH Configuration
+      - name: Create Kubernetes Secrets
         run: |
-          rm -rf ~/.ssh
+          export KUBECONFIG=$(pwd)/kubeconfig.yaml
+          kubectl create secret generic loopback-secrets \
+            --namespace=${{ env.NAMESPACE }} \
+            --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            --from-literal=JWT_SECRET_EMAIL="${{ secrets.JWT_SECRET_EMAIL }}" \
+            --from-literal=JWT_SECRET_SIGNUP="${{ secrets.JWT_SECRET_SIGNUP }}" \
+            --from-literal=SQL_DATABASE="${{ secrets.SQL_DATABASE }}"
+            --from-literal=SQL_USER="${{ secrets.SQL_USER }}" \
+            --from-literal=SQL_PASSWORD="${{ secrets.SQL_PASSWORD }}" \
+            --from-literal=EMAIL_HOST="${{ secrets.EMAIL_HOST }}" \
+            --from-literal=EMAIL_USER="${{ secrets.EMAIL_USER }}" \
+            --from-literal=EMAIL_PASSWORD="${{ secrets.EMAIL_PASSWORD }}" \
+            --from-literal=IMGUR_CLIENT_ID="${{ secrets.IMGUR_CLIENT_ID }}" \
+            --from-literal=INSTRUCTION_KEY_PREMIUM="${{ secrets.INSTRUCTION_KEY_PREMIUM }}" \
+            --from-literal=INSTRUCTION_KEY_PREMIUM_PERMISSIONS="${{ secrets.INSTRUCTION_KEY_PREMIUM_PERMISSIONS }}" \
+            --from-literal=ROOT_VAULT_TOKEN="${{ secrets.ROOT_VAULT_TOKEN }}" \
+            --from-literal=UNSEAL_KEY_1="${{ secrets.UNSEAL_KEY_1 }}" \
+            --from-literal=UNSEAL_KEY_2="${{ secrets.UNSEAL_KEY_2 }}" \
+            --from-literal=UNSEAL_KEY_3="${{ secrets.UNSEAL_KEY_3 }}" \
+
+      - name: Deploy LoopBack 4 to K3s
+        run: |
+          export KUBECONFIG=$(pwd)/kubeconfig.yaml
+          kubectl apply -f k8s/deployment.yaml -n ${{ env.NAMESPACE }}
+          kubectl apply -f k8s/service.yaml -n ${{ env.NAMESPACE }}
+
+      - name: Clean up
+        run: |
+          rm -f kubeconfig.yaml
