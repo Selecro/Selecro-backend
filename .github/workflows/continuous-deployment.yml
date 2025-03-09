@@ -63,8 +63,7 @@ jobs:
       - name: Configure kubectl
         run: |
           echo "${{ secrets.K3S_KUBECONFIG }}" | base64 -d > kubeconfig.yaml
-          export KUBECONFIG=$(pwd)/kubeconfig.yaml
-          kubectl config current-context
+          echo "KUBECONFIG=$(pwd)/kubeconfig.yaml" >> $GITHUB_ENV
 
       - name: Check Cluster Connection
         run: |
@@ -72,31 +71,10 @@ jobs:
 
       - name: Ensure Namespace Exists
         run: |
-          kubectl get namespace ${{ env.NAMESPACE }} || kubectl create namespace ${{ env.NAMESPACE }}
-
-      - name: Create Kubernetes Secrets
-        run: |
-          export KUBECONFIG=$(pwd)/kubeconfig.yaml
-          kubectl create secret generic loopback-secrets \
-            --namespace=${{ env.NAMESPACE }} \
-
-      - name: Create Kubernetes Secrets
-        run: |
-          export KUBECONFIG=$(pwd)/kubeconfig.yaml
-
-          # Ensure the namespace exists (Ignore error if it already exists)
           kubectl create namespace ${{ env.NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
 
-          # Apply secrets
-          kubectl apply -f k8s/secrets.yaml --namespace=${{ env.NAMESPACE }}
-
-          # Apply deployment and service
-          kubectl apply -f k8s/deployment.yaml --namespace=${{ env.NAMESPACE }}
-          kubectl apply -f k8s/service.yaml --namespace=${{ env.NAMESPACE }}
-
-          export KUBECONFIG=$(pwd)/kubeconfig.yaml
-          kubectl get namespace "${{ env.NAMESPACE }}" >/dev/null 2>&1 || \
-          kubectl create namespace "${{ env.NAMESPACE }}"
+      - name: Create Kubernetes Secrets
+        run: |
           kubectl delete secret loopback-secrets --namespace="${{ env.NAMESPACE }}" --ignore-not-found
           kubectl create secret generic loopback-secrets \
             --namespace=${{ env.NAMESPACE }} \
@@ -117,12 +95,11 @@ jobs:
             --from-literal=UNSEAL_KEY_2="${{ secrets.UNSEAL_KEY_2 }}" \
             --from-literal=UNSEAL_KEY_3="${{ secrets.UNSEAL_KEY_3 }}"
 
-
-      - name: Deploy LoopBack 4 to K3s
+      - name: Deploy to Kubernetes
         run: |
-          export KUBECONFIG=$(pwd)/kubeconfig.yaml
-          kubectl apply -f k8s/deployment.yaml -n ${{ env.NAMESPACE }}
-          kubectl apply -f k8s/service.yaml -n ${{ env.NAMESPACE }}
+          kubectl apply -f k8s/secrets.yaml --namespace=${{ env.NAMESPACE }}
+          kubectl apply -f k8s/deployment.yaml --namespace=${{ env.NAMESPACE }}
+          kubectl apply -f k8s/service.yaml --namespace=${{ env.NAMESPACE }}
 
       - name: Clean up
         run: |
