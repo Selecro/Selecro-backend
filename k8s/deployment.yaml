@@ -58,7 +58,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: loopback4-service
-  namespace: ${NAMESPACE} # This will be dynamically replaced with the actual namespace
+  namespace: ${NAMESPACE}
 spec:
   selector:
     app: loopback4
@@ -66,4 +66,4 @@ spec:
   - protocol: TCP
     port: 80
     targetPort: 3000
-  type: ClusterIP # Change to LoadBalancer if exposing externally
+  type: ClusterIP
