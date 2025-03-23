@@ -8,7 +8,30 @@ on:
   workflow_dispatch:
 
 jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
   deploy:
+    needs: ci
     runs-on: ubuntu-latest
 
     steps:
@@ -19,40 +42,38 @@ jobs:
 
       - name: Set deployment variables
         run: |
-          if [ "${{ github.ref }}" = "refs/heads/dev" ]; then
-            echo "IMAGE=backend-dev" >> $GITHUB_ENV
-            echo "NAMESPACE=selecro-dev" >> $GITHUB_ENV
-          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            echo "IMAGE=backend-main" >> $GITHUB_ENV
-            echo "NAMESPACE=selecro-main" >> $GITHUB_ENV
-          else
-            echo "Invalid branch for deployment" && exit 1
-          fi
+          BRANCH=${GITHUB_REF#refs/heads/}
+          case "$BRANCH" in
+            dev)
+              BACKEND_NAME="backend-dev"
+              ;;
+            main)
+              BACKEND_NAME="backend-main"
+              ;;
+            *)
+              echo "Invalid branch for deployment" && exit 1
+              ;;
+          esac
+          IMAGE_TAG="${{ github.ref_name }}-${{ github.sha }}"
+          IMAGE_REGISTRY="selecro"
+          echo "IMAGE_NAME=${IMAGE_REGISTRY}/${BACKEND_NAME}:${IMAGE_TAG}" >> $GITHUB_ENV
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Get the short SHA hash of the commit
-        run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
 
       - name: Build and push Docker image
         run: |
-          docker build -t selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }} .
-          docker push selecro/${{ env.IMAGE }}:${{ github.ref_name }}-${{ env.SHORT_SHA }}
+          docker build -t ${{ env.IMAGE_NAME }} .
+          docker push ${{ env.IMAGE_NAME }}
 
-      - name: Install Tailscale
+      - name: Install and authenticate Tailscale
         run: |
           curl -fsSL https://tailscale.com/install.sh | sh
-
-      - name: Authenticate Tailscale
-        run: |
           sudo tailscale up --auth-key=${{ secrets.TAILSCALE_AUTH_KEY }}
-
-      - name: Verify Tailscale Connection
-        run: |
           sudo tailscale status
 
       - name: Install kubectl
@@ -66,40 +87,17 @@ jobs:
           echo "KUBECONFIG=$(pwd)/kubeconfig.yaml" >> $GITHUB_ENV
 
       - name: Check Cluster Connection
-        run: |
-          kubectl cluster-info
+        run: kubectl cluster-info
 
-      - name: Ensure Namespace Exists
+      - name: Apply Kubernetes Manifests
         run: |
-          kubectl create namespace ${{ env.NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+          envsubst < k8s/deployment.yaml | kubectl apply -f -
+          envsubst < k8s/service.yaml | kubectl apply -f -
 
-      - name: Create Kubernetes Secrets
+      - name: Wait for Deployment to be Ready
         run: |
-          kubectl delete secret loopback-secrets --namespace="${{ env.NAMESPACE }}" --ignore-not-found
-          kubectl create secret generic loopback-secrets \
-            --namespace=${{ env.NAMESPACE }} \
-            --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-            --from-literal=JWT_SECRET_EMAIL="${{ secrets.JWT_SECRET_EMAIL }}" \
-            --from-literal=JWT_SECRET_SIGNUP="${{ secrets.JWT_SECRET_SIGNUP }}" \
-            --from-literal=SQL_DATABASE="${{ secrets.SQL_DATABASE }}" \
-            --from-literal=SQL_USER="${{ secrets.SQL_USER }}" \
-            --from-literal=SQL_PASSWORD="${{ secrets.SQL_PASSWORD }}" \
-            --from-literal=EMAIL_HOST="${{ secrets.EMAIL_HOST }}" \
-            --from-literal=EMAIL_USER="${{ secrets.EMAIL_USER }}" \
-            --from-literal=EMAIL_PASSWORD="${{ secrets.EMAIL_PASSWORD }}" \
-            --from-literal=IMGUR_CLIENT_ID="${{ secrets.IMGUR_CLIENT_ID }}" \
-            --from-literal=INSTRUCTION_KEY_PREMIUM="${{ secrets.INSTRUCTION_KEY_PREMIUM }}" \
-            --from-literal=INSTRUCTION_KEY_PREMIUM_PERMISSIONS="${{ secrets.INSTRUCTION_KEY_PREMIUM_PERMISSIONS }}" \
-            --from-literal=ROOT_VAULT_TOKEN="${{ secrets.ROOT_VAULT_TOKEN }}" \
-            --from-literal=UNSEAL_KEY_1="${{ secrets.UNSEAL_KEY_1 }}" \
-            --from-literal=UNSEAL_KEY_2="${{ secrets.UNSEAL_KEY_2 }}" \
-            --from-literal=UNSEAL_KEY_3="${{ secrets.UNSEAL_KEY_3 }}"
-
-      - name: Deploy to Kubernetes
-        run: |
-          envsubst < k8s/deployment.yaml | kubectl apply -f - --namespace=${{ env.NAMESPACE }}
-          envsubst < k8s/service.yaml | kubectl apply -f - --namespace=${{ env.NAMESPACE }}
+          kubectl rollout status deployment/loopback4-backend --BACKEND_NAME=${{ env.BACKEND_NAME }} --timeout=60s
 
       - name: Clean up
-        run: |
-          rm -f kubeconfig.yaml
+        if: always()
+        run: rm -f kubeconfig.yaml
