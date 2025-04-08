@@ -7,6 +7,9 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  IMAGE_REGISTRY: selecro
+
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -30,10 +33,9 @@ jobs:
       - name: Test
         run: npm run test
 
-  deploy:
+  build-and-push:
     needs: ci
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -41,8 +43,9 @@ jobs:
           fetch-depth: 0
 
       - name: Set deployment variables
+        id: vars
         run: |
-          BRANCH=${GITHUB_REF#refs/heads/}
+          BRANCH="${GITHUB_REF#refs/heads/}"
           case "$BRANCH" in
             dev)
               BACKEND_NAME="backend-dev"
@@ -55,9 +58,10 @@ jobs:
               ;;
           esac
           IMAGE_TAG="${{ github.ref_name }}-${{ github.sha }}"
-          IMAGE_REGISTRY="selecro"
-          echo "IMAGE_NAME=${IMAGE_REGISTRY}/${BACKEND_NAME}:${IMAGE_TAG}" >> $GITHUB_ENV
-          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          IMAGE_NAME="${{ env.IMAGE_REGISTRY }}/${BACKEND_NAME}:${IMAGE_TAG}"
+          echo "BACKEND_NAME=$BACKEND_NAME" >> "$GITHUB_OUTPUT"
+          echo "IMAGE_NAME=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -67,8 +71,17 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          docker build -t ${{ env.IMAGE_NAME }} .
-          docker push ${{ env.IMAGE_NAME }}
+          docker build -t "${{ steps.vars.outputs.IMAGE_NAME }}" .
+          docker push "${{ steps.vars.outputs.IMAGE_NAME }}"
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install and authenticate Tailscale
         run: |
@@ -84,7 +97,8 @@ jobs:
       - name: Configure kubectl
         run: |
           echo "${{ secrets.K3S_KUBECONFIG }}" | base64 -d > kubeconfig.yaml
-          echo "KUBECONFIG=$(pwd)/kubeconfig.yaml" >> $GITHUB_ENV
+          export KUBECONFIG=$(pwd)/kubeconfig.yaml
+          kubectl config current-context # Verify the context
 
       - name: Check Cluster Connection
         run: kubectl cluster-info
@@ -93,11 +107,14 @@ jobs:
         run: |
           envsubst < k8s/deployment.yaml | kubectl apply -f -
           envsubst < k8s/service.yaml | kubectl apply -f -
+        env:
+          BACKEND_NAME: ${{ needs.build-and-push.outputs.BACKEND_NAME }}
+          IMAGE_NAME: ${{ needs.build-and-push.outputs.IMAGE_NAME }}
+          SHORT_SHA: ${{ needs.build-and-push.outputs.SHORT_SHA }}
 
       - name: Wait for Deployment to be Ready
-        run: |
-          kubectl rollout status deployment/loopback4-backend --BACKEND_NAME=${{ env.BACKEND_NAME }} --timeout=60s
+        run: kubectl rollout status deployment/${{ needs.build-and-push.outputs.BACKEND_NAME }} --timeout=120s
 
-      - name: Clean up
+      - name: Clean up kubeconfig
         if: always()
         run: rm -f kubeconfig.yaml
