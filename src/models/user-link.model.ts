@@ -2,6 +2,26 @@ import {Entity, model, property} from '@loopback/repository';
 
 @model({
   name: 'users_users',
+  settings: {
+    foreignKeys: {
+      fk_userlink_followerId: {
+        name: 'fk_userlink_followerId',
+        entity: 'user',
+        entityKey: 'id',
+        foreignKey: 'followerId',
+        onDelete: 'CASCADE',
+        onUpdate: 'SET NULL',
+      },
+      fk_userlink_followeeId: {
+        name: 'fk_userlink_followeeId',
+        entity: 'user',
+        entityKey: 'id',
+        foreignKey: 'followeeId',
+        onDelete: 'CASCADE',
+        onUpdate: 'SET NULL',
+      },
+    },
+  }
 })
 export class UserLink extends Entity {
   @property({
@@ -22,7 +42,7 @@ export class UserLink extends Entity {
     type: 'string',
     required: true,
     postgresql: {
-      columnName: 'follower_id',
+      columnName: 'followerId',
       dataType: 'text',
       dataLength: null,
       dataPrecision: null,
@@ -36,7 +56,7 @@ export class UserLink extends Entity {
     type: 'string',
     required: true,
     postgresql: {
-      columnName: 'followee_id',
+      columnName: 'followeeId',
       dataType: 'text',
       dataLength: null,
       dataPrecision: null,

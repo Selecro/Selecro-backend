@@ -9,7 +9,7 @@ export enum Language {
 }
 
 @model({
-  name: 'users',
+  name: 'user',
 })
 export class User extends Entity {
   @property({

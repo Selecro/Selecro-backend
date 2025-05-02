@@ -1,0 +1,83 @@
+services:
+  db:
+    container_name: selecro_postgres
+    image: postgres:latest
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "${SQL_USER}"
+      POSTGRES_PASSWORD: "${SQL_PASSWORD}"
+      POSTGRES_DB: "${SQL_DATABASE}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${SQL_PORT}:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${SQL_USER}", "-d", "${SQL_DATABASE}"]
+      interval: 30s
+      retries: 5
+      timeout: 10s
+
+  pgadmin:
+    container_name: selecro_pgadmin4
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "${PGADMIN_DEFAULT_EMAIL}"
+      PGADMIN_DEFAULT_PASSWORD: "${PGADMIN_DEFAULT_PASSWORD}"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    healthcheck:
+      test: ["CMD", "wget", "-O", "-", "http://localhost:80/misc/ping"]
+      interval: 30s
+      retries: 5
+      timeout: 10s
+
+  selecro_app:
+    build: .
+    container_name: selecro
+    image: selecro
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DEFAULT_HOST: "0.0.0.0" # Changed to localhost for local development
+      DEFAULT_PORT: "3000" # Changed to 3000 for local development
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_SECRET_EMAIL: "${JWT_SECRET_EMAIL}"
+      JWT_SECRET_SIGNUP: "${JWT_SECRET_SIGNUP}"
+      SQL_HOST: "db" # Changed to service name, redundant, but kept for clarity
+      SQL_PORT: "${SQL_PORT}" # Corrected to use POSTGRES_PORT
+      SQL_USER: "${SQL_USER}" # Corrected to use POSTGRES_USER
+      SQL_PASSWORD: "${SQL_PASSWORD}" # Corrected
+      SQL_DATABASE: "${SQL_DATABASE}" # Corrected
+      EMAIL_HOST: "${EMAIL_HOST}"
+      EMAIL_PORT: "654"
+      EMAIL_USER: "${EMAIL_USER}"
+      EMAIL_PASSWORD: "${EMAIL_PASSWORD}"
+      VAULT_URL: "localhost"
+      VAULT_PORT: "3200"
+      UNSEAL_KEY_1: "${UNSEAL_KEY_1}"
+      UNSEAL_KEY_2: "${UNSEAL_KEY_2}"
+      UNSEAL_KEY_3: "${UNSEAL_KEY_3}"
+      ROOT_VAULT_TOKEN: "${ROOT_VAULT_TOKEN}"
+      INSTRUCTION_KEY_PREMIUM: "${INSTRUCTION_KEY_PREMIUM}"
+      INSTRUCTION_KEY_PREMIUM_PERMISSIONS: "${INSTRUCTION_KEY_PREMIUM_PERMISSIONS}"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      retries: 5
+      timeout: 10s
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  default:
+    driver: bridge

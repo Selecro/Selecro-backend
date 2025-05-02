@@ -2,6 +2,18 @@ import {Entity, model, property} from '@loopback/repository';
 
 @model({
   name: 'steps',
+  settings: {
+    foreignKeys: {
+      fk_step_instructionId: {
+        name: 'fk_step_instructionId',
+        entity: 'instructions',
+        entityKey: 'id',
+        foreignKey: 'instructionId',
+        onDelete: 'CASCADE',
+        onUpdate: 'SET NULL',
+      },
+    },
+  },
 })
 export class Step extends Entity {
   @property({
@@ -95,6 +107,12 @@ export class Step extends Entity {
 
   @property({
     type: 'string',
+    required: true,
+    postgresql: {
+      columnName: 'instructionId',
+      dataType: 'text',
+      nullable: 'NO',
+    },
   })
   instructionId: string;
 

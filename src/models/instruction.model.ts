@@ -9,6 +9,18 @@ export enum Difficulty {
 
 @model({
   name: 'instructions',
+  settings: {
+    foreignKeys: {
+      fk_instuction_userId: {
+        name: 'fk_instruction_userId',
+        entity: 'user',
+        entityKey: 'id',
+        foreignKey: 'userId',
+        onDelete: 'CASCADE',
+        onUpdate: 'SET NULL'
+      },
+    },
+  }
 })
 export class Instruction extends Entity {
   @property({
@@ -150,6 +162,12 @@ export class Instruction extends Entity {
 
   @property({
     type: 'string',
+    required: true,
+    postgresql: {
+      columnName: 'userId',
+      dataType: 'text',
+      nullable: 'NO',
+    },
   })
   userId: string;
 
