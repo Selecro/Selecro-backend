@@ -22,7 +22,7 @@ import {
   UserLinkController,
   UserProgressController,
 } from './controllers';
-import {DbDataSource} from './datasources';
+import {DbDataSource, KafkaDataSource, KmsDataSource, RedisDataSource} from './datasources';
 import {
   InstructionRepository,
   ProgressRepository,
@@ -69,6 +69,9 @@ export class SelecroBackendApplication extends BootMixin(
     this.repository(UserLinkRepository);
     this.repository(ProgressRepository);
     this.dataSource(DbDataSource);
+    this.dataSource(KafkaDataSource);
+    this.dataSource(RedisDataSource);
+    this.dataSource(KmsDataSource);
 
     this.bind('services.jwt.service').toClass(JWTService);
     this.bind('authentication.jwt.expiresIn').to('32d');

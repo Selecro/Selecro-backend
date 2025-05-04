@@ -8,7 +8,7 @@ export enum Difficulty {
 }
 
 @model({
-  name: 'instructions',
+  name: 'instruction',
   settings: {
     foreignKeys: {
       fk_instuction_userId: {

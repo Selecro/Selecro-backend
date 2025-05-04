@@ -13,9 +13,10 @@ services:
       - "${SQL_PORT}:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${SQL_USER}", "-d", "${SQL_DATABASE}"]
-      interval: 30s
+      interval: 10s
       retries: 5
-      timeout: 10s
+      timeout: 5s
+      start_period: 5s
 
   pgadmin:
     container_name: selecro_pgadmin4
@@ -28,11 +29,92 @@ services:
       - pgadmin_data:/var/lib/pgadmin
     ports:
       - "5050:80"
+    depends_on:
+       db:
+         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-O", "-", "http://localhost:80/misc/ping"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80/misc/ping"]
       interval: 30s
       retries: 5
       timeout: 10s
+
+  redis:
+    container_name: selecro_redis
+    image: redis:latest
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 50
+      start_period: 5s
+
+  zookeeper:
+    container_name: selecro_zookeeper
+    image: confluentinc/cp-zookeeper:latest
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'srvr' | nc localhost 2181 | grep -q 'Mode:'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  kafka:
+    container_name: selecro_kafka
+    image: confluentinc/cp-kafka:latest
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+  vault:
+    container_name: selecro_vault
+    image: hashicorp/vault:latest
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    volumes:
+      - vault_data:/vault/file
+      - vault_logs:/vault/logs
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: "${ROOT_VAULT_TOKEN}"
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+      VAULT_API_ADDR: "http://vault:8200"
+    cap_add:
+      - IPC_LOCK
+    command: server -dev -dev-root-token-id="${ROOT_VAULT_TOKEN}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8200/v1/sys/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
   selecro_app:
     build: .
@@ -42,41 +124,54 @@ services:
     env_file:
       - .env
     environment:
-      DEFAULT_HOST: "0.0.0.0" # Changed to localhost for local development
-      DEFAULT_PORT: "3000" # Changed to 3000 for local development
+      DEFAULT_HOST: "0.0.0.0"
+      DEFAULT_PORT: "3000"
       JWT_SECRET: "${JWT_SECRET}"
       JWT_SECRET_EMAIL: "${JWT_SECRET_EMAIL}"
       JWT_SECRET_SIGNUP: "${JWT_SECRET_SIGNUP}"
-      SQL_HOST: "db" # Changed to service name, redundant, but kept for clarity
-      SQL_PORT: "${SQL_PORT}" # Corrected to use POSTGRES_PORT
-      SQL_USER: "${SQL_USER}" # Corrected to use POSTGRES_USER
-      SQL_PASSWORD: "${SQL_PASSWORD}" # Corrected
-      SQL_DATABASE: "${SQL_DATABASE}" # Corrected
+      SQL_HOST: "db"
+      SQL_PORT: "5432"
+      SQL_USER: "${SQL_USER}"
+      SQL_PASSWORD: "${SQL_PASSWORD}"
+      SQL_DATABASE: "${SQL_DATABASE}"
       EMAIL_HOST: "${EMAIL_HOST}"
       EMAIL_PORT: "654"
       EMAIL_USER: "${EMAIL_USER}"
       EMAIL_PASSWORD: "${EMAIL_PASSWORD}"
-      VAULT_URL: "localhost"
-      VAULT_PORT: "3200"
-      UNSEAL_KEY_1: "${UNSEAL_KEY_1}"
-      UNSEAL_KEY_2: "${UNSEAL_KEY_2}"
-      UNSEAL_KEY_3: "${UNSEAL_KEY_3}"
+      VAULT_URL: "http://vault:8200"
       ROOT_VAULT_TOKEN: "${ROOT_VAULT_TOKEN}"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      KAFKA_BROKERS: "kafka:9092"
       INSTRUCTION_KEY_PREMIUM: "${INSTRUCTION_KEY_PREMIUM}"
       INSTRUCTION_KEY_PREMIUM_PERMISSIONS: "${INSTRUCTION_KEY_PREMIUM_PERMISSIONS}"
     ports:
       - "3000:3000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      vault:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
       interval: 30s
       retries: 5
       timeout: 10s
+      start_period: 15s
 
 volumes:
   postgres_data:
   pgadmin_data:
+  redis_data:
+  zookeeper_data:
+  zookeeper_log:
+  kafka_data:
+  vault_data:
+  vault_logs:
 
 networks:
   default:

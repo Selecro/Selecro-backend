@@ -1,6 +1,6 @@
 # Check out https://hub.docker.com/_/node to select a new base image
 
-FROM node:20.19.0-bullseye-slim
+FROM node:22.15.0-slim-bullseye
 
 # Set to a non-root built-in user `node`
 USER node
