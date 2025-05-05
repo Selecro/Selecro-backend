@@ -6,8 +6,8 @@ dotenv.config();
 const config = {
   name: 'db',
   connector: 'postgresql',
-  host: process.env.SQL_HOST,
-  port: Number(process.env.SQL_PORT),
+  host: process.env.SQL_HOST || 'localhost',
+  port: Number(process.env.SQL_PORT) || 5432,
   user: process.env.SQL_USER,
   password: process.env.SQL_PASSWORD,
   database: process.env.SQL_DATABASE,
@@ -20,8 +20,7 @@ const config = {
 @lifeCycleObserver('datasource')
 export class DbDataSource
   extends juggler.DataSource
-  implements LifeCycleObserver
-{
+  implements LifeCycleObserver {
   static dataSourceName = 'db';
   static readonly defaultConfig = config;
 

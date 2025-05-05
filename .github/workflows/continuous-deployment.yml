@@ -1,4 +1,5 @@
 name: Deploy LoopBack 4 to K3s via Tailscale
+name: Deploy LoopBack 4 to K3s via Tailscale
 
 on:
   push:
@@ -6,6 +7,9 @@ on:
       - dev
       - main
   workflow_dispatch:
+
+env:
+  IMAGE_REGISTRY: selecro
 
 env:
   IMAGE_REGISTRY: selecro
@@ -44,13 +48,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Set deployment variables
         id: vars
+        id: vars
         run: |
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          case "$BRANCH" in
+            dev)
+              BACKEND_NAME="backend-dev"
+              ;;
+            main)
+              BACKEND_NAME="backend-main"
+              ;;
+            *)
+              echo "Invalid branch for deployment" && exit 1
+              ;;
+          esac
+          IMAGE_TAG="${{ github.ref_name }}-${{ github.sha }}"
+          IMAGE_NAME="${{ env.IMAGE_REGISTRY }}/${BACKEND_NAME}:${IMAGE_TAG}"
+          echo "BACKEND_NAME=$BACKEND_NAME" >> "$GITHUB_OUTPUT"
+          echo "IMAGE_NAME=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           BRANCH="${GITHUB_REF#refs/heads/}"
           case "$BRANCH" in
             dev)
@@ -104,6 +127,9 @@ jobs:
           version: 'latest'
 
       - name: Configure kubectl
+          version: 'latest'
+
+      - name: Configure kubectl
         run: |
           echo "${{ secrets.K3S_KUBECONFIG }}" | base64 -d > kubeconfig.yaml
           export KUBECONFIG=$(pwd)/kubeconfig.yaml
@@ -113,7 +139,28 @@ jobs:
         run: kubectl cluster-info
 
       - name: Apply Kubernetes Manifests
+          echo "${{ secrets.K3S_KUBECONFIG }}" | base64 -d > kubeconfig.yaml
+          export KUBECONFIG=$(pwd)/kubeconfig.yaml
+          kubectl config current-context # Verify the context
+
+      - name: Check Cluster Connection
+        run: kubectl cluster-info
+
+      - name: Apply Kubernetes Manifests
         run: |
+          envsubst < k8s/deployment.yaml | kubectl apply -f -
+          envsubst < k8s/service.yaml | kubectl apply -f -
+        env:
+          BACKEND_NAME: ${{ needs.build-and-push.outputs.BACKEND_NAME }}
+          IMAGE_NAME: ${{ needs.build-and-push.outputs.IMAGE_NAME }}
+          SHORT_SHA: ${{ needs.build-and-push.outputs.SHORT_SHA }}
+
+      - name: Wait for Deployment to be Ready
+        run: kubectl rollout status deployment/${{ needs.build-and-push.outputs.BACKEND_NAME }} --timeout=120s
+
+      - name: Clean up kubeconfig
+        if: always()
+        run: rm -f kubeconfig.yaml
           envsubst < k8s/deployment.yaml | kubectl apply -f -
           envsubst < k8s/service.yaml | kubectl apply -f -
         env:
