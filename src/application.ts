@@ -23,6 +23,8 @@ import {
   UserProgressController,
 } from './controllers';
 import {DbDataSource, KafkaDataSource, KmsDataSource, RedisDataSource} from './datasources';
+import {CsrfProtectionInterceptor} from './interceptors/csrf.interceptor';
+import {EncryptDecryptInterceptor} from './interceptors/encryption.interceptor';
 import {
   InstructionRepository,
   ProgressRepository,
@@ -82,6 +84,9 @@ export class SelecroBackendApplication extends BootMixin(
     this.bind('services.email').toClass(EmailService);
     this.bind('services.imgur').toClass(ImgurService);
     this.bind('services.vault').toClass(VaultService);
+
+    this.interceptor(CsrfProtectionInterceptor, {global: true});
+    this.interceptor(EncryptDecryptInterceptor, {global: true});
 
     this.projectRoot = __dirname;
     // Customize @loopback/boot Booter Conventions here
