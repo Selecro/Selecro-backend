@@ -71,7 +71,7 @@
   },
   "devDependencies": {
     "@loopback/build": "^11.0.3",
-    "@loopback/eslint-config": "^15.0.3",
+    "@loopback/eslint-config": "^15.0.5",
     "@loopback/testlab": "^7.0.3",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/multer": "^1.4.11",
