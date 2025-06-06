@@ -51,7 +51,7 @@
   "dependencies": {
     "@loopback/authentication-jwt": "^0.15.13",
     "@loopback/boot": "^7.0.13",
-    "@loopback/core": "^6.1.10",
+    "@loopback/core": "^6.1.11",
     "@loopback/repository": "^7.0.13",
     "@loopback/rest": "^14.0.13",
     "@loopback/rest-explorer": "^7.0.13",
