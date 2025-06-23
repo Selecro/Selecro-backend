@@ -52,7 +52,7 @@
     "@loopback/authentication-jwt": "^0.15.14",
     "@loopback/boot": "^7.0.13",
     "@loopback/core": "^6.1.11",
-    "@loopback/repository": "^7.0.13",
+    "@loopback/repository": "^8.0.1",
     "@loopback/rest": "^15.0.2",
     "@loopback/rest-explorer": "^7.0.13",
     "@nestjs/common": "^11.1.3",
