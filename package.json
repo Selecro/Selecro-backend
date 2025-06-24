@@ -54,7 +54,7 @@
     "@loopback/core": "^6.1.11",
     "@loopback/repository": "^8.0.1",
     "@loopback/rest": "^15.0.2",
-    "@loopback/rest-explorer": "^7.0.13",
+    "@loopback/rest-explorer": "^8.0.2",
     "@nestjs/common": "^11.1.3",
     "@nestjs/core": "^11.1.3",
     "@nestjs/platform-express": "^11.1.3",
