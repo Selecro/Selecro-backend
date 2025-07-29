@@ -1,4 +1,6 @@
+import {juggler} from '@loopback/repository';
 import * as dotenv from 'dotenv';
+import 'reflect-metadata';
 import {ApplicationConfig, SelecroBackendApplication} from './application';
 dotenv.config();
 
@@ -7,7 +9,18 @@ export * from './application';
 export async function main(options: ApplicationConfig = {}) {
   const app = new SelecroBackendApplication(options);
   await app.boot();
-  await app.migrateSchema({existingSchema: 'alter'});
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Running schema migration for the main relational database (existingSchema: "alter")...');
+    try {
+      const postgresqlDataSource = await app.get<juggler.DataSource>('datasources.postgresql');
+      await postgresqlDataSource.autoupdate?.();
+      console.log('Schema migration for "postgresql" datasource completed.');
+    } catch (error) {
+      console.error('Error migrating "postgresql" datasource:', error);
+    }
+  }
+
   await app.start();
 
   const url = app.restServer.url;
@@ -21,8 +34,8 @@ if (require.main === module) {
   // Run the application
   const config = {
     rest: {
-      port: +(process.env.PORT ?? 3000),
-      host: process.env.HOST ?? '0.0.0.0',
+      port: +(process.env.APP_DEFAULT_PORT ?? 3000),
+      host: process.env.APP_DEFAULT_HOST ?? '0.0.0.0',
       // The `gracePeriodForClose` provides a graceful close for http/https
       // servers with keep-alive clients. The default value is `Infinity`
       // (don't force-close). If you want to immediately destroy all sockets

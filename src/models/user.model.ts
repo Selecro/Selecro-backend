@@ -1,55 +1,81 @@
-import {Entity, hasMany, model, property} from '@loopback/repository';
-import {UserLink} from '.';
-import {Instruction} from './instruction.model';
-import {Progress} from './progress.model';
+import {Entity, hasMany, hasOne, model, property} from '@loopback/repository';
+import {Badge, Comment, Device, Dictionary, EducationMode, File, Follower, LoginHistory, Manual, ManualProgress, ManualPurchase, News, NewsDelivery, Notification, OAuthAccount, PasswordHistory, Permission, Role, Session, SystemLog, Tool, TwoFactorAuthBackupCode, TwoFactorAuthLog, TwoFactorAuthMethod, UserBadge, UserDocument, UserLocation, UserManualInteraction, UserNotificationSetting, UserRole, UserSecurity, UserSetting} from '.';
 
-export enum Language {
-  CZ = 'CZ',
-  EN = 'EN',
+export enum AccountStatus {
+  active = 'active',
+  suspended = 'suspended',
+  deleted = 'deleted',
+  pending_verification = 'pending_verification',
 }
 
 @model({
   name: 'user',
+  settings: {
+    postgresql: {
+      table: 'user',
+    },
+  }
 })
 export class User extends Entity {
   @property({
-    type: 'string',
+    type: 'number',
     id: true,
-    defaultFn: 'uuidv4',
+    generated: true,
     postgresql: {
       columnName: 'id',
-      dataLength: null,
-      dataPrecision: 10,
-      dataScale: 0,
+      dataType: 'bigint',
       nullable: 'NO',
+      generated: true,
     },
   })
-  id: string;
+  id?: number;
 
   @property({
     type: 'string',
-    required: true,
+    defaultFn: 'uuidv4',
     postgresql: {
-      columnName: 'email',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
+      columnName: 'uuid',
+      dataType: 'varchar',
+      dataLength: 36,
       nullable: 'NO',
+      unique: true,
     },
   })
-  email: string;
+  uuid: string;
+
+  @property({
+    type: 'string',
+    required: false,
+    postgresql: {
+      columnName: 'first_name',
+      dataType: 'varchar',
+      dataLength: 100,
+      nullable: 'YES',
+    },
+  })
+  firstName?: string;
+
+  @property({
+    type: 'string',
+    required: false,
+    postgresql: {
+      columnName: 'last_name',
+      dataType: 'varchar',
+      dataLength: 100,
+      nullable: 'YES',
+    },
+  })
+  lastName?: string;
 
   @property({
     type: 'string',
     required: true,
     postgresql: {
       columnName: 'username',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
+      dataType: 'varchar',
+      dataLength: 50,
       nullable: 'NO',
+      unique: true,
     },
   })
   username: string;
@@ -58,197 +84,230 @@ export class User extends Entity {
     type: 'string',
     required: true,
     postgresql: {
-      columnName: 'password_hash',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
+      columnName: 'email',
+      dataType: 'varchar',
+      dataLength: 255,
       nullable: 'NO',
+      unique: true,
     },
   })
-  passwordHash: string;
-
-  @property({
-    type: 'string',
-    required: true,
-    postgresql: {
-      columnName: 'wrapped_dek',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'NO',
-    },
-  })
-  wrappedDEK: string;
-
-  @property({
-    type: 'string',
-    required: true,
-    postgresql: {
-      columnName: 'initialization_vector',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'NO',
-    },
-  })
-  initializationVector: string;
-
-  @property({
-    type: 'string',
-    required: true,
-    postgresql: {
-      columnName: 'kek_salt',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'NO',
-    },
-  })
-  kekSalt: string;
-
-  @property({
-    type: 'string',
-    required: true,
-    postgresql: {
-      columnName: 'language',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'NO',
-    },
-  })
-  language: Language;
+  email: string;
 
   @property({
     type: 'boolean',
     required: true,
-    postgresql: {
-      columnName: 'darkmode',
-      dataType: 'boolean',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'NO',
-      default: false,
-    },
     default: false,
-  })
-  darkmode: boolean;
-
-  @property({
-    type: 'boolean',
-    required: true,
     postgresql: {
       columnName: 'email_verified',
       dataType: 'boolean',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
       nullable: 'NO',
       default: false,
     },
-    default: false,
   })
   emailVerified: boolean;
 
   @property({
     type: 'date',
-    required: true,
+    required: false,
     postgresql: {
-      columnName: 'date',
+      columnName: 'date_of_birth',
+      dataType: 'date',
+      nullable: 'YES',
+    },
+  })
+  dateOfBirth?: Date;
+
+  @property({
+    type: 'string',
+    required: true,
+    default: AccountStatus.pending_verification,
+    jsonSchema: {
+      enum: Object.values(AccountStatus),
+    },
+    postgresql: {
+      columnName: 'account_status',
+      dataType: 'text',
+      nullable: 'NO',
+      default: 'pending_verification',
+    },
+  })
+  accountStatus: AccountStatus;
+
+  @property({
+    type: 'date',
+    required: false,
+    postgresql: {
+      columnName: 'last_login_at',
+      dataType: 'timestamp with time zone',
+      nullable: 'YES',
+    },
+  })
+  lastLoginAt?: Date;
+
+  @property({
+    type: 'date',
+    required: false,
+    postgresql: {
+      columnName: 'last_active_at',
+      dataType: 'timestamp with time zone',
+      nullable: 'YES',
+    },
+  })
+  lastActiveAt?: Date;
+
+  @property({
+    type: 'date',
+    required: true,
+    defaultFn: 'now',
+    postgresql: {
+      columnName: 'created_at',
       dataType: 'timestamp with time zone',
       nullable: 'NO',
+      default: 'CURRENT_TIMESTAMP',
     },
-    default: () => new Date(),
-    valueGenerator: () => 'NOW()',
   })
-  date: Date;
+  createdAt: Date;
+
+  @property({
+    type: 'date',
+    required: true,
+    defaultFn: 'now',
+    updateDefaultFn: 'now',
+    postgresql: {
+      columnName: 'updated_at',
+      dataType: 'timestamp with time zone',
+      nullable: 'NO',
+      default: 'CURRENT_TIMESTAMP',
+    },
+  })
+  updatedAt: Date;
 
   @property({
     type: 'string',
     required: false,
     postgresql: {
-      columnName: 'nick',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
+      columnName: 'phone_number',
+      dataType: 'varchar',
+      dataLength: 20,
       nullable: 'YES',
     },
   })
-  nick?: string | null;
+  phoneNumber?: string;
 
   @property({
-    type: 'string',
-    required: false,
+    type: 'boolean',
+    required: true,
+    default: false,
     postgresql: {
-      columnName: 'bio',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'YES',
+      columnName: 'is_oauth_user',
+      dataType: 'boolean',
+      nullable: 'NO',
+      default: false,
     },
   })
-  bio?: string | null;
+  isOauthUser: boolean;
 
-  @property({
-    type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'link',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'YES',
-    },
-  })
-  link?: string | null;
+  @hasOne(() => UserSecurity, {keyTo: 'userId'})
+  userSecurity: UserSecurity;
 
-  @property({
-    type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'delete_hash',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'YES',
-    },
-  })
-  deleteHash?: string | null;
+  @hasOne(() => UserNotificationSetting, {keyTo: 'userId'})
+  userNotificationSetting: UserNotificationSetting;
 
-  @property.array(String, {
-    required: false,
-    postgresql: {
-      columnName: 'favorites',
-      array: true,
-    },
-    default: () => [],
-  })
-  favorites?: string[];
+  @hasOne(() => UserLocation, {keyTo: 'userId'})
+  userLocation: UserLocation;
 
-  @hasMany(() => User, {
-    through: {
-      model: () => UserLink,
-      keyFrom: 'followerId',
-      keyTo: 'followeeId',
-    },
-  })
-  users?: User[];
+  @hasOne(() => UserSetting, {keyTo: 'userId'})
+  userSetting: UserSetting;
 
-  @hasMany(() => Instruction, {keyTo: 'userId'})
-  instructions?: Instruction[];
+  @hasMany(() => Session, {keyTo: 'userId'})
+  sessions: Session[];
 
-  @hasMany(() => Progress, {keyTo: 'userId'})
-  progresses?: Progress[];
+  @hasMany(() => Device, {keyTo: 'userId'})
+  devices: Device[];
+
+  @hasMany(() => PasswordHistory, {keyTo: 'userId'})
+  passwordHistories: PasswordHistory[];
+
+  @hasMany(() => OAuthAccount, {keyTo: 'userId'})
+  oAuthAccounts: OAuthAccount[];
+
+  @hasMany(() => TwoFactorAuthBackupCode, {keyTo: 'userId'})
+  twoFactorAuthBackupCodes: TwoFactorAuthBackupCode[];
+
+  @hasMany(() => Role, {keyTo: 'creatorUserId'})
+  roles: Role[];
+
+  @hasMany(() => TwoFactorAuthMethod, {keyTo: 'userId'})
+  twoFactorAuthMethods: TwoFactorAuthMethod[];
+
+  @hasMany(() => SystemLog, {keyTo: 'userId'})
+  systemLogs: SystemLog[];
+
+  @hasMany(() => UserRole, {keyTo: 'userId'})
+  userRoles: UserRole[];
+
+  @hasMany(() => Permission, {keyTo: 'creatorUserId'})
+  permissions: Permission[];
+
+  @hasMany(() => LoginHistory, {keyTo: 'userId'})
+  loginHistories: LoginHistory[];
+
+  @hasMany(() => TwoFactorAuthLog, {keyTo: 'userId'})
+  twoFactorAuthLogs: TwoFactorAuthLog[];
+
+  @hasMany(() => NewsDelivery, {keyTo: 'userId'})
+  newsDeliveries: NewsDelivery[];
+
+  @hasMany(() => News, {keyTo: 'creatorUserId'})
+  news: News[];
+
+  @hasMany(() => Notification, {keyTo: 'creatorUserId'})
+  createdNotifications: Notification[];
+
+  @hasMany(() => Notification, {keyTo: 'userId'})
+  receivedNotifications: Notification[];
+
+  @hasMany(() => UserBadge, {keyTo: 'userId'})
+  userBadges: UserBadge[];
+
+  @hasMany(() => Follower, {keyTo: 'followerId'})
+  followers: Follower[];
+
+  @hasMany(() => Follower, {keyTo: 'followedId'})
+  following: Follower[];
+
+  @hasMany(() => Badge, {keyTo: 'creatorUserId'})
+  badges: Badge[];
+
+  @hasMany(() => UserDocument, {keyTo: 'userId'})
+  userDocuments: UserDocument[];
+
+  @hasMany(() => File, {keyTo: 'creatorUserId'})
+  files: File[];
+
+  @hasMany(() => Tool, {keyTo: 'creatorUserId'})
+  tools: Tool[];
+
+  @hasMany(() => Dictionary, {keyTo: 'creatorUserId'})
+  dictionaries: Dictionary[];
+
+  @hasMany(() => UserManualInteraction, {keyTo: 'userId'})
+  userManualInteractions: UserManualInteraction[];
+
+  @hasMany(() => ManualPurchase, {keyTo: 'userId'})
+  manualPurchases: ManualPurchase[];
+
+  @hasMany(() => ManualProgress, {keyTo: 'userId'})
+  manualProgresses: ManualProgress[];
+
+  @hasMany(() => EducationMode, {keyTo: 'creatorUserId'})
+  educationModes: EducationMode[];
+
+  @hasMany(() => Manual, {keyTo: 'creatorUserId'})
+  manuals: Manual[];
+
+  @hasMany(() => Comment, {keyTo: 'userId'})
+  comments: Comment[];
 
   constructor(data?: Partial<User>) {
     super(data);
@@ -256,7 +315,6 @@ export class User extends Entity {
 }
 
 export interface UserRelations {
-  // describe navigational properties here
 }
 
 export type UserWithRelations = User & UserRelations;

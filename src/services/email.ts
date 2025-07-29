@@ -1,9 +1,12 @@
 import {bind, BindingScope} from '@loopback/core';
+import {repository} from '@loopback/repository'; // Import repository decorator
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import jwt from 'jsonwebtoken';
 import {EmailDataSource} from '../datasources';
-import {User} from '../models';
+import {User} from '../models'; // Import UserSetting model
+import {UserSettingRepository} from '../repositories/user-setting.repository'; // Import UserSettingRepository
+
 dotenv.config();
 
 @bind({scope: BindingScope.TRANSIENT})
@@ -13,7 +16,10 @@ export class EmailService {
       ? 'https://develop.selecro.cz/#'
       : 'https://selecro.cz/#';
 
-  constructor() { }
+  constructor(
+    @repository(UserSettingRepository)
+    public userSettingRepository: UserSettingRepository,
+  ) { }
 
   private generateVerificationToken(userId: string): string {
     const secret = process.env.JWT_SECRET_EMAIL ?? '';
@@ -24,11 +30,22 @@ export class EmailService {
     return token;
   }
 
+  private async getUserLanguage(userId: number): Promise<string> {
+    const userSetting = await this.userSettingRepository.findOne({
+      where: {
+        userId: userId,
+      },
+    });
+    // Default to 'en' if setting not found or languagePreference is not set
+    return userSetting?.languagePreference || 'en';
+  }
+
   async sendRegistrationEmail(user: User): Promise<void> {
-    const token = this.generateVerificationToken(user.id);
+    const token = this.generateVerificationToken(user.uuid);
     const url = `${this.domain}/verification?token=${token}`;
+    const userLanguage = await this.getUserLanguage(user.id as number); // Assuming id is the userId for UserSetting
     let body = fs.readFileSync(
-      `./src/html/registration${user.language}.html`,
+      `./src/html/registration${userLanguage}.html`,
       'utf-8',
     );
     body = body.replace('{{URL}}', url);
@@ -41,14 +58,15 @@ export class EmailService {
   }
 
   async sendResetEmail(user: User, email: string | undefined): Promise<void> {
-    const token = this.generateVerificationToken(user.id);
+    const token = this.generateVerificationToken(user.uuid);
     const url = `${this.domain}/verication?token=${token}`;
+    const userLanguage = await this.getUserLanguage(user.id as number); // Assuming id is the userId for UserSetting
     let body0 = fs.readFileSync(
-      `./src/html/verification${user.language}.html`,
+      `./src/html/verification${userLanguage}.html`,
       'utf-8',
     );
     const body1 = fs.readFileSync(
-      `./src/html/emailInfo${user.language}.html`,
+      `./src/html/emailInfo${userLanguage}.html`,
       'utf-8',
     );
     body0 = body0.replace('{{URL}}', url);
@@ -67,10 +85,11 @@ export class EmailService {
   }
 
   async sendPasswordChange(user: User): Promise<void> {
-    const token = this.generateVerificationToken(user.id);
+    const token = this.generateVerificationToken(user.uuid);
     const url = `${this.domain}/passwdchange?token=${token}`;
+    const userLanguage = await this.getUserLanguage(user.id as number); // Assuming id is the userId for UserSetting
     let body = fs.readFileSync(
-      `./src/html/passwordChange${user.language}.html`,
+      `./src/html/passwordChange${userLanguage}.html`,
       'utf-8',
     );
     body = body.replace('{{URL}}', url);
@@ -83,8 +102,9 @@ export class EmailService {
   }
 
   async sendSuccessfulyPasswordChange(user: User): Promise<void> {
+    const userLanguage = await this.getUserLanguage(user.id as number); // Assuming id is the userId for UserSetting
     const body = fs.readFileSync(
-      `./src/html/successfulyPasswordChange${user.language}.html`,
+      `./src/html/successfulyPasswordChange${userLanguage}.html`,
       'utf-8',
     );
     await EmailDataSource.sendMail({
