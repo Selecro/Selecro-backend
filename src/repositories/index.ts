@@ -26,7 +26,7 @@ export * from './two-factor-auth-backup-code.repository';
 export * from './two-factor-auth-log.repository';
 export * from './two-factor-auth-method.repository';
 export * from './user-badge.repository';
-export * from './user-document.repository';
+export * from './user-file.repository';
 export * from './user-location.repository';
 export * from './user-manual-interaction.repository';
 export * from './user-notification-setting.repository';
@@ -34,3 +34,4 @@ export * from './user-role.repository';
 export * from './user-security.repository';
 export * from './user-setting.repository';
 export * from './user.repository';
+

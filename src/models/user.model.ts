@@ -1,5 +1,5 @@
 import {Entity, hasMany, hasOne, model, property} from '@loopback/repository';
-import {Badge, Comment, Device, Dictionary, EducationMode, File, Follower, LoginHistory, Manual, ManualProgress, ManualPurchase, News, NewsDelivery, Notification, OAuthAccount, PasswordHistory, Permission, Role, Session, SystemLog, Tool, TwoFactorAuthBackupCode, TwoFactorAuthLog, TwoFactorAuthMethod, UserBadge, UserDocument, UserLocation, UserManualInteraction, UserNotificationSetting, UserRole, UserSecurity, UserSetting} from '.';
+import {Badge, Comment, Device, Dictionary, EducationMode, File, Follower, LoginHistory, Manual, ManualProgress, ManualPurchase, News, NewsDelivery, Notification, OAuthAccount, PasswordHistory, Permission, Role, Session, SystemLog, Tool, TwoFactorAuthBackupCode, TwoFactorAuthLog, TwoFactorAuthMethod, UserBadge, UserFile, UserLocation, UserManualInteraction, UserNotificationSetting, UserRole, UserSecurity, UserSetting} from '.';
 
 export enum AccountStatus {
   active = 'active',
@@ -279,8 +279,8 @@ export class User extends Entity {
   @hasMany(() => Badge, {keyTo: 'creatorUserId'})
   badges: Badge[];
 
-  @hasMany(() => UserDocument, {keyTo: 'userId'})
-  userDocuments: UserDocument[];
+  @hasMany(() => UserFile, {keyTo: 'userId'})
+  userFiles: UserFile[];
 
   @hasMany(() => File, {keyTo: 'creatorUserId'})
   files: File[];

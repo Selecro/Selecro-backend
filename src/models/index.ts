@@ -26,7 +26,7 @@ export * from './two-factor-auth-backup-code.model';
 export * from './two-factor-auth-log.model';
 export * from './two-factor-auth-method.model';
 export * from './user-badge.model';
-export * from './user-document.model';
+export * from './user-file.model';
 export * from './user-location.model';
 export * from './user-manual-interaction.model';
 export * from './user-notification-setting.model';

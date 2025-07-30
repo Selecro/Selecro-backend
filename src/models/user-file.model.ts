@@ -2,22 +2,22 @@ import {Entity, model, property} from '@loopback/repository';
 import {File, User} from '.';
 
 @model({
-  name: 'user_document',
+  name: 'user_file',
   settings: {
     postgresql: {
-      table: 'user_document',
+      table: 'user_file',
     },
     foreignKeys: {
-      fk_user_document_userId: {
-        name: 'fk_user_document_userId',
+      fk_user_File_userId: {
+        name: 'fk_user_file_userId',
         entity: 'user',
         entityKey: 'id',
         foreignKey: 'user_id',
         onDelete: 'NO ACTION',
         onUpdate: 'NO ACTION',
       },
-      fk_user_document_fileId: {
-        name: 'fk_user_document_fileId',
+      fk_user_File_fileId: {
+        name: 'fk_user_file_fileId',
         entity: 'file',
         entityKey: 'id',
         foreignKey: 'file_id',
@@ -27,23 +27,11 @@ import {File, User} from '.';
     },
   }
 })
-export class UserDocument extends Entity {
-  @property({
-    type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
-  })
-  id?: number;
-
+export class UserFile extends Entity {
   @property({
     type: 'number',
     required: true,
+    id: true,
     postgresql: {
       columnName: 'user_id',
       dataType: 'bigint',
@@ -55,6 +43,7 @@ export class UserDocument extends Entity {
   @property({
     type: 'number',
     required: true,
+    id: true,
     postgresql: {
       columnName: 'file_id',
       dataType: 'bigint',
@@ -76,14 +65,14 @@ export class UserDocument extends Entity {
   })
   generatedOrUploadedAt: Date;
 
-  constructor(data?: Partial<UserDocument>) {
+  constructor(data?: Partial<UserFile>) {
     super(data);
   }
 }
 
-export interface UserDocumentRelations {
+export interface UserFileRelations {
   user?: User;
   file?: File;
 }
 
-export type UserDocumentWithRelations = UserDocument & UserDocumentRelations;
+export type UserFileWithRelations = UserFile & UserFileRelations;

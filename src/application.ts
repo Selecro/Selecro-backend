@@ -19,7 +19,7 @@ import path from 'path';
 import {PingController} from './controllers';
 import {KafkaDataSource, KmsDataSource, PostgresqlDataSource, RedisDataSource} from './datasources';
 import {CookieParserMiddlewareProvider, CorrelationIdMiddlewareProvider, CorsMiddlewareProvider, CsrfMiddlewareProvider, IpFilterMiddlewareProvider, RateLimitMiddlewareProvider} from './middleware';
-import {BadgeRepository, CommentRepository, DeviceRepository, DictionaryRepository, EducationModeRepository, EducationStepRepository, FileRepository, FollowerRepository, LoginHistoryRepository, ManualProgressRepository, ManualPurchaseRepository, ManualRepository, ManualStepRepository, NewsDeliveryRepository, NewsRepository, NotificationRepository, OAuthAccountRepository, PasswordHistoryRepository, PermissionRepository, RolePermissionRepository, RoleRepository, SessionRepository, SystemLogRepository, ToolRepository, TwoFactorAuthBackupCodeRepository, TwoFactorAuthLogRepository, TwoFactorAuthMethodRepository, UserBadgeRepository, UserDocumentRepository, UserLocationRepository, UserManualInteractionRepository, UserNotificationSettingRepository, UserRoleRepository, UserSecurityRepository, UserSettingRepository} from './repositories';
+import {BadgeRepository, CommentRepository, DeviceRepository, DictionaryRepository, EducationModeRepository, EducationStepRepository, FileRepository, FollowerRepository, LoginHistoryRepository, ManualProgressRepository, ManualPurchaseRepository, ManualRepository, ManualStepRepository, NewsDeliveryRepository, NewsRepository, NotificationRepository, OAuthAccountRepository, PasswordHistoryRepository, PermissionRepository, RolePermissionRepository, RoleRepository, SessionRepository, SystemLogRepository, ToolRepository, TwoFactorAuthBackupCodeRepository, TwoFactorAuthLogRepository, TwoFactorAuthMethodRepository, UserBadgeRepository, UserFileRepository, UserLocationRepository, UserManualInteractionRepository, UserNotificationSettingRepository, UserRoleRepository, UserSecurityRepository, UserSettingRepository} from './repositories';
 import {MySequence} from './sequence';
 dotenv.config();
 
@@ -55,7 +55,7 @@ export class SelecroBackendApplication extends BootMixin(
 
     this.repository(UserRepository);
     this.repository(FileRepository);
-    this.repository(UserDocumentRepository);
+    this.repository(UserFileRepository);
     this.repository(UserSettingRepository);
     this.repository(UserLocationRepository);
     this.repository(UserNotificationSettingRepository);

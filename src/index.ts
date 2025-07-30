@@ -1,6 +1,5 @@
 import {juggler} from '@loopback/repository';
 import * as dotenv from 'dotenv';
-import 'reflect-metadata';
 import {ApplicationConfig, SelecroBackendApplication} from './application';
 dotenv.config();
 
