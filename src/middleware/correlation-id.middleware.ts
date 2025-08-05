@@ -1,16 +1,20 @@
-import {Provider} from '@loopback/core';
+import {inject, Provider} from '@loopback/core';
 import {Middleware} from '@loopback/rest';
 import {v4 as uuidv4} from 'uuid';
+import {CorrelationIdBindings} from '../keys';
 
 export class CorrelationIdMiddlewareProvider implements Provider<Middleware> {
-  constructor() { }
+  constructor(
+    @inject(CorrelationIdBindings.HEADER_NAME, {optional: true})
+    private headerName = 'X-Request-ID',
+  ) { }
 
   value(): Middleware {
     return async (ctx, next) => {
       const {request, response} = ctx;
       let correlationId: string;
 
-      const existingId = request.headers['x-request-id'] as string;
+      const existingId = request.headers[this.headerName.toLowerCase()] as string;
 
       if (existingId) {
         correlationId = existingId;
@@ -18,9 +22,9 @@ export class CorrelationIdMiddlewareProvider implements Provider<Middleware> {
         correlationId = uuidv4();
       }
 
-      ctx.bind('request.correlationId').to(correlationId);
+      ctx.bind(CorrelationIdBindings.CORRELATION_ID).to(correlationId);
 
-      response.header('X-Request-ID', correlationId);
+      response.header(this.headerName, correlationId);
 
       console.log(`[${correlationId}] Incoming request: ${request.method} ${request.url}`);
 

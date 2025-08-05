@@ -1,4 +1,3 @@
-
 import {inject} from '@loopback/core';
 import {
   FindRoute,
@@ -35,15 +34,10 @@ export class MySequence implements SequenceHandler {
       const {request, response} = context;
 
       await this.ipFilterMiddleware(context, () => Promise.resolve());
-
       await this.correlationIdMiddleware(context, () => Promise.resolve());
-
       await this.corsMiddleware(context, () => Promise.resolve());
-
       await this.rateLimitMiddleware(context, () => Promise.resolve());
-
       await this.cookieParserMiddleware(context, () => Promise.resolve());
-
       await this.csrfMiddleware(context, () => Promise.resolve());
 
       const route = this.findRoute(request);
