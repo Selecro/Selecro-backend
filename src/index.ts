@@ -9,6 +9,8 @@ export async function main(options: ApplicationConfig = {}) {
   const app = new SelecroBackendApplication(options);
   await app.boot();
 
+  await app.migrateSchema({existingSchema: 'drop'});
+
   if (process.env.NODE_ENV !== 'production') {
     console.log('Running schema migration for the main relational database (existingSchema: "alter")...');
     try {
@@ -30,6 +32,23 @@ export async function main(options: ApplicationConfig = {}) {
 }
 
 if (require.main === module) {
+  const defaultOrigin = `http://localhost:${process.env.APP_DEFAULT_PORT ?? '3000'}`;
+  let corsOrigins: string[] | boolean = [defaultOrigin];
+
+  if (process.env.CORS_ORIGINS) {
+    if (process.env.CORS_ORIGINS === '*') {
+      corsOrigins = true;
+    } else {
+      corsOrigins = process.env.CORS_ORIGINS.split(',')
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+      if (corsOrigins.length === 0) {
+        console.warn('CORS_ORIGINS environment variable was set but resulted in an empty list. Falling back to default origin.');
+        corsOrigins = [defaultOrigin];
+      }
+    }
+  }
+
   // Run the application
   const config = {
     rest: {
@@ -44,6 +63,28 @@ if (require.main === module) {
       openApiSpec: {
         // useful when used with OpenAPI-to-GraphQL to locate your application
         setServersFromRequest: true,
+      },
+      cors: {
+        origin: corsOrigins,
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        preflightContinue: false,
+        optionsSuccessStatus: 204,
+        credentials: true,
+        allowedHeaders: [
+          'Authorization',
+          'Content-Type',
+          'Origin',
+          'X-Requested-With',
+          'Accept',
+        ],
+        exposedHeaders: [
+          'Authorization',
+          'Content-Type',
+          'Origin',
+          'X-Requested-With',
+          'Accept',
+        ],
+        maxAge: 60,
       },
     },
   };

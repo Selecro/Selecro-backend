@@ -1,21 +1,27 @@
 import {
   BindingScope,
   injectable,
-  Provider
+  Provider,
 } from '@loopback/core';
 import * as admin from 'firebase-admin';
 
 @injectable({
   scope: BindingScope.SINGLETON,
 })
-export class FirebaseAdminProvider implements Provider<typeof admin> {
+export class FirebaseAdminProvider implements Provider<Promise<typeof admin>> {
   constructor() { }
 
-  value(): typeof admin {
+  async value(): Promise<typeof admin> {
     const firebaseBase64 = process.env.FIREBASE_ADMIN_BASE64;
 
     if (!firebaseBase64) {
-      console.warn('WARNING: FIREBASE_ADMIN_BASE64 environment variable is not set. Firebase Admin SDK will not be available.');
+      const errorMsg = 'CRITICAL ERROR: FIREBASE_ADMIN_BASE64 environment variable is not set. Aborting app startup.';
+      console.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    if (admin.apps.length) {
+      console.warn('Firebase Admin SDK is already initialized.');
       return admin;
     }
 
@@ -23,17 +29,15 @@ export class FirebaseAdminProvider implements Provider<typeof admin> {
       const serviceAccountJson = Buffer.from(firebaseBase64, 'base64').toString('utf8');
       const serviceAccount = JSON.parse(serviceAccountJson);
 
-      if (!admin.apps.length) {
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-        });
-      }
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+      });
 
       console.log('Firebase Admin SDK initialized successfully.');
       return admin;
     } catch (error) {
       console.error('Failed to initialize Firebase Admin SDK:', error);
-      return admin;
+      throw new Error(`Failed to initialize Firebase Admin SDK: ${error.message}`);
     }
   }
 }

@@ -21,10 +21,11 @@ export class MySequence implements SequenceHandler {
     @inject(SequenceActions.SEND) protected send: Send,
     @inject(SequenceActions.REJECT) protected reject: Reject,
 
+    @inject('middleware.maintenance') private maintenanceMiddleware: Middleware,
+    @inject('middleware.rateLimit') private rateLimitMiddleware: Middleware,
     @inject('middleware.ipFilter') private ipFilterMiddleware: Middleware,
     @inject('middleware.correlationId') private correlationIdMiddleware: Middleware,
-    @inject('middleware.cors') private corsMiddleware: Middleware,
-    @inject('middleware.rateLimit') private rateLimitMiddleware: Middleware,
+    @inject('middleware.inputSanitizer') private inputSanitizerMiddleware: Middleware,
     @inject('middleware.cookieParser') private cookieParserMiddleware: Middleware,
     @inject('middleware.csrf') private csrfMiddleware: Middleware,
   ) { }
@@ -33,10 +34,11 @@ export class MySequence implements SequenceHandler {
     try {
       const {request, response} = context;
 
+      await this.maintenanceMiddleware(context, () => Promise.resolve());
+      await this.rateLimitMiddleware(context, () => Promise.resolve());
       await this.ipFilterMiddleware(context, () => Promise.resolve());
       await this.correlationIdMiddleware(context, () => Promise.resolve());
-      await this.corsMiddleware(context, () => Promise.resolve());
-      await this.rateLimitMiddleware(context, () => Promise.resolve());
+      await this.inputSanitizerMiddleware(context, () => Promise.resolve());
       await this.cookieParserMiddleware(context, () => Promise.resolve());
       await this.csrfMiddleware(context, () => Promise.resolve());
 

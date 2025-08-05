@@ -18,16 +18,19 @@ import helmet from 'helmet';
 import path from 'path';
 import {PingController} from './controllers';
 import {KafkaDataSource, KmsDataSource, PostgresqlDataSource, RedisDataSource} from './datasources';
-import {COOKIE_PARSER_OPTIONS, CorrelationIdBindings, CORS_OPTIONS, FirebaseBindings, IpFilterBindings, RATE_LIMIT_OPTIONS} from './keys';
+import {COOKIE_PARSER_OPTIONS, CorrelationIdBindings, FirebaseBindings, IpFilterBindings, RATE_LIMIT_OPTIONS} from './keys';
 import {
   CookieParserMiddlewareProvider,
   CorrelationIdMiddlewareProvider,
-  CorsMiddlewareProvider,
   CsrfMiddlewareProvider,
+  InputSanitizerMiddlewareProvider,
   IpFilterMiddlewareProvider,
+  MaintenanceMiddlewareProvider,
   RateLimitMiddlewareProvider
 } from './middleware';
+import {RemoteConfigObserver} from './observers/remote-config.observer';
 import {FirebaseAdminProvider} from './providers/firebase-admin.provider';
+import {RemoteConfigService} from './providers/remote-config.provider';
 import {
   BadgeRepository,
   CommentRepository,
@@ -84,6 +87,8 @@ export class SelecroBackendApplication extends BootMixin(
     this.restServer.expressMiddleware(helmetMiddlewareFactory);
     this.configureMiddleware();
     this.bind(FirebaseBindings.ADMIN).toProvider(FirebaseAdminProvider);
+    this.service(RemoteConfigService);
+    this.lifeCycleObserver(RemoteConfigObserver);
     this.configure(RestExplorerBindings.COMPONENT).to({
       path: '/explorer',
     });
@@ -138,14 +143,20 @@ export class SelecroBackendApplication extends BootMixin(
         extensions: ['.controller.js'],
         nested: true,
       },
+      models: {
+        dirs: ['models'],
+        extensions: ['.model.js'],
+        nested: true,
+      },
     };
   }
 
   configureMiddleware() {
+    this.bind('middleware.maintenance').toProvider(MaintenanceMiddlewareProvider);
+    this.bind('middleware.rateLimit').toProvider(RateLimitMiddlewareProvider);
     this.bind('middleware.ipFilter').toProvider(IpFilterMiddlewareProvider);
     this.bind('middleware.correlationId').toProvider(CorrelationIdMiddlewareProvider);
-    this.bind('middleware.cors').toProvider(CorsMiddlewareProvider);
-    this.bind('middleware.rateLimit').toProvider(RateLimitMiddlewareProvider);
+    this.bind('middleware.inputSanitizer').toProvider(InputSanitizerMiddlewareProvider);
     this.bind('middleware.cookieParser').toProvider(CookieParserMiddlewareProvider);
     this.bind('middleware.csrf').toProvider(CsrfMiddlewareProvider);
 
@@ -157,13 +168,6 @@ export class SelecroBackendApplication extends BootMixin(
     });
 
     this.bind(CorrelationIdBindings.HEADER_NAME).to('X-Request-ID');
-
-    const defaultOrigin = `http://localhost:${process.env.APP_DEFAULT_PORT ?? '3000'}`;
-    const corsOrigins = process.env.CORS_ORIGINS?.split(',').map(s => s.trim()) ?? [defaultOrigin];
-    this.bind(CORS_OPTIONS).to({
-      origin: corsOrigins,
-      credentials: true,
-    });
 
     this.bind(RATE_LIMIT_OPTIONS).to({
       windowMs: 15 * 60 * 1000,

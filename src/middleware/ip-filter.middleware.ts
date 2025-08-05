@@ -22,6 +22,10 @@ export class IpFilterMiddlewareProvider implements Provider<Middleware> {
       ...DEFAULT_IP_FILTER_OPTIONS,
       ...this.injectedOptions,
     };
+    console.log('IP Filter Middleware initialized with:', {
+      mode: finalOptions.mode,
+      ips: this.ipList,
+    })
     this.ipFilterHandler = IpFilter(this.ipList, finalOptions);
   }
 

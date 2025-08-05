@@ -17,11 +17,13 @@ export class CorsMiddlewareProvider implements Provider<Middleware> {
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
     },
   ) {
+    console.log('CORS Middleware initialized with:', this.options);
     this.corsHandler = cors(this.options);
   }
 
   value(): Middleware {
     return async (ctx, next) => {
+      console.log('CORS Middleware processing request for:', ctx.request.url);
       await new Promise<void>((resolve, reject) => {
         this.corsHandler(ctx.request, ctx.response, err => {
           if (err) {
