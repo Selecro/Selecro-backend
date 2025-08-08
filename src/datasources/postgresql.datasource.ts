@@ -6,11 +6,12 @@ dotenv.config();
 const config = {
   name: 'postgresql',
   connector: 'postgresql',
-  host: process.env.SQL_HOST || 'localhost',
-  port: Number(process.env.SQL_PORT) || 5432,
-  user: process.env.SQL_USER,
-  password: process.env.SQL_PASSWORD,
-  database: process.env.SQL_DATABASE,
+  url: process.env.POSTGRESQL_URL || undefined,
+  host: process.env.POSTGRESQL_HOST || 'localhost',
+  port: process.env.POSTGRESQL_PORT ? Number(process.env.POSTGRESQL_PORT) : 5432,
+  user: process.env.POSTGRESQL_USER || undefined,
+  password: process.env.POSTGRESQL_PASSWORD || undefined,
+  database: process.env.POSTGRESQL_DATABASE || undefined,
 };
 
 // Observe application's life cycle to disconnect the datasource when

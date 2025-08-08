@@ -3,7 +3,6 @@ import {repository} from '@loopback/repository'; // Import repository decorator
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import jwt from 'jsonwebtoken';
-import {EmailDataSource} from '../datasources';
 import {User} from '../models'; // Import UserSetting model
 import {UserSettingRepository} from '../repositories/user-setting.repository'; // Import UserSettingRepository
 
@@ -49,12 +48,15 @@ export class EmailService {
       'utf-8',
     );
     body = body.replace('{{URL}}', url);
-    await EmailDataSource.sendMail({
+    await EmailService.sendMail({
       from: process.env.EMAIL_USER,
       to: user.email,
       subject: 'Selecro: Registration',
       html: body,
     });
+  }
+  static sendMail(arg0: {from: string | undefined; to: string | undefined; subject: string; html: string;}) {
+    throw new Error('Method not implemented.');
   }
 
   async sendResetEmail(user: User, email: string | undefined): Promise<void> {
@@ -70,13 +72,13 @@ export class EmailService {
       'utf-8',
     );
     body0 = body0.replace('{{URL}}', url);
-    await EmailDataSource.sendMail({
+    await EmailService.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
       subject: 'Selecro: Email verification',
       html: body0,
     });
-    await EmailDataSource.sendMail({
+    await EmailService.sendMail({
       from: process.env.EMAIL_USER,
       to: user.email,
       subject: 'Selecro: Email change',
@@ -93,7 +95,7 @@ export class EmailService {
       'utf-8',
     );
     body = body.replace('{{URL}}', url);
-    await EmailDataSource.sendMail({
+    await EmailService.sendMail({
       from: process.env.EMAIL_USER,
       to: user.email,
       subject: 'Selecro: Change password',
@@ -107,7 +109,7 @@ export class EmailService {
       `./src/html/successfulyPasswordChange${userLanguage}.html`,
       'utf-8',
     );
-    await EmailDataSource.sendMail({
+    await EmailService.sendMail({
       from: process.env.EMAIL_USER,
       to: user.email,
       subject: 'Selecro: Successfuly changed password',
@@ -116,7 +118,7 @@ export class EmailService {
   }
 
   async sendError(error: string): Promise<void> {
-    await EmailDataSource.sendMail({
+    await EmailService.sendMail({
       from: process.env.EMAIL_USER,
       to: 'error@selecro.cz',
       subject: 'Selecro: error',

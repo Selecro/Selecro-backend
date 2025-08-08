@@ -1,10 +1,16 @@
 import {inject, lifeCycleObserver, LifeCycleObserver} from '@loopback/core';
 import {juggler} from '@loopback/repository';
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+const protocol = process.env.VAULT_PROTOCOL || 'http';
+const host = process.env.VAULT_HOST || 'localhost';
+const port = process.env.VAULT_PORT ? Number(process.env.VAULT_PORT) : 8200;
 
 const config = {
   name: 'kms',
   connector: 'rest',
-  baseURL: 'http://vault:8200',
+  baseURL: `${protocol}://${host}:${port}`,
   crud: false,
 };
 

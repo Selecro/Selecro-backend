@@ -4,7 +4,10 @@ import {CorsOptions} from 'cors';
 import {IpFilterOptions, IpList} from 'express-ipfilter';
 import {Options as RateLimitOptions} from 'express-rate-limit';
 import * as admin from 'firebase-admin';
+import {FirebaseOauthStrategy} from './providers/firebase-oauth.strategy';
 import {RemoteConfigParameters} from './providers/remote-config.provider';
+import {FcmService} from './services/fcm.service';
+import {FirebaseAdminService} from './services/firebase-admin.service';
 
 export interface CookieParserOptions extends cookieParser.CookieParseOptions { }
 
@@ -56,6 +59,8 @@ export namespace IpFilterBindings {
 
 export namespace FirebaseBindings {
   export const ADMIN = BindingKey.create<typeof admin>('services.firebase.admin');
+  export const OAUTH_STRATEGY = BindingKey.create<FirebaseOauthStrategy>('authentication.strategies.firebase-oauth');
+  export const ADMIN_SERVICE = BindingKey.create<FirebaseAdminService>('services.FirebaseAdminService');
 }
 
 export namespace RemoteConfigBindings {
@@ -66,4 +71,9 @@ export namespace RemoteConfigBindings {
   export const API_REQUEST_WINDOW_MINUTES = BindingKey.create<number>('services.remoteConfig.apiRequestWindowMinutes');
   export const MAX_FILE_UPLOAD_SIZE_MB = BindingKey.create<number>('services.remoteConfig.maxFileUploadSizeMb');
   export const REDIS_CACHE_EXPIRY_SECONDS = BindingKey.create<number>('services.remoteConfig.redisCacheExpirySeconds');
+}
+
+export namespace FcmBindings {
+  export const ADMIN = BindingKey.create<typeof admin>('fcm.admin');
+  export const SERVICE = BindingKey.create<FcmService>('services.FcmService');
 }

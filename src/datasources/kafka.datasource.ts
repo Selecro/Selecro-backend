@@ -1,11 +1,16 @@
 import {inject, lifeCycleObserver, LifeCycleObserver} from '@loopback/core';
 import {juggler} from '@loopback/repository';
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+const kafkaHost = process.env.KAFKA_HOST || 'localhost';
+const kafkaPort = process.env.KAFKA_PORT || '9092';
 
 const config = {
   name: 'kafka',
-  connector: 'kafka',                   // juggler will resolve this to loopback-connector-kafka :contentReference[oaicite:0]{index=0}
-  connectionString: 'zookeeper:2181/kafka',  // or use hosts/brokers if your connector supports it
-  disableMigration: true,               // skip this datasource during app.migrateSchema() :contentReference[oaicite:1]{index=1}
+  connector: 'kafka',
+  connectionString: `${kafkaHost}:${kafkaPort}`,
+  disableMigration: true,
 };
 
 // Observe application's life cycle to disconnect the datasource when

@@ -1,14 +1,18 @@
 import {inject, lifeCycleObserver, LifeCycleObserver} from '@loopback/core';
 import {juggler} from '@loopback/repository';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 const config = {
   name: 'redis',
   connector: 'kv-redis',
-  url: '',
-  host: 'localhost',
-  port: 6379,
-  password: '',
-  db: 0
+  url: process.env.REDIS_URL || undefined,
+  host: process.env.REDIS_HOST || 'localhost',
+  port: process.env.REDIS_PORT_INTERNAL
+    ? Number(process.env.REDIS_PORT_INTERNAL)
+    : 6379,
+  password: process.env.REDIS_PASSWORD || undefined,
+  db: process.env.REDIS_DB ? Number(process.env.REDIS_DB) : 0,
 };
 
 // Observe application's life cycle to disconnect the datasource when
