@@ -4,29 +4,23 @@ import xss from 'xss';
 
 @injectable({scope: BindingScope.TRANSIENT})
 export class InputSanitizerMiddlewareProvider implements Provider<Middleware> {
-  constructor() {
-    console.log('InputSanitizerMiddlewareProvider initialized.');
-  }
+  constructor() { }
 
   value(): Middleware {
     return async (ctx: MiddlewareContext, next) => {
       const requestContext = ctx as RequestContext;
       const {request} = requestContext;
       const correlationId = requestContext.getSync('request.correlationId');
-      console.log(`[${correlationId || 'N/A'}] InputSanitizerMiddleware: Processing request.`);
 
       if (request.body && typeof request.body === 'object') {
         request.body = this.deepSanitize(request.body);
-        console.log(`[${correlationId || 'N/A'}] InputSanitizerMiddleware: Request body sanitized.`);
       }
 
       if (request.query && typeof request.query === 'object') {
         request.query = this.deepSanitize(request.query);
-        console.log(`[${correlationId || 'N/A'}] InputSanitizerMiddleware: Query parameters sanitized.`);
       }
 
       const result = await next();
-      console.log(`[${correlationId || 'N/A'}] InputSanitizerMiddleware: Request finished.`);
       return result;
     };
   }

@@ -22,7 +22,6 @@ export class CsrfMiddlewareProvider implements Provider<Middleware> {
       },
       ...this.options,
     });
-    console.log('CSRF Middleware initialized with:', this.options);
   }
 
   value(): Middleware {

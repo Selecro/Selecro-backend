@@ -7,9 +7,7 @@ export class CorrelationIdMiddlewareProvider implements Provider<Middleware> {
   constructor(
     @inject(CorrelationIdBindings.HEADER_NAME, {optional: true})
     private headerName = 'X-Request-ID',
-  ) {
-    console.log('Correlation ID middleware initialized');
-  }
+  ) { }
 
   value(): Middleware {
     return async (ctx, next) => {
@@ -23,9 +21,7 @@ export class CorrelationIdMiddlewareProvider implements Provider<Middleware> {
       }
       ctx.bind(CorrelationIdBindings.CORRELATION_ID).to(correlationId);
       response.header(this.headerName, correlationId);
-      console.log(`[${correlationId}] Incoming request: ${request.method} ${request.url}`);
       const result = await next();
-      console.log(`[${correlationId}] Request finished: ${request.method} ${request.url} - Status: ${response.statusCode}`);
       return result;
     };
   }

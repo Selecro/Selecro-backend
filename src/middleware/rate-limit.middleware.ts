@@ -38,11 +38,6 @@ export class RateLimitMiddlewareProvider implements Provider<Middleware> {
         max: maxFromConfig,
       };
 
-      console.log('Rate Limit Middleware initialized with:', {
-        windowMs: finalOptions.windowMs,
-        max: finalOptions.max
-      });
-
       this.rateLimitHandler = rateLimit(finalOptions);
     } catch (error) {
       console.error('Failed to initialize Rate Limit Middleware with Remote Config:', error);

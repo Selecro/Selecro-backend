@@ -16,10 +16,9 @@ export class CookieParserMiddlewareProvider implements Provider<Middleware> {
   ) {
     if (!this.secret || this.secret.length === 0) {
       console.warn('WARNING: Cookie Parser secret is not set. Signed cookies will not work properly.');
-      console.warn('  Please bind `cookieParser.secret` in application.ts with a strong, unique secret.');
+      console.warn('Please bind `cookieParser.secret` in application.ts with a strong, unique secret.');
     }
 
-    console.log('Cookie Parser Middleware initialized');
     this.cookieParserHandler = cookieParser(this.secret, this.options);
   }
 
