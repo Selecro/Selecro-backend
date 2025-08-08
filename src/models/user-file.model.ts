@@ -1,69 +1,70 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {File, User} from '.';
 
 @model({
-  name: 'user_file',
   settings: {
-    postgresql: {
-      table: 'user_file',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'user_file'},
     foreignKeys: {
-      fk_user_File_userId: {
-        name: 'fk_user_file_userId',
-        entity: 'user',
+      user_file_file_id_fkeyRel: {
+        name: 'user_file_file_id_fkeyRel',
+        entity: 'File',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'file_id'
       },
-      fk_user_File_fileId: {
-        name: 'fk_user_file_fileId',
-        entity: 'file',
+      user_file_user_id_fkeyRel: {
+        name: 'user_file_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'file_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'user_id'
+      }
     },
+    indexes: {
+      idx_user_file_user_id: {
+        keys: {user_id: 1}
+      },
+      idx_user_file_file_id: {
+        keys: {file_id: 1}
+      },
+      uq_user_file_user_file: {
+        keys: {user_id: 1, file_id: 1},
+        options: {unique: true}
+      }
+    }
   }
 })
 export class UserFile extends Entity {
   @property({
     type: 'number',
     required: true,
-    id: true,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  userId: number;
+  id: number;
 
-  @property({
-    type: 'number',
-    required: true,
-    id: true,
-    postgresql: {
-      columnName: 'file_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
-  })
-  fileId: number;
+  @belongsTo(() => User)
+  user_id: number;
+
+  @belongsTo(() => File)
+  file_id: number;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'generated_or_uploaded_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'generated_or_uploaded_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  generatedOrUploadedAt: Date;
+  generated_or_uploaded_at: string;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<UserFile>) {
     super(data);
@@ -71,8 +72,7 @@ export class UserFile extends Entity {
 }
 
 export interface UserFileRelations {
-  user?: User;
-  file?: File;
+  // describe navigational properties here
 }
 
 export type UserFileWithRelations = UserFile & UserFileRelations;

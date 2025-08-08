@@ -1,176 +1,132 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {EducationMode, Manual, User} from '.';
 
-export enum CommentOnType {
-  manual = 'manual',
-  education_mode = 'education_mode',
-}
-
 @model({
-  name: 'comment',
   settings: {
-    postgresql: {
-      table: 'comment',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'comment'},
     foreignKeys: {
-      fk_comment_manualId: {
-        name: 'fk_comment_manualId',
-        entity: 'manual',
+      comment_education_mode_id_fkeyRel: {
+        name: 'comment_education_mode_id_fkeyRel',
+        entity: 'EducationMode',
         entityKey: 'id',
-        foreignKey: 'manual_id',
-        onDelete: 'CASCADE',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'education_mode_id'
       },
-      fk_comment_educationModeId: {
-        name: 'fk_comment_educationModeId',
-        entity: 'education_mode',
+      comment_manual_id_fkeyRel: {
+        name: 'comment_manual_id_fkeyRel',
+        entity: 'Manual',
         entityKey: 'id',
-        foreignKey: 'education_mode_id',
-        onDelete: 'CASCADE',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'manual_id'
       },
-      fk_comment_userId: {
-        name: 'fk_comment_userId',
-        entity: 'user',
+      comment_parent_comment_id_fkeyRel: {
+        name: 'comment_parent_comment_id_fkeyRel',
+        entity: 'Comment',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'CASCADE',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'parent_comment_id'
       },
-      fk_comment_parentCommentId: {
-        name: 'fk_comment_parentCommentId',
-        entity: 'comment',
+      comment_user_id_fkeyRel: {
+        name: 'comment_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'parent_comment_id',
-        onDelete: 'CASCADE',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'user_id'
+      }
     },
+    indexes: {
+      idx_comment_user_id: {
+        keys: {user_id: 1}
+      },
+      idx_comment_manual_id: {
+        keys: {manual_id: 1}
+      },
+      idx_comment_parent_comment_id: {
+        keys: {parent_comment_id: 1}
+      },
+      idx_comment_education_mode_id: {
+        keys: {education_mode_id: 1}
+      },
+      idx_comment_commented_at: {
+        keys: {commented_at: 1}
+      }
+    }
   }
 })
 export class Comment extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  id?: number;
+  id: number;
 
   @property({
     type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
+    required: true,
+    jsonSchema: {nullable: false},
+    length: 36,
+    generated: false,
+    index: {unique: true},
+    postgresql: {columnName: 'uuid', dataType: 'character varying', dataLength: 36, nullable: 'NO', generated: false},
   })
   uuid: string;
 
-  @property({
-    type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'parent_comment_id',
-      dataType: 'bigint',
-      nullable: 'YES',
-    },
-  })
-  parentCommentId?: number;
+  @belongsTo(() => Comment)
+  parent_comment_id?: number;
 
-  @property({
-    type: 'number',
-    required: true,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
-  })
-  userId: number;
+  @belongsTo(() => User)
+  user_id: number;
 
-  @property({
-    type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'manual_id',
-      dataType: 'bigint',
-      nullable: 'YES',
-    },
-  })
-  manualId?: number;
+  @belongsTo(() => Manual)
+  manual_id?: number;
 
-  @property({
-    type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'education_mode_id',
-      dataType: 'bigint',
-      nullable: 'YES',
-    },
-  })
-  educationModeId?: number;
+  @belongsTo(() => EducationMode)
+  education_mode_id?: number;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'comment_text',
-      dataType: 'text',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'comment_text', dataType: 'text', nullable: 'NO', generated: false},
   })
-  commentText: string;
+  comment_text: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'commented_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'commented_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  commentedAt: Date;
+  commented_at: string;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {
-      enum: Object.values(CommentOnType),
-    },
-    postgresql: {
-      columnName: 'comment_on_type',
-      dataType: 'text',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'comment_on_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  commentOnType: CommentOnType;
+  comment_on_type: string;
 
   @property({
     type: 'number',
-    required: false,
-    jsonSchema: {
-      minimum: 1,
-      maximum: 5,
-    },
-    postgresql: {
-      columnName: 'rating',
-      dataType: 'integer',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'rating', dataType: 'integer', dataScale: 0, nullable: 'YES', generated: false},
   })
   rating?: number;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<Comment>) {
     super(data);
@@ -178,10 +134,7 @@ export class Comment extends Entity {
 }
 
 export interface CommentRelations {
-  user?: User;
-  manual?: Manual;
-  educationMode?: EducationMode;
-  parentComment?: Comment;
+  // describe navigational properties here
 }
 
 export type CommentWithRelations = Comment & CommentRelations;

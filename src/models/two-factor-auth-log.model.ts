@@ -1,119 +1,88 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from '.';
 
-export enum TwoFactorAuthMethodType {
-  email = 'email',
-  TOTP = 'TOTP',
-  biometric = 'biometric',
-  U2F = 'U2F',
-  backup_code = 'backup_code',
-}
-
 @model({
-  name: 'two_factor_auth_log',
   settings: {
-    postgresql: {
-      table: 'two_factor_auth_log',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'two_factor_auth_log'},
     foreignKeys: {
-      fk_two_factor_auth_log_userId: {
-        name: 'fk_two_factor_auth_log_userId',
-        entity: 'user',
+      two_factor_auth_log_user_id_fkeyRel: {
+        name: 'two_factor_auth_log_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'user_id'
+      }
     },
+    indexes: {
+      idx_two_factor_auth_log_user_id: {
+        keys: {user_id: 1}
+      },
+      idx_two_factor_auth_log_method_type: {
+        keys: {method_type: 1}
+      },
+      idx_two_factor_auth_log_attempted_at: {
+        keys: {attempted_at: 1}
+      }
+    }
   }
 })
 export class TwoFactorAuthLog extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
-  })
-  id?: number;
-
-  @property({
-    type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
-  })
-  uuid: string;
-
-  @property({
-    type: 'number',
     required: true,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  userId: number;
+  id: number;
+
+  @belongsTo(() => User)
+  user_id: number;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {
-      enum: Object.values(TwoFactorAuthMethodType),
-    },
-    postgresql: {
-      columnName: 'method_type',
-      dataType: 'text',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'method_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  methodType: TwoFactorAuthMethodType;
+  method_type: string;
 
   @property({
     type: 'boolean',
     required: true,
-    postgresql: {
-      columnName: 'success',
-      dataType: 'boolean',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'success', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   success: boolean;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'attempted_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'attempted_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  attemptedAt: Date;
+  attempted_at: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'ip_address',
-      dataType: 'varchar',
-      dataLength: 45,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 45,
+    generated: false,
+    postgresql: {columnName: 'ip_address', dataType: 'character varying', dataLength: 45, nullable: 'YES', generated: false},
   })
-  ipAddress?: string;
+  ip_address?: string;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<TwoFactorAuthLog>) {
     super(data);
@@ -121,7 +90,7 @@ export class TwoFactorAuthLog extends Entity {
 }
 
 export interface TwoFactorAuthLogRelations {
-  user?: User;
+  // describe navigational properties here
 }
 
 export type TwoFactorAuthLogWithRelations = TwoFactorAuthLog & TwoFactorAuthLogRelations;

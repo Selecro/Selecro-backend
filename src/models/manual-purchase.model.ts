@@ -1,202 +1,132 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {Manual, User} from '.';
 
-export enum Currency {
-  CZK = 'CZK',
-  EUR = 'EUR',
-  USD = 'USD',
-}
-
-export enum PaymentStatus {
-  pending = 'pending',
-  completed = 'completed',
-  failed = 'failed',
-  refunded = 'refunded',
-}
-
 @model({
-  name: 'manual_purchase',
   settings: {
-    postgresql: {
-      table: 'manual_purchase',
-      indexes: {
-        uniqueUserManualPurchase: {
-          keys: {
-            user_id: 1,
-            manual_id: 1,
-          },
-          options: {
-            unique: true,
-          },
-        },
-      },
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'manual_purchase'},
     foreignKeys: {
-      fk_manual_purchase_userId: {
-        name: 'fk_manual_purchase_userId',
-        entity: 'user',
+      manual_purchase_manual_id_fkeyRel: {
+        name: 'manual_purchase_manual_id_fkeyRel',
+        entity: 'Manual',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'CASCADE',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'manual_id'
       },
-      fk_manual_purchase_manualId: {
-        name: 'fk_manual_purchase_manualId',
-        entity: 'manual',
+      manual_purchase_user_id_fkeyRel: {
+        name: 'manual_purchase_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'manual_id',
-        onDelete: 'CASCADE',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'user_id'
+      }
     },
+    indexes: {
+      idx_manual_purchase_user_id: {
+        keys: {user_id: 1}
+      },
+      idx_manual_purchase_manual_id: {
+        keys: {manual_id: 1}
+      },
+      idx_manual_purchase_purchase_date: {
+        keys: {purchase_date: 1}
+      },
+      uq_manual_purchase_transaction_id: {
+        keys: {transaction_id: 1},
+        options: {unique: true}
+      }
+    }
   }
 })
 export class ManualPurchase extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
-  })
-  id?: number;
-
-  @property({
-    type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
-  })
-  uuid: string;
-
-  @property({
-    type: 'number',
     required: true,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  userId: number;
+  id: number;
 
-  @property({
-    type: 'number',
-    required: true,
-    postgresql: {
-      columnName: 'manual_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
-  })
-  manualId: number;
+  @belongsTo(() => User)
+  user_id: number;
+
+  @belongsTo(() => Manual)
+  manual_id: number;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'purchase_date',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'purchase_date', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  purchaseDate: Date;
+  purchase_date: string;
 
   @property({
     type: 'number',
     required: true,
-    postgresql: {
-      columnName: 'price_paid',
-      dataType: 'decimal',
-      dataPrecision: 10,
-      dataScale: 2,
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    precision: 10,
+    scale: 2,
+    generated: false,
+    postgresql: {columnName: 'price_paid', dataType: 'numeric', dataPrecision: 10, dataScale: 2, nullable: 'NO', generated: false},
   })
-  pricePaid: number;
+  price_paid: number;
 
   @property({
     type: 'string',
     required: true,
-    default: Currency.CZK,
-    jsonSchema: {
-      enum: Object.values(Currency),
-    },
-    postgresql: {
-      columnName: 'currency',
-      dataType: 'text',
-      nullable: 'NO',
-      default: 'CZK',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'currency', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  currency: Currency;
+  currency: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'transaction_id',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'YES',
-      unique: true,
-    },
+    jsonSchema: {nullable: true},
+    length: 255,
+    generated: false,
+    index: {unique: true},
+    postgresql: {columnName: 'transaction_id', dataType: 'character varying', dataLength: 255, nullable: 'YES', generated: false},
   })
-  transactionId?: string;
+  transaction_id?: string;
 
   @property({
     type: 'string',
     required: true,
-    default: PaymentStatus.pending,
-    jsonSchema: {
-      enum: Object.values(PaymentStatus),
-    },
-    postgresql: {
-      columnName: 'payment_status',
-      dataType: 'text',
-      nullable: 'NO',
-      default: 'pending',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'payment_status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  paymentStatus: PaymentStatus;
+  payment_status: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'created_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  createdAt: Date;
+  created_at: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    updateDefaultFn: 'now',
-    postgresql: {
-      columnName: 'updated_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  updatedAt: Date;
+  updated_at: string;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<ManualPurchase>) {
     super(data);
@@ -204,8 +134,7 @@ export class ManualPurchase extends Entity {
 }
 
 export interface ManualPurchaseRelations {
-  user?: User;
-  manual?: Manual;
+  // describe navigational properties here
 }
 
 export type ManualPurchaseWithRelations = ManualPurchase & ManualPurchaseRelations;

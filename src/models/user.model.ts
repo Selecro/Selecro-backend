@@ -1,313 +1,172 @@
-import {Entity, hasMany, hasOne, model, property} from '@loopback/repository';
-import {Badge, Comment, Device, Dictionary, EducationMode, File, Follower, LoginHistory, Manual, ManualProgress, ManualPurchase, News, NewsDelivery, Notification, OAuthAccount, PasswordHistory, Permission, Role, Session, SystemLog, Tool, TwoFactorAuthBackupCode, TwoFactorAuthLog, TwoFactorAuthMethod, UserBadge, UserFile, UserLocation, UserManualInteraction, UserNotificationSetting, UserRole, UserSecurity, UserSetting} from '.';
-
-export enum AccountStatus {
-  active = 'active',
-  suspended = 'suspended',
-  deleted = 'deleted',
-  pending_verification = 'pending_verification',
-}
+import {Entity, model, property} from '@loopback/repository';
 
 @model({
-  name: 'user',
   settings: {
-    postgresql: {
-      table: 'user',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'user'},
+    indexes: {
+      idx_user_uuid: {
+        keys: {uuid: 1},
+        options: {unique: true}
+      },
+      idx_user_username: {
+        keys: {username: 1},
+        options: {unique: true}
+      },
+      idx_user_email: {
+        keys: {email: 1},
+        options: {unique: true}
+      }
+    }
   }
 })
 export class User extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  id?: number;
+  id: number;
 
   @property({
     type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
+    required: true,
+    jsonSchema: {nullable: false},
+    length: 36,
+    generated: false,
+    index: {unique: true},
+    postgresql: {columnName: 'uuid', dataType: 'character varying', dataLength: 36, nullable: 'NO', generated: false},
   })
   uuid: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'first_name',
-      dataType: 'varchar',
-      dataLength: 100,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 100,
+    generated: false,
+    postgresql: {columnName: 'first_name', dataType: 'character varying', dataLength: 100, nullable: 'YES', generated: false},
   })
-  firstName?: string;
+  first_name?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'last_name',
-      dataType: 'varchar',
-      dataLength: 100,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 100,
+    generated: false,
+    postgresql: {columnName: 'last_name', dataType: 'character varying', dataLength: 100, nullable: 'YES', generated: false},
   })
-  lastName?: string;
+  last_name?: string;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'username',
-      dataType: 'varchar',
-      dataLength: 50,
-      nullable: 'NO',
-      unique: true,
-    },
+    jsonSchema: {nullable: false},
+    length: 50,
+    generated: false,
+    index: {unique: true},
+    postgresql: {columnName: 'username', dataType: 'character varying', dataLength: 50, nullable: 'NO', generated: false},
   })
   username: string;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'email',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'NO',
-      unique: true,
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    index: {unique: true},
+    postgresql: {columnName: 'email', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
   email: string;
 
   @property({
     type: 'boolean',
     required: true,
-    default: false,
-    postgresql: {
-      columnName: 'email_verified',
-      dataType: 'boolean',
-      nullable: 'NO',
-      default: false,
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'email_verified', dataType: 'boolean', nullable: 'NO', generated: false},
   })
-  emailVerified: boolean;
+  email_verified: boolean;
 
   @property({
     type: 'date',
-    required: false,
-    postgresql: {
-      columnName: 'date_of_birth',
-      dataType: 'date',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'date_of_birth', dataType: 'date', nullable: 'YES', generated: false},
   })
-  dateOfBirth?: Date;
+  date_of_birth?: string;
 
   @property({
     type: 'string',
     required: true,
-    default: AccountStatus.pending_verification,
-    jsonSchema: {
-      enum: Object.values(AccountStatus),
-    },
-    postgresql: {
-      columnName: 'account_status',
-      dataType: 'text',
-      nullable: 'NO',
-      default: 'pending_verification',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'account_status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  accountStatus: AccountStatus;
+  account_status: string;
 
   @property({
     type: 'date',
-    required: false,
-    postgresql: {
-      columnName: 'last_login_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'last_login_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
   })
-  lastLoginAt?: Date;
+  last_login_at?: string;
 
   @property({
     type: 'date',
-    required: false,
-    postgresql: {
-      columnName: 'last_active_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'last_active_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
   })
-  lastActiveAt?: Date;
+  last_active_at?: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'created_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  createdAt: Date;
+  created_at: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    updateDefaultFn: 'now',
-    postgresql: {
-      columnName: 'updated_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  updatedAt: Date;
+  updated_at: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'phone_number',
-      dataType: 'varchar',
-      dataLength: 20,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 20,
+    generated: false,
+    postgresql: {columnName: 'phone_number', dataType: 'character varying', dataLength: 20, nullable: 'YES', generated: false},
   })
-  phoneNumber?: string;
+  phone_number?: string;
 
   @property({
     type: 'boolean',
     required: true,
-    default: false,
-    postgresql: {
-      columnName: 'is_oauth_user',
-      dataType: 'boolean',
-      nullable: 'NO',
-      default: false,
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'is_oauth_user', dataType: 'boolean', nullable: 'NO', generated: false},
   })
-  isOauthUser: boolean;
+  is_oauth_user: boolean;
 
-  @hasOne(() => UserSecurity, {keyTo: 'userId'})
-  userSecurity: UserSecurity;
+  // Define well-known properties here
 
-  @hasOne(() => UserNotificationSetting, {keyTo: 'userId'})
-  userNotificationSetting: UserNotificationSetting;
-
-  @hasOne(() => UserLocation, {keyTo: 'userId'})
-  userLocation: UserLocation;
-
-  @hasOne(() => UserSetting, {keyTo: 'userId'})
-  userSetting: UserSetting;
-
-  @hasMany(() => Session, {keyTo: 'userId'})
-  sessions: Session[];
-
-  @hasMany(() => Device, {keyTo: 'userId'})
-  devices: Device[];
-
-  @hasMany(() => PasswordHistory, {keyTo: 'userId'})
-  passwordHistories: PasswordHistory[];
-
-  @hasMany(() => OAuthAccount, {keyTo: 'userId'})
-  oAuthAccounts: OAuthAccount[];
-
-  @hasMany(() => TwoFactorAuthBackupCode, {keyTo: 'userId'})
-  twoFactorAuthBackupCodes: TwoFactorAuthBackupCode[];
-
-  @hasMany(() => Role, {keyTo: 'creatorUserId'})
-  roles: Role[];
-
-  @hasMany(() => TwoFactorAuthMethod, {keyTo: 'userId'})
-  twoFactorAuthMethods: TwoFactorAuthMethod[];
-
-  @hasMany(() => SystemLog, {keyTo: 'userId'})
-  systemLogs: SystemLog[];
-
-  @hasMany(() => UserRole, {keyTo: 'userId'})
-  userRoles: UserRole[];
-
-  @hasMany(() => Permission, {keyTo: 'creatorUserId'})
-  permissions: Permission[];
-
-  @hasMany(() => LoginHistory, {keyTo: 'userId'})
-  loginHistories: LoginHistory[];
-
-  @hasMany(() => TwoFactorAuthLog, {keyTo: 'userId'})
-  twoFactorAuthLogs: TwoFactorAuthLog[];
-
-  @hasMany(() => NewsDelivery, {keyTo: 'userId'})
-  newsDeliveries: NewsDelivery[];
-
-  @hasMany(() => News, {keyTo: 'creatorUserId'})
-  news: News[];
-
-  @hasMany(() => Notification, {keyTo: 'creatorUserId'})
-  createdNotifications: Notification[];
-
-  @hasMany(() => Notification, {keyTo: 'userId'})
-  receivedNotifications: Notification[];
-
-  @hasMany(() => UserBadge, {keyTo: 'userId'})
-  userBadges: UserBadge[];
-
-  @hasMany(() => Follower, {keyTo: 'followerId'})
-  followers: Follower[];
-
-  @hasMany(() => Follower, {keyTo: 'followedId'})
-  following: Follower[];
-
-  @hasMany(() => Badge, {keyTo: 'creatorUserId'})
-  badges: Badge[];
-
-  @hasMany(() => UserFile, {keyTo: 'userId'})
-  userFiles: UserFile[];
-
-  @hasMany(() => File, {keyTo: 'creatorUserId'})
-  files: File[];
-
-  @hasMany(() => Tool, {keyTo: 'creatorUserId'})
-  tools: Tool[];
-
-  @hasMany(() => Dictionary, {keyTo: 'creatorUserId'})
-  dictionaries: Dictionary[];
-
-  @hasMany(() => UserManualInteraction, {keyTo: 'userId'})
-  userManualInteractions: UserManualInteraction[];
-
-  @hasMany(() => ManualPurchase, {keyTo: 'userId'})
-  manualPurchases: ManualPurchase[];
-
-  @hasMany(() => ManualProgress, {keyTo: 'userId'})
-  manualProgresses: ManualProgress[];
-
-  @hasMany(() => EducationMode, {keyTo: 'creatorUserId'})
-  educationModes: EducationMode[];
-
-  @hasMany(() => Manual, {keyTo: 'creatorUserId'})
-  manuals: Manual[];
-
-  @hasMany(() => Comment, {keyTo: 'userId'})
-  comments: Comment[];
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<User>) {
     super(data);
@@ -315,6 +174,7 @@ export class User extends Entity {
 }
 
 export interface UserRelations {
+  // describe navigational properties here
 }
 
 export type UserWithRelations = User & UserRelations;

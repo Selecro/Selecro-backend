@@ -1,122 +1,99 @@
 import {Entity, model, property} from '@loopback/repository';
-import {User} from '.';
 
 @model({
-  name: 'user_security',
   settings: {
-    postgresql: {
-      table: 'user_security',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'user_security'},
     foreignKeys: {
-      fk_user_security_userId: {
-        name: 'fk_user_security_userId',
-        entity: 'user',
+      user_security_user_id_fkeyRel: {
+        name: 'user_security_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'user_id'
+      }
     },
+    indexes: {
+      idx_user_security_user_id: {
+        keys: {user_id: 1},
+        options: {unique: true}
+      },
+      idx_user_security_failed_login_attempts: {
+        keys: {failed_login_attempts: 1}
+      }
+    }
   }
 })
 export class UserSecurity extends Entity {
   @property({
     type: 'number',
     required: true,
-    id: true,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'user_id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  userId: number;
-
-  @property({
-    type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
-  })
-  uuid: string;
+  user_id: number;
 
   @property({
     type: 'boolean',
     required: true,
-    default: false,
-    postgresql: {
-      columnName: 'two_factor_enabled',
-      dataType: 'boolean',
-      nullable: 'NO',
-      default: false,
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'two_factor_enabled', dataType: 'boolean', nullable: 'NO', generated: false},
   })
-  twoFactorEnabled: boolean;
+  two_factor_enabled: boolean;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'recovery_email',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'recovery_email', dataType: 'character varying', dataLength: 255, nullable: 'YES', generated: false},
   })
-  recoveryEmail?: string;
+  recovery_email?: string;
 
   @property({
     type: 'number',
     required: true,
-    default: 0,
-    postgresql: {
-      columnName: 'failed_login_attempts',
-      dataType: 'integer',
-      nullable: 'NO',
-      default: 0,
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'failed_login_attempts', dataType: 'integer', dataScale: 0, nullable: 'NO', generated: false},
   })
-  failedLoginAttempts: number;
+  failed_login_attempts: number;
 
   @property({
     type: 'date',
-    required: false,
-    postgresql: {
-      columnName: 'password_last_changed_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'password_last_changed_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
   })
-  passwordLastChangedAt?: Date;
+  password_last_changed_at?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'last_login_ip',
-      dataType: 'varchar',
-      dataLength: 45,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 45,
+    generated: false,
+    postgresql: {columnName: 'last_login_ip', dataType: 'character varying', dataLength: 45, nullable: 'YES', generated: false},
   })
-  lastLoginIp?: string;
+  last_login_ip?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'password_hash',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'password_hash', dataType: 'character varying', dataLength: 255, nullable: 'YES', generated: false},
   })
-  passwordHash?: string;
+  password_hash?: string;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<UserSecurity>) {
     super(data);
@@ -124,7 +101,7 @@ export class UserSecurity extends Entity {
 }
 
 export interface UserSecurityRelations {
-  user?: User;
+  // describe navigational properties here
 }
 
 export type UserSecurityWithRelations = UserSecurity & UserSecurityRelations;

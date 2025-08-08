@@ -48,7 +48,7 @@ import {
   NewsDeliveryRepository,
   NewsRepository,
   NotificationRepository,
-  OAuthAccountRepository,
+  OauthAccountRepository,
   PasswordHistoryRepository,
   PermissionRepository,
   RolePermissionRepository,
@@ -111,7 +111,7 @@ export class SelecroBackendApplication extends BootMixin(
     this.repository(SystemLogRepository);
     this.repository(TwoFactorAuthMethodRepository);
     this.repository(PasswordHistoryRepository);
-    this.repository(OAuthAccountRepository);
+    this.repository(OauthAccountRepository);
     this.repository(TwoFactorAuthBackupCodeRepository);
     this.repository(UserRoleRepository);
     this.repository(RolePermissionRepository);

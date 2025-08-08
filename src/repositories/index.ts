@@ -14,7 +14,7 @@ export * from './manual.repository';
 export * from './news-delivery.repository';
 export * from './news.repository';
 export * from './notification.repository';
-export * from './o-auth-account.repository';
+export * from './oauth-account.repository';
 export * from './password-history.repository';
 export * from './permision.repository';
 export * from './role-permission.repository';

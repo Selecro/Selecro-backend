@@ -1,56 +1,61 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {Permission, Role} from '.';
 
 @model({
-  name: 'role_permission',
   settings: {
-    postgresql: {
-      table: 'role_permission',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'role_permission'},
     foreignKeys: {
-      fk_role_permission_roleId: {
-        name: 'fk_role_permission_roleId',
-        entity: 'role',
+      role_permission_permission_id_fkeyRel: {
+        name: 'role_permission_permission_id_fkeyRel',
+        entity: 'Permission',
         entityKey: 'id',
-        foreignKey: 'role_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'permission_id'
       },
-      fk_role_permission_permissionId: {
-        name: 'fk_role_permission_permissionId',
-        entity: 'permission',
+      role_permission_role_id_fkeyRel: {
+        name: 'role_permission_role_id_fkeyRel',
+        entity: 'Role',
         entityKey: 'id',
-        foreignKey: 'permission_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'role_id'
+      }
     },
+    indexes: {
+      idx_role_permission_role_id: {
+        keys: {role_id: 1}
+      },
+      idx_role_permission_permission_id: {
+        keys: {permission_id: 1}
+      },
+      uq_role_permission_role_permission: {
+        keys: {role_id: 1, permission_id: 1},
+        options: {unique: true}
+      }
+    }
   }
 })
 export class RolePermission extends Entity {
   @property({
     type: 'number',
     required: true,
-    id: true,
-    postgresql: {
-      columnName: 'role_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  roleId: number;
+  id: number;
 
-  @property({
-    type: 'number',
-    required: true,
-    id: true,
-    postgresql: {
-      columnName: 'permission_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
-  })
-  permissionId: number;
+  @belongsTo(() => Role)
+  role_id: number;
+
+  @belongsTo(() => Permission)
+  permission_id: number;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<RolePermission>) {
     super(data);
@@ -58,8 +63,7 @@ export class RolePermission extends Entity {
 }
 
 export interface RolePermissionRelations {
-  role?: Role;
-  permission?: Permission;
+  // describe navigational properties here
 }
 
 export type RolePermissionWithRelations = RolePermission & RolePermissionRelations;

@@ -1,69 +1,61 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {Role, User} from '.';
 
 @model({
-  name: 'user_role',
   settings: {
-    postgresql: {
-      table: 'user_role',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'user_role'},
     foreignKeys: {
-      fk_user_role_userId: {
-        name: 'fk_user_role_userId',
-        entity: 'user',
+      user_role_role_id_fkeyRel: {
+        name: 'user_role_role_id_fkeyRel',
+        entity: 'Role',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'role_id'
       },
-      fk_user_role_roleId: {
-        name: 'fk_user_role_roleId',
-        entity: 'role',
+      user_role_user_id_fkeyRel: {
+        name: 'user_role_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'role_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'user_id'
+      }
     },
+    indexes: {
+      idx_user_role_user_id: {
+        keys: {user_id: 1}
+      },
+      idx_user_role_role_id: {
+        keys: {role_id: 1}
+      },
+      uq_user_role_user_id_role_id: {
+        keys: {user_id: 1, role_id: 1},
+        options: {unique: true}
+      }
+    }
   }
 })
 export class UserRole extends Entity {
   @property({
     type: 'number',
     required: true,
-    id: true,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  userId: number;
+  id: number;
 
-  @property({
-    type: 'number',
-    required: true,
-    id: true,
-    postgresql: {
-      columnName: 'role_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
-  })
-  roleId: number;
+  @belongsTo(() => User)
+  user_id: number;
 
-  @property({
-    type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
-  })
-  uuid: string;
+  @belongsTo(() => Role)
+  role_id: number;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<UserRole>) {
     super(data);
@@ -71,8 +63,7 @@ export class UserRole extends Entity {
 }
 
 export interface UserRoleRelations {
-  user?: User;
-  role?: Role;
+  // describe navigational properties here
 }
 
 export type UserRoleWithRelations = UserRole & UserRoleRelations;

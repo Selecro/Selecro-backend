@@ -1,175 +1,115 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from '.';
 
-export enum LogType {
-  authentication = 'authentication',
-  data_access = 'data_access',
-  error = 'error',
-  system_event = 'system_event',
-}
-
-export enum LogAction {
-  create = 'create',
-  read = 'read',
-  update = 'update',
-  delete = 'delete',
-  login = 'login',
-  logout = 'logout',
-  error = 'error',
-}
-
-export enum LogSeverity {
-  info = 'info',
-  warning = 'warning',
-  error = 'error',
-  debug = 'debug',
-  critical = 'critical',
-}
-
 @model({
-  name: 'system_log',
   settings: {
-    postgresql: {
-      table: 'system_log',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'system_log'},
     foreignKeys: {
-      fk_system_log_userId: {
-        name: 'fk_system_log_userId',
-        entity: 'user',
+      system_log_user_id_fkeyRel: {
+        name: 'system_log_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'user_id'
+      }
     },
+    indexes: {
+      idx_system_log_log_time: {
+        keys: {log_time: 1}
+      },
+      idx_system_log_severity: {
+        keys: {severity: 1}
+      },
+      idx_system_log_user_id: {
+        keys: {user_id: 1}
+      }
+    }
   }
 })
 export class SystemLog extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  id?: number;
+  id: number;
 
-  @property({
-    type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
-  })
-  uuid: string;
-
-  @property({
-    type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'YES',
-    },
-  })
-  userId?: number;
+  @belongsTo(() => User)
+  user_id?: number;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {
-      enum: Object.values(LogType),
-    },
-    postgresql: {
-      columnName: 'log_type',
-      dataType: 'text',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'log_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  logType: LogType;
+  log_type: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'log_time',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'log_time', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  logTime: Date;
+  log_time: string;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {
-      enum: Object.values(LogAction),
-    },
-    postgresql: {
-      columnName: 'action',
-      dataType: 'text',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'action', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  action: LogAction;
+  action: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'resource_id',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'resource_id', dataType: 'character varying', dataLength: 255, nullable: 'YES', generated: false},
   })
-  resourceId?: string;
+  resource_id?: string;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {
-      enum: Object.values(LogSeverity),
-    },
-    postgresql: {
-      columnName: 'severity',
-      dataType: 'text',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'severity', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  severity: LogSeverity;
+  severity: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'details',
-      dataType: 'text',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'details', dataType: 'text', nullable: 'YES', generated: false},
   })
   details?: string;
 
   @property({
-    type: 'object',
-    required: false,
-    postgresql: {
-      columnName: 'metadata',
-      dataType: 'jsonb',
-      nullable: 'YES',
-    },
+    type: 'string',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'metadata', dataType: 'json', nullable: 'YES', generated: false},
   })
-  metadata?: object;
+  metadata?: string;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<SystemLog>) {
     super(data);
@@ -177,7 +117,7 @@ export class SystemLog extends Entity {
 }
 
 export interface SystemLogRelations {
-  user?: User;
+  // describe navigational properties here
 }
 
 export type SystemLogWithRelations = SystemLog & SystemLogRelations;

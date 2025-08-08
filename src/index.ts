@@ -1,6 +1,8 @@
-import {juggler} from '@loopback/repository';
 import * as dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 import {ApplicationConfig, SelecroBackendApplication} from './application';
+import {PostgresqlDataSource} from './datasources';
 dotenv.config();
 
 export * from './application';
@@ -9,16 +11,95 @@ export async function main(options: ApplicationConfig = {}) {
   const app = new SelecroBackendApplication(options);
   await app.boot();
 
-  await app.migrateSchema({existingSchema: 'drop'});
+  const dataSource = await app.get<PostgresqlDataSource>('datasources.postgresql');
 
   if (process.env.NODE_ENV !== 'production') {
-    console.log('Running schema migration for the main relational database (existingSchema: "alter")...');
     try {
-      const postgresqlDataSource = await app.get<juggler.DataSource>('datasources.postgresql');
-      await postgresqlDataSource.autoupdate?.();
-      console.log('Schema migration for "postgresql" datasource completed.');
-    } catch (error) {
-      console.error('Error migrating "postgresql" datasource:', error);
+      const tableCount = await dataSource.execute(`
+        SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';
+      `);
+
+      if (tableCount[0].count === '0') {
+        console.log('Database is empty. Starting full schema migration and seeding...');
+        console.log('Dropping and recreating schema "public"...');
+        try {
+          await dataSource.execute('DROP SCHEMA public CASCADE;');
+          await dataSource.execute('CREATE SCHEMA public;');
+          console.log('Schema "public" dropped and recreated successfully.');
+        } catch (err) {
+          if (err.code === '42P06') {
+            console.log('Schema "public" does not exist, creating it...');
+            await dataSource.execute('CREATE SCHEMA public;');
+          } else {
+            console.error('Error dropping/recreating schema:', err);
+            process.exit(1);
+          }
+        }
+
+        const modelsInOrder = [
+          'User',
+          'File',
+          'Badge',
+          'News',
+          'Tool',
+          'EducationMode',
+          'Dictionary',
+          'Manual',
+          'Permission',
+          'Role',
+          'ManualStep',
+          'UserSetting',
+          'UserLocation',
+          'UserNotificationSetting',
+          'UserSecurity',
+          'Device',
+          'LoginHistory',
+          'TwoFactorAuthLog',
+          'SystemLog',
+          'TwoFactorAuthMethod',
+          'PasswordHistory',
+          'OauthAccount',
+          'TwoFactorAuthBackupCode',
+          'Notification',
+          'Comment',
+          'EducationStep',
+          'UserFile',
+          'UserRole',
+          'Follower',
+          'UserBadge',
+          'NewsDelivery',
+          'ManualProgress',
+          'ManualPurchase',
+          'UserManualInteraction',
+          'Session',
+          'RolePermission'
+        ];
+
+        for (const model of modelsInOrder) {
+          console.log(`Migrating model: ${model}`);
+          await app.migrateSchema({
+            existingSchema: 'alter',
+            models: [model],
+          });
+        }
+        console.log('Schema migration completed.');
+
+        const testDataPath = path.join(__dirname, '../test-data.sql');
+        if (fs.existsSync(testDataPath)) {
+          console.log('Seeding database with test data...');
+          const sqlFile = fs.readFileSync(testDataPath, 'utf8');
+          const sqlStatements = sqlFile.split(';').filter((s) => s.trim().length > 0);
+          for (const sqlStatement of sqlStatements) {
+            await dataSource.execute(sqlStatement);
+          }
+          console.log('Database seeding completed.');
+        } else {
+          console.warn('test-data.sql file not found. Skipping data seeding.');
+        }
+      }
+    } catch (err) {
+      console.error('Error during schema migration check:', err);
+      process.exit(1);
     }
   }
 

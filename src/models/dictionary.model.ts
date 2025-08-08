@@ -1,237 +1,177 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {File, User} from '.';
 
-export enum DictionaryStatus {
-  active = 'active',
-  draft = 'draft',
-  archived = 'archived',
-}
-
 @model({
-  name: 'dictionary',
   settings: {
-    postgresql: {
-      table: 'dictionary',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'dictionary'},
     foreignKeys: {
-      fk_dictionary_creatorUserId: {
-        name: 'fk_dictionary_creatorUserId',
-        entity: 'user',
+      dictionary_animation_file_id_fkeyRel: {
+        name: 'dictionary_animation_file_id_fkeyRel',
+        entity: 'File',
         entityKey: 'id',
-        foreignKey: 'creator_user_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'animation_file_id'
       },
-      fk_dictionary_imageFileId: {
-        name: 'fk_dictionary_imageFileId',
-        entity: 'file',
+      dictionary_creator_user_id_fkeyRel: {
+        name: 'dictionary_creator_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'image_file_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'creator_user_id'
       },
-      fk_dictionary_animationFileId: {
-        name: 'fk_dictionary_animationFileId',
-        entity: 'file',
+      dictionary_image_file_id_fkeyRel: {
+        name: 'dictionary_image_file_id_fkeyRel',
+        entity: 'File',
         entityKey: 'id',
-        foreignKey: 'animation_file_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'image_file_id'
       },
-      fk_dictionary_markFileId: {
-        name: 'fk_dictionary_markFileId',
-        entity: 'file',
+      dictionary_mark_file_id_fkeyRel: {
+        name: 'dictionary_mark_file_id_fkeyRel',
+        entity: 'File',
         entityKey: 'id',
-        foreignKey: 'mark_file_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'mark_file_id'
+      }
     },
+    indexes: {
+      idx_dictionary_creator_user_id: {
+        keys: {creator_user_id: 1}
+      },
+      idx_dictionary_image_file_id: {
+        keys: {image_file_id: 1}
+      },
+      idx_dictionary_animation_file_id: {
+        keys: {animation_file_id: 1}
+      },
+      idx_dictionary_mark_file_id: {
+        keys: {mark_file_id: 1}
+      },
+      idx_dictionary_creator_status: {
+        keys: {creator_user_id: 1, status: 1}
+      }
+    }
   }
 })
 export class Dictionary extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  id?: number;
+  id: number;
 
   @property({
     type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
+    required: true,
+    jsonSchema: {nullable: false},
+    length: 36,
+    generated: false,
+    index: {unique: true},
+    postgresql: {columnName: 'uuid', dataType: 'character varying', dataLength: 36, nullable: 'NO', generated: false},
   })
   uuid: string;
 
-  @property({
-    type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'creator_user_id',
-      dataType: 'bigint',
-      nullable: 'YES',
-    },
-  })
-  creatorUserId?: number;
+  @belongsTo(() => User)
+  creator_user_id?: number;
 
-  @property({
-    type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'image_file_id',
-      dataType: 'bigint',
-      nullable: 'YES',
-    },
-  })
-  imageFileId?: number;
+  @belongsTo(() => File)
+  image_file_id?: number;
 
-  @property({
-    type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'animation_file_id',
-      dataType: 'bigint',
-      nullable: 'YES',
-    },
-  })
-  animationFileId?: number;
+  @belongsTo(() => File)
+  animation_file_id?: number;
 
-  @property({
-    type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'mark_file_id',
-      dataType: 'bigint',
-      nullable: 'YES',
-    },
-  })
-  markFileId?: number;
+  @belongsTo(() => File)
+  mark_file_id?: number;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'title_cz',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'title_cz', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  titleCz: string;
+  title_cz: string;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'title_en',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'title_en', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  titleEn: string;
+  title_en: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'description_cz',
-      dataType: 'text',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'description_cz', dataType: 'text', nullable: 'YES', generated: false},
   })
-  descriptionCz?: string;
+  description_cz?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'description_en',
-      dataType: 'text',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'description_en', dataType: 'text', nullable: 'YES', generated: false},
   })
-  descriptionEn?: string;
+  description_en?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'abbrevation_cz',
-      dataType: 'varchar',
-      dataLength: 50,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 50,
+    generated: false,
+    postgresql: {columnName: 'abbrevation_cz', dataType: 'character varying', dataLength: 50, nullable: 'YES', generated: false},
   })
-  abbrevationCz?: string;
+  abbrevation_cz?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'abbrevation_en',
-      dataType: 'varchar',
-      dataLength: 50,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 50,
+    generated: false,
+    postgresql: {columnName: 'abbrevation_en', dataType: 'character varying', dataLength: 50, nullable: 'YES', generated: false},
   })
-  abbrevationEn?: string;
+  abbrevation_en?: string;
 
   @property({
     type: 'string',
     required: true,
-    default: DictionaryStatus.draft,
-    jsonSchema: {
-      enum: Object.values(DictionaryStatus),
-    },
-    postgresql: {
-      columnName: 'status',
-      dataType: 'text',
-      nullable: 'NO',
-      default: 'draft',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  status: DictionaryStatus;
+  status: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'created_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  createdAt: Date;
+  created_at: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    updateDefaultFn: 'now',
-    postgresql: {
-      columnName: 'updated_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  updatedAt: Date;
+  updated_at: string;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<Dictionary>) {
     super(data);
@@ -239,10 +179,7 @@ export class Dictionary extends Entity {
 }
 
 export interface DictionaryRelations {
-  creatorUser?: User;
-  imageFile?: File;
-  animationFile?: File;
-  markFile?: File;
+  // describe navigational properties here
 }
 
 export type DictionaryWithRelations = Dictionary & DictionaryRelations;

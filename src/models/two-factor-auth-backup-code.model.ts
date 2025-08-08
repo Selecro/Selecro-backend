@@ -1,110 +1,82 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from '.';
 
 @model({
-  name: 'two_factor_auth_backup_code',
   settings: {
-    postgresql: {
-      table: 'two_factor_auth_backup_code',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'two_factor_auth_backup_code'},
     foreignKeys: {
-      fk_two_factor_auth_backup_code_userId: {
-        name: 'fk_two_factor_auth_backup_code_userId',
-        entity: 'user',
+      two_factor_auth_backup_code_user_id_fkeyRel: {
+        name: 'two_factor_auth_backup_code_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'user_id'
+      }
     },
+    indexes: {
+      uq_code_hash: {
+        keys: {code_hash: 1},
+        options: {unique: true}
+      }
+    }
   }
 })
 export class TwoFactorAuthBackupCode extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
-  })
-  id?: number;
-
-  @property({
-    type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
-  })
-  uuid: string;
-
-  @property({
-    type: 'number',
     required: true,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  userId: number;
+  id: number;
+
+  @belongsTo(() => User)
+  user_id: number;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'code_hash',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'NO',
-      unique: true,
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'code_hash', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  codeHash: string;
+  code_hash: string;
 
   @property({
     type: 'date',
-    required: false,
-    postgresql: {
-      columnName: 'used_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'used_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
   })
-  usedAt?: Date;
+  used_at?: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'created_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  createdAt: Date;
+  created_at: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'batch_id',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'batch_id', dataType: 'character varying', dataLength: 255, nullable: 'YES', generated: false},
   })
-  batchId?: string;
+  batch_id?: string;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<TwoFactorAuthBackupCode>) {
     super(data);
@@ -112,7 +84,7 @@ export class TwoFactorAuthBackupCode extends Entity {
 }
 
 export interface TwoFactorAuthBackupCodeRelations {
-  user?: User;
+  // describe navigational properties here
 }
 
 export type TwoFactorAuthBackupCodeWithRelations = TwoFactorAuthBackupCode & TwoFactorAuthBackupCodeRelations;

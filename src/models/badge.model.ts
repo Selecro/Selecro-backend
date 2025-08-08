@@ -1,131 +1,105 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {File, User} from '.';
 
 @model({
-  name: 'badge',
   settings: {
-    postgresql: {
-      table: 'badge',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'badge'},
     foreignKeys: {
-      fk_badge_imageFileId: {
-        name: 'fk_badge_imageFileId',
-        entity: 'file',
+      badge_creator_user_id_fkeyRel: {
+        name: 'badge_creator_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'image_file_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'creator_user_id'
       },
-      fk_badge_creatorUserId: {
-        name: 'fk_badge_creatorUserId',
-        entity: 'user',
+      badge_image_file_id_fkeyRel: {
+        name: 'badge_image_file_id_fkeyRel',
+        entity: 'File',
         entityKey: 'id',
-        foreignKey: 'creator_user_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'image_file_id'
+      }
     },
+    indexes: {
+      idx_badge_creator_user_id: {
+        keys: {creator_user_id: 1}
+      },
+      idx_badge_image_file_id: {
+        keys: {image_file_id: 1}
+      }
+    }
   }
 })
 export class Badge extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  id?: number;
+  id: number;
 
   @property({
     type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
+    required: true,
+    jsonSchema: {nullable: false},
+    length: 36,
+    generated: false,
+    index: {unique: true},
+    postgresql: {columnName: 'uuid', dataType: 'character varying', dataLength: 36, nullable: 'NO', generated: false},
   })
   uuid: string;
 
-  @property({
-    type: 'number',
-    required: true,
-    postgresql: {
-      columnName: 'creator_user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
-  })
-  creatorUserId: number;
+  @belongsTo(() => User)
+  creator_user_id: number;
 
-  @property({
-    type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'image_file_id',
-      dataType: 'bigint',
-      nullable: 'YES',
-    },
-  })
-  imageFileId?: number;
+  @belongsTo(() => File)
+  image_file_id?: number;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'name',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'NO',
-      unique: true,
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    index: {unique: true},
+    postgresql: {columnName: 'name', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
   name: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'description',
-      dataType: 'text',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'description', dataType: 'text', nullable: 'YES', generated: false},
   })
   description?: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'created_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  createdAt: Date;
+  created_at: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    updateDefaultFn: 'now',
-    postgresql: {
-      columnName: 'updated_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  updatedAt: Date;
+  updated_at: string;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<Badge>) {
     super(data);
@@ -133,8 +107,7 @@ export class Badge extends Entity {
 }
 
 export interface BadgeRelations {
-  imageFile?: File;
-  creatorUser?: User;
+  // describe navigational properties here
 }
 
 export type BadgeWithRelations = Badge & BadgeRelations;

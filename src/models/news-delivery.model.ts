@@ -1,182 +1,117 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {Device, News, User} from '.';
 
-export enum NewsDeliveryLanguage {
-  cz = 'cz',
-  en = 'en',
-}
-
 @model({
-  name: 'news_delivery',
   settings: {
-    postgresql: {
-      table: 'news_delivery',
-      indexes: {
-        uniqueNewsUserDevice: {
-          keys: {
-            news_id: 1,
-            user_id: 1,
-            device_id: 1,
-          },
-          options: {
-            unique: true,
-          },
-        },
-      },
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'news_delivery'},
     foreignKeys: {
-      fk_news_delivery_newsId: {
-        name: 'fk_news_delivery_newsId',
-        entity: 'news',
+      news_delivery_device_id_fkeyRel: {
+        name: 'news_delivery_device_id_fkeyRel',
+        entity: 'Device',
         entityKey: 'id',
-        foreignKey: 'news_id',
-        onDelete: 'CASCADE',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'device_id'
       },
-      fk_news_delivery_userId: {
-        name: 'fk_news_delivery_userId',
-        entity: 'user',
+      news_delivery_news_id_fkeyRel: {
+        name: 'news_delivery_news_id_fkeyRel',
+        entity: 'News',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'CASCADE',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'news_id'
       },
-      fk_news_delivery_deviceId: {
-        name: 'fk_news_delivery_deviceId',
-        entity: 'device',
+      news_delivery_user_id_fkeyRel: {
+        name: 'news_delivery_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'device_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'user_id'
+      }
     },
+    indexes: {
+      idx_news_delivery_news_id: {
+        keys: {news_id: 1}
+      },
+      idx_news_delivery_user_id: {
+        keys: {user_id: 1}
+      },
+      idx_news_delivery_device_id: {
+        keys: {device_id: 1}
+      },
+      idx_news_delivery_language: {
+        keys: {language: 1}
+      }
+    }
   }
 })
 export class NewsDelivery extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
-  })
-  id?: number;
-
-  @property({
-    type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
-  })
-  uuid: string;
-
-  @property({
-    type: 'number',
     required: true,
-    postgresql: {
-      columnName: 'news_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  newsId: number;
+  id: number;
 
-  @property({
-    type: 'number',
-    required: true,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
-  })
-  userId: number;
+  @belongsTo(() => News)
+  news_id: number;
 
-  @property({
-    type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'device_id',
-      dataType: 'bigint',
-      nullable: 'YES',
-    },
-  })
-  deviceId?: number;
+  @belongsTo(() => User)
+  user_id: number;
+
+  @belongsTo(() => Device)
+  device_id?: number;
 
   @property({
     type: 'string',
     required: true,
-    default: NewsDeliveryLanguage.cz,
-    jsonSchema: {
-      enum: Object.values(NewsDeliveryLanguage),
-    },
-    postgresql: {
-      columnName: 'language',
-      dataType: 'text',
-      nullable: 'NO',
-      default: 'cz',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'language', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  language: NewsDeliveryLanguage;
+  language: string;
 
   @property({
     type: 'boolean',
     required: true,
-    default: false,
-    postgresql: {
-      columnName: 'sent_as_push',
-      dataType: 'boolean',
-      nullable: 'NO',
-      default: false,
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'sent_as_push', dataType: 'boolean', nullable: 'NO', generated: false},
   })
-  sentAsPush: boolean;
+  sent_as_push: boolean;
 
   @property({
     type: 'boolean',
     required: true,
-    default: false,
-    postgresql: {
-      columnName: 'delivered_as_in_app',
-      dataType: 'boolean',
-      nullable: 'NO',
-      default: false,
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'delivered_as_in_app', dataType: 'boolean', nullable: 'NO', generated: false},
   })
-  deliveredAsInApp: boolean;
+  delivered_as_in_app: boolean;
 
   @property({
     type: 'date',
-    required: false,
-    postgresql: {
-      columnName: 'read_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'read_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
   })
-  readAt?: Date;
+  read_at?: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'created_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  createdAt: Date;
+  created_at: string;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<NewsDelivery>) {
     super(data);
@@ -184,9 +119,7 @@ export class NewsDelivery extends Entity {
 }
 
 export interface NewsDeliveryRelations {
-  news?: News;
-  user?: User;
-  device?: Device;
+  // describe navigational properties here
 }
 
 export type NewsDeliveryWithRelations = NewsDelivery & NewsDeliveryRelations;

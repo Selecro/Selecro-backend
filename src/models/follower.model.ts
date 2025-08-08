@@ -1,82 +1,79 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from '.';
 
 @model({
-  name: 'follower',
   settings: {
-    postgresql: {
-      table: 'follower',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'follower'},
     foreignKeys: {
-      fk_follower_followerId: {
-        name: 'fk_follower_followerId',
-        entity: 'user',
+      follower_followed_id_fkeyRel: {
+        name: 'follower_followed_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'follower_id',
-        onDelete: 'CASCADE',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'followed_id'
       },
-      fk_follower_followedId: {
-        name: 'fk_follower_followedId',
-        entity: 'user',
+      follower_follower_id_fkeyRel: {
+        name: 'follower_follower_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'followed_id',
-        onDelete: 'CASCADE',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'follower_id'
+      }
     },
+    indexes: {
+      idx_follower_follower_id: {
+        keys: {follower_id: 1}
+      },
+      idx_follower_followed_id: {
+        keys: {followed_id: 1}
+      },
+      uq_follower_pair: {
+        keys: {follower_id: 1, followed_id: 1},
+        options: {unique: true}
+      }
+    }
   }
 })
 export class Follower extends Entity {
   @property({
     type: 'number',
     required: true,
-    id: true,
-    postgresql: {
-      columnName: 'follower_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  followerId: number;
+  id: number;
 
-  @property({
-    type: 'number',
-    required: true,
-    id: true,
-    postgresql: {
-      columnName: 'followed_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
-  })
-  followedId: number;
+  @belongsTo(() => User)
+  follower_id: number;
+
+  @belongsTo(() => User)
+  followed_id: number;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'followed_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'followed_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  followedAt: Date;
+  followed_at: string;
 
   @property({
     type: 'boolean',
     required: true,
-    default: true,
-    postgresql: {
-      columnName: 'is_active',
-      dataType: 'boolean',
-      nullable: 'NO',
-      default: true,
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'is_active', dataType: 'boolean', nullable: 'NO', generated: false},
   })
-  isActive: boolean;
+  is_active: boolean;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<Follower>) {
     super(data);
@@ -84,8 +81,7 @@ export class Follower extends Entity {
 }
 
 export interface FollowerRelations {
-  followerUser?: User;
-  followedUser?: User;
+  // describe navigational properties here
 }
 
 export type FollowerWithRelations = Follower & FollowerRelations;

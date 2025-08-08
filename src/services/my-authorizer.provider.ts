@@ -8,7 +8,6 @@ import {
 import {Provider} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import {securityId} from '@loopback/security';
-import {ActionType, ResourceType} from '../models'; // Import your enums
 import {
   PermissionRepository,
   RolePermissionRepository,
@@ -88,8 +87,8 @@ export class MyAuthorizerProvider implements Provider<Authorizer> {
         return AuthorizationDecision.DENY;
       }
 
-      const resourceType = resourceTypeStr as ResourceType;
-      const actionType = actionTypeStr as ActionType;
+      const resourceType = resourceTypeStr as any;
+      const actionType = actionTypeStr as any;
 
       // Find the permission ID for the required resource and action
       const permission = await this.permissionRepository.findOne({

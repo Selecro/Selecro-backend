@@ -14,7 +14,7 @@ export * from './manual.model';
 export * from './news-delivery.model';
 export * from './news.model';
 export * from './notification.model';
-export * from './o-auth-account.model';
+export * from './oauth-account.model';
 export * from './password-history.model';
 export * from './permission.model';
 export * from './role-permission.model';

@@ -1,182 +1,148 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from '.';
 
 @model({
-  name: 'device',
   settings: {
-    postgresql: {
-      table: 'device',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'device'},
     foreignKeys: {
-      fk_device_userId: {
-        name: 'fk_device_userId',
-        entity: 'user',
+      device_user_id_fkeyRel: {
+        name: 'device_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'user_id'
+      }
     },
+    indexes: {
+      idx_device_user_id: {
+        keys: {user_id: 1}
+      },
+      idx_device_last_used_at: {
+        keys: {last_used_at: 1}
+      },
+      idx_device_device_token: {
+        keys: {device_token: 1}
+      }
+    }
   }
 })
 export class Device extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
-  })
-  id?: number;
-
-  @property({
-    type: 'number',
     required: true,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  userId: number;
+  id: number;
+
+  @belongsTo(() => User)
+  user_id: number;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'device_name',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'device_name', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  deviceName: string;
+  device_name: string;
 
   @property({
     type: 'date',
-    required: false,
-    postgresql: {
-      columnName: 'last_used_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'last_used_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
   })
-  lastUsedAt?: Date;
+  last_used_at?: string;
 
   @property({
     type: 'boolean',
     required: true,
-    default: false,
-    postgresql: {
-      columnName: 'is_trusted',
-      dataType: 'boolean',
-      nullable: 'NO',
-      default: false,
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'is_trusted', dataType: 'boolean', nullable: 'NO', generated: false},
   })
-  isTrusted: boolean;
+  is_trusted: boolean;
 
   @property({
     type: 'boolean',
     required: true,
-    default: false,
-    postgresql: {
-      columnName: 'biometric_enabled',
-      dataType: 'boolean',
-      nullable: 'NO',
-      default: false,
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'biometric_enabled', dataType: 'boolean', nullable: 'NO', generated: false},
   })
-  biometricEnabled: boolean;
+  biometric_enabled: boolean;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'device_os',
-      dataType: 'varchar',
-      dataLength: 100,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 100,
+    generated: false,
+    postgresql: {columnName: 'device_os', dataType: 'character varying', dataLength: 100, nullable: 'YES', generated: false},
   })
-  deviceOs?: string;
+  device_os?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'device_version',
-      dataType: 'varchar',
-      dataLength: 100,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 100,
+    generated: false,
+    postgresql: {columnName: 'device_version', dataType: 'character varying', dataLength: 100, nullable: 'YES', generated: false},
   })
-  deviceVersion?: string;
+  device_version?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'device_fingerprint',
-      dataType: 'text',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'device_fingerprint', dataType: 'text', nullable: 'YES', generated: false},
   })
-  deviceFingerprint?: string;
+  device_fingerprint?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'device_token',
-      dataType: 'text',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'device_token', dataType: 'text', nullable: 'YES', generated: false},
   })
-  deviceToken?: string;
+  device_token?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'last_known_ip',
-      dataType: 'varchar',
-      dataLength: 45,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 45,
+    generated: false,
+    postgresql: {columnName: 'last_known_ip', dataType: 'character varying', dataLength: 45, nullable: 'YES', generated: false},
   })
-  lastKnownIp?: string;
+  last_known_ip?: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'created_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  createdAt: Date;
+  created_at: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    updateDefaultFn: 'now',
-    postgresql: {
-      columnName: 'updated_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  updatedAt: Date;
+  updated_at: string;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<Device>) {
     super(data);
@@ -184,7 +150,7 @@ export class Device extends Entity {
 }
 
 export interface DeviceRelations {
-  user?: User;
+  // describe navigational properties here
 }
 
 export type DeviceWithRelations = Device & DeviceRelations;

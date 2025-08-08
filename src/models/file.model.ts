@@ -1,204 +1,155 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from '.';
 
-export enum FileType {
-  image = 'image',
-  video = 'video',
-  document = 'document',
-  other = 'other',
-}
-
-export enum FileCategory {
-  profile_picture = 'profile_picture',
-  user_uploaded_document = 'user_uploaded_document',
-  system_generated_document = 'system_generated_document',
-  invoice = 'invoice',
-  report = 'report',
-  contract = 'contract',
-  other_category = 'other_category',
-}
-
 @model({
-  name: 'file',
   settings: {
-    postgresql: {
-      table: 'file',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'file'},
     foreignKeys: {
-      fk_file_creatorUserId: {
-        name: 'fk_file_creatorUserId',
-        entity: 'user',
+      file_creator_user_id_fkeyRel: {
+        name: 'file_creator_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'creator_user_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'creator_user_id'
+      }
     },
+    indexes: {
+      idx_file_creator_user_id: {
+        keys: {creator_user_id: 1}
+      },
+      idx_file_creator_user_uploaded_at: {
+        keys: {creator_user_id: 1, uploaded_at: 1}
+      }
+    }
   }
 })
 export class File extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  id?: number;
+  id: number;
 
   @property({
     type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
+    required: true,
+    jsonSchema: {nullable: false},
+    length: 36,
+    generated: false,
+    index: {unique: true},
+    postgresql: {columnName: 'uuid', dataType: 'character varying', dataLength: 36, nullable: 'NO', generated: false},
   })
   uuid: string;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'file_name',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'file_name', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  fileName: string;
+  file_name: string;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {
-      enum: Object.values(FileType),
-    },
-    postgresql: {
-      columnName: 'file_type',
-      dataType: 'text',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'file_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  fileType: FileType;
+  file_type: string;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {
-      enum: Object.values(FileCategory),
-    },
-    postgresql: {
-      columnName: 'file_category',
-      dataType: 'text',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'file_category', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  fileCategory: FileCategory;
+  file_category: string;
 
   @property({
     type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'file_size_bytes',
-      dataType: 'bigint',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'file_size_bytes', dataType: 'bigint', dataScale: 0, nullable: 'YES', generated: false},
   })
-  fileSizeBytes?: number;
+  file_size_bytes?: number;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'mime_type',
-      dataType: 'varchar',
-      dataLength: 100,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 100,
+    generated: false,
+    postgresql: {columnName: 'mime_type', dataType: 'character varying', dataLength: 100, nullable: 'YES', generated: false},
   })
-  mimeType?: string;
+  mime_type?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'checksum',
-      dataType: 'varchar',
-      dataLength: 64,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 64,
+    generated: false,
+    postgresql: {columnName: 'checksum', dataType: 'character varying', dataLength: 64, nullable: 'YES', generated: false},
   })
   checksum?: string;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'storage_url',
-      dataType: 'varchar',
-      dataLength: 512,
-      nullable: 'NO',
-      unique: true,
-    },
+    jsonSchema: {nullable: false},
+    length: 512,
+    generated: false,
+    index: {unique: true},
+    postgresql: {columnName: 'storage_url', dataType: 'character varying', dataLength: 512, nullable: 'NO', generated: false},
   })
-  storageUrl: string;
+  storage_url: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'storage_service',
-      dataType: 'varchar',
-      dataLength: 100,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 100,
+    generated: false,
+    postgresql: {columnName: 'storage_service', dataType: 'character varying', dataLength: 100, nullable: 'YES', generated: false},
   })
-  storageService?: string;
+  storage_service?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'storage_identifier',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'YES',
-      unique: true,
-    },
+    jsonSchema: {nullable: true},
+    length: 255,
+    generated: false,
+    index: {unique: true},
+    postgresql: {columnName: 'storage_identifier', dataType: 'character varying', dataLength: 255, nullable: 'YES', generated: false},
   })
-  storageIdentifier?: string;
+  storage_identifier?: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'uploaded_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'uploaded_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  uploadedAt: Date;
+  uploaded_at: string;
 
-  @property({
-    type: 'number',
-    required: true,
-    postgresql: {
-      columnName: 'creator_user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
-  })
-  creatorUserId: number;
+  @belongsTo(() => User)
+  creator_user_id: number;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<File>) {
     super(data);
@@ -206,7 +157,7 @@ export class File extends Entity {
 }
 
 export interface FileRelations {
-  creatorUser?: User;
+  // describe navigational properties here
 }
 
 export type FileWithRelations = File & FileRelations;

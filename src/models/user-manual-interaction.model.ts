@@ -1,113 +1,83 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {Manual, User} from '.';
 
-export enum InteractionType {
-  view = 'view',
-  like = 'like',
-  share = 'share',
-}
-
 @model({
-  name: 'user_manual_interaction',
   settings: {
-    postgresql: {
-      table: 'user_manual_interaction',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'user_manual_interaction'},
     foreignKeys: {
-      fk_user_manual_interaction_manualId: {
-        name: 'fk_user_manual_interaction_manualId',
-        entity: 'manual',
+      user_manual_interaction_manual_id_fkeyRel: {
+        name: 'user_manual_interaction_manual_id_fkeyRel',
+        entity: 'Manual',
         entityKey: 'id',
-        foreignKey: 'manual_id',
-        onDelete: 'CASCADE',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'manual_id'
       },
-      fk_user_manual_interaction_userId: {
-        name: 'fk_user_manual_interaction_userId',
-        entity: 'user',
+      user_manual_interaction_user_id_fkeyRel: {
+        name: 'user_manual_interaction_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'CASCADE',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'user_id'
+      }
     },
+    indexes: {
+      idx_user_manual_interaction_user_id: {
+        keys: {user_id: 1}
+      },
+      idx_user_manual_interaction_manual_id: {
+        keys: {manual_id: 1}
+      },
+      idx_user_manual_interaction_created_at: {
+        keys: {created_at: 1}
+      },
+      uq_user_manual_interaction: {
+        keys: {user_id: 1, manual_id: 1, interaction_type: 1},
+        options: {unique: true}
+      }
+    }
   }
 })
 export class UserManualInteraction extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
-  })
-  id?: number;
-
-  @property({
-    type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
-  })
-  uuid: string;
-
-  @property({
-    type: 'number',
     required: true,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  userId: number;
+  id: number;
 
-  @property({
-    type: 'number',
-    required: true,
-    postgresql: {
-      columnName: 'manual_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
-  })
-  manualId: number;
+  @belongsTo(() => User)
+  user_id: number;
+
+  @belongsTo(() => Manual)
+  manual_id: number;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {
-      enum: Object.values(InteractionType),
-    },
-    postgresql: {
-      columnName: 'interaction_type',
-      dataType: 'text',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'interaction_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  interactionType: InteractionType;
+  interaction_type: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'created_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  createdAt: Date;
+  created_at: string;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<UserManualInteraction>) {
     super(data);
@@ -115,8 +85,7 @@ export class UserManualInteraction extends Entity {
 }
 
 export interface UserManualInteractionRelations {
-  user?: User;
-  manual?: Manual;
+  // describe navigational properties here
 }
 
 export type UserManualInteractionWithRelations = UserManualInteraction & UserManualInteractionRelations;

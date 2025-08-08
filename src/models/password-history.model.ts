@@ -1,86 +1,67 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from '.';
 
 @model({
-  name: 'password_history',
   settings: {
-    postgresql: {
-      table: 'password_history',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'password_history'},
     foreignKeys: {
-      fk_password_history_userId: {
-        name: 'fk_password_history_userId',
-        entity: 'user',
+      password_history_user_id_fkeyRel: {
+        name: 'password_history_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'user_id'
+      }
     },
+    indexes: {
+      idx_password_history_user_id: {
+        keys: {user_id: 1}
+      },
+      idx_password_history_changed_at: {
+        keys: {changed_at: -1}
+      }
+    }
   }
 })
 export class PasswordHistory extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
-  })
-  id?: number;
-
-  @property({
-    type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
-  })
-  uuid: string;
-
-  @property({
-    type: 'number',
     required: true,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  userId: number;
+  id: number;
+
+  @belongsTo(() => User)
+  user_id: number;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'password_hash',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'password_hash', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  passwordHash: string;
+  password_hash: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'changed_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'changed_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  changedAt: Date;
+  changed_at: string;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<PasswordHistory>) {
     super(data);
@@ -88,7 +69,7 @@ export class PasswordHistory extends Entity {
 }
 
 export interface PasswordHistoryRelations {
-  user?: User;
+  // describe navigational properties here
 }
 
 export type PasswordHistoryWithRelations = PasswordHistory & PasswordHistoryRelations;

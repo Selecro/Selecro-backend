@@ -1,163 +1,110 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {Manual, ManualStep, User} from '.';
 
 @model({
-  name: 'manual_progress',
   settings: {
-    postgresql: {
-      table: 'manual_progress',
-      indexes: {
-        uniqueUserManual: {
-          keys: {
-            user_id: 1,
-            manual_id: 1,
-          },
-          options: {
-            unique: true,
-          },
-        },
-      },
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'manual_progress'},
     foreignKeys: {
-      fk_manual_progress_currentStepId: {
-        name: 'fk_manual_progress_currentStepId',
-        entity: 'manual_step',
+      manual_progress_current_step_id_fkeyRel: {
+        name: 'manual_progress_current_step_id_fkeyRel',
+        entity: 'ManualStep',
         entityKey: 'id',
-        foreignKey: 'current_step_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'current_step_id'
       },
-      fk_manual_progress_userId: {
-        name: 'fk_manual_progress_userId',
-        entity: 'user',
+      manual_progress_manual_id_fkeyRel: {
+        name: 'manual_progress_manual_id_fkeyRel',
+        entity: 'Manual',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'CASCADE',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'manual_id'
       },
-      fk_manual_progress_manualId: {
-        name: 'fk_manual_progress_manualId',
-        entity: 'manual',
+      manual_progress_user_id_fkeyRel: {
+        name: 'manual_progress_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'manual_id',
-        onDelete: 'CASCADE',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'user_id'
+      }
     },
+    indexes: {
+      idx_manual_progress_user_id: {
+        keys: {user_id: 1}
+      },
+      idx_manual_progress_manual_id: {
+        keys: {manual_id: 1}
+      },
+      idx_manual_progress_current_step_id: {
+        keys: {current_step_id: 1}
+      },
+      uq_manual_progress_user_manual: {
+        keys: {user_id: 1, manual_id: 1},
+        options: {unique: true}
+      }
+    }
   }
 })
 export class ManualProgress extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  id?: number;
+  id: number;
 
-  @property({
-    type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
-  })
-  uuid: string;
+  @belongsTo(() => User)
+  user_id: number;
+
+  @belongsTo(() => Manual)
+  manual_id: number;
+
+  @belongsTo(() => ManualStep)
+  current_step_id?: number;
 
   @property({
     type: 'number',
     required: true,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'total_time_seconds', dataType: 'integer', dataScale: 0, nullable: 'NO', generated: false},
   })
-  userId: number;
-
-  @property({
-    type: 'number',
-    required: true,
-    postgresql: {
-      columnName: 'manual_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
-  })
-  manualId: number;
-
-  @property({
-    type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'current_step_id',
-      dataType: 'bigint',
-      nullable: 'YES',
-    },
-  })
-  currentStepId?: number;
-
-  @property({
-    type: 'number',
-    required: true,
-    default: 0,
-    postgresql: {
-      columnName: 'total_time_seconds',
-      dataType: 'integer',
-      nullable: 'NO',
-      default: 0,
-    },
-  })
-  totalTimeSeconds: number;
+  total_time_seconds: number;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'started_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'started_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  startedAt: Date;
+  started_at: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    updateDefaultFn: 'now',
-    postgresql: {
-      columnName: 'last_updated_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'last_updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  lastUpdatedAt: Date;
+  last_updated_at: string;
 
   @property({
     type: 'boolean',
     required: true,
-    default: false,
-    postgresql: {
-      columnName: 'is_finished',
-      dataType: 'boolean',
-      nullable: 'NO',
-      default: false,
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'is_finished', dataType: 'boolean', nullable: 'NO', generated: false},
   })
-  isFinished: boolean;
+  is_finished: boolean;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<ManualProgress>) {
     super(data);
@@ -165,9 +112,7 @@ export class ManualProgress extends Entity {
 }
 
 export interface ManualProgressRelations {
-  user?: User;
-  manual?: Manual;
-  currentStep?: ManualStep;
+  // describe navigational properties here
 }
 
 export type ManualProgressWithRelations = ManualProgress & ManualProgressRelations;

@@ -1,205 +1,148 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from '.';
 
-export enum NotificationType {
-  info = 'info',
-  warning = 'warning',
-  error = 'error',
-  success = 'success',
-  promotion = 'promotion',
-  activity = 'activity',
-}
-
-export enum DeliveryMethod {
-  email = 'email',
-  push = 'push',
-  in_app = 'in_app',
-}
-
 @model({
-  name: 'notification',
   settings: {
-    postgresql: {
-      table: 'notification',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'notification'},
     foreignKeys: {
-      fk_notification_userId: {
-        name: 'fk_notification_userId',
-        entity: 'user',
+      notification_creator_user_id_fkeyRel: {
+        name: 'notification_creator_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'CASCADE',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'creator_user_id'
       },
-      fk_notification_creatorUserId: {
-        name: 'fk_notification_creatorUserId',
-        entity: 'user',
+      notification_user_id_fkeyRel: {
+        name: 'notification_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'creator_user_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'user_id'
+      }
     },
+    indexes: {
+      idx_notification_user_id: {
+        keys: {user_id: 1}
+      },
+      idx_notification_creator_user_id: {
+        keys: {creator_user_id: 1}
+      },
+      idx_notification_type: {
+        keys: {type: 1}
+      },
+      idx_notification_delivery_method: {
+        keys: {delivery_method: 1}
+      },
+      idx_notification_read_at: {
+        keys: {read_at: 1}
+      }
+    }
   }
 })
 export class Notification extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
-  })
-  id?: number;
-
-  @property({
-    type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
-  })
-  uuid: string;
-
-  @property({
-    type: 'number',
     required: true,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  userId: number;
+  id: number;
 
-  @property({
-    type: 'number',
-    required: true,
-    postgresql: {
-      columnName: 'creator_user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
-  })
-  creatorUserId: number;
+  @belongsTo(() => User)
+  user_id: number;
+
+  @belongsTo(() => User)
+  creator_user_id: number;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'title',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'title', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
   title: string;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'message',
-      dataType: 'text',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'message', dataType: 'text', nullable: 'NO', generated: false},
   })
   message: string;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {
-      enum: Object.values(NotificationType),
-    },
-    postgresql: {
-      columnName: 'type',
-      dataType: 'text',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  type: NotificationType;
+  type: string;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {
-      enum: Object.values(DeliveryMethod),
-    },
-    postgresql: {
-      columnName: 'delivery_method',
-      dataType: 'text',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'delivery_method', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  deliveryMethod: DeliveryMethod;
+  delivery_method: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'image_url',
-      dataType: 'varchar',
-      dataLength: 2048,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 2048,
+    generated: false,
+    postgresql: {columnName: 'image_url', dataType: 'character varying', dataLength: 2048, nullable: 'YES', generated: false},
   })
-  imageUrl?: string;
+  image_url?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'action_url',
-      dataType: 'varchar',
-      dataLength: 2048,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 2048,
+    generated: false,
+    postgresql: {columnName: 'action_url', dataType: 'character varying', dataLength: 2048, nullable: 'YES', generated: false},
   })
-  actionUrl?: string;
+  action_url?: string;
 
   @property({
-    type: 'object',
-    required: false,
-    postgresql: {
-      columnName: 'extra_data',
-      dataType: 'jsonb',
-      nullable: 'YES',
-    },
+    type: 'string',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'extra_data', dataType: 'json', nullable: 'YES', generated: false},
   })
-  extraData?: object;
+  extra_data?: string;
 
   @property({
     type: 'date',
-    required: false,
-    postgresql: {
-      columnName: 'read_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'read_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
   })
-  readAt?: Date;
+  read_at?: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'created_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  createdAt: Date;
+  created_at: string;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<Notification>) {
     super(data);
@@ -207,8 +150,7 @@ export class Notification extends Entity {
 }
 
 export interface NotificationRelations {
-  user?: User;
-  creatorUser?: User;
+  // describe navigational properties here
 }
 
 export type NotificationWithRelations = Notification & NotificationRelations;

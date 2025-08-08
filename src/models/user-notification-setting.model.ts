@@ -1,86 +1,68 @@
 import {Entity, model, property} from '@loopback/repository';
-import {User} from '.';
 
 @model({
-  name: 'user_notification_setting',
   settings: {
-    postgresql: {
-      table: 'user_notification_setting',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'user_notification_setting'},
     foreignKeys: {
-      fk_user_notification_setting_userId: {
-        name: 'fk_user_notification_setting_userId',
-        entity: 'user',
+      user_notification_setting_user_id_fkeyRel: {
+        name: 'user_notification_setting_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'user_id'
+      }
     },
+    indexes: {
+      idx_user_notification_setting_user_id: {
+        keys: {user_id: 1},
+        options: {unique: true}
+      }
+    }
   }
 })
 export class UserNotificationSetting extends Entity {
   @property({
     type: 'number',
     required: true,
-    id: true,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'user_id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  userId: number;
-
-  @property({
-    type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
-  })
-  uuid: string;
+  user_id: number;
 
   @property({
     type: 'boolean',
     required: true,
-    default: true,
-    postgresql: {
-      columnName: 'receive_news',
-      dataType: 'boolean',
-      nullable: 'NO',
-      default: true,
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'receive_news', dataType: 'boolean', nullable: 'NO', generated: false},
   })
-  receiveNews: boolean;
+  receive_news: boolean;
 
   @property({
     type: 'boolean',
     required: true,
-    default: true,
-    postgresql: {
-      columnName: 'receive_private_messages',
-      dataType: 'boolean',
-      nullable: 'NO',
-      default: true,
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'receive_private_messages', dataType: 'boolean', nullable: 'NO', generated: false},
   })
-  receivePrivateMessages: boolean;
+  receive_private_messages: boolean;
 
   @property({
     type: 'date',
-    required: false,
-    postgresql: {
-      columnName: 'marketing_consent_given_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'marketing_consent_given_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
   })
-  marketingConsentGivenAt?: Date;
+  marketing_consent_given_at?: string;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<UserNotificationSetting>) {
     super(data);
@@ -88,7 +70,7 @@ export class UserNotificationSetting extends Entity {
 }
 
 export interface UserNotificationSettingRelations {
-  user?: User;
+  // describe navigational properties here
 }
 
 export type UserNotificationSettingWithRelations = UserNotificationSetting & UserNotificationSettingRelations;

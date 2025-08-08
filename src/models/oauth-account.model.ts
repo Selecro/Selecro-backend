@@ -4,24 +4,33 @@ import {User} from '.';
 @model({
   settings: {
     idInjection: false,
-    postgresql: {schema: 'public', table: 'two_factor_auth_method'},
+    postgresql: {schema: 'public', table: 'oauth_account'},
     foreignKeys: {
-      two_factor_auth_method_user_id_fkeyRel: {
-        name: 'two_factor_auth_method_user_id_fkeyRel',
+      oauth_account_user_id_fkeyRel: {
+        name: 'oauth_account_user_id_fkeyRel',
         entity: 'User',
         entityKey: 'id',
         foreignKey: 'user_id'
       }
     },
     indexes: {
-      uq_user_method_type: {
-        keys: {user_id: 1, method_type: 1},
+      idx_oauth_account_user_id: {
+        keys: {user_id: 1}
+      },
+      uq_oauth_account_provider_provider_user_id: {
+        keys: {provider: 1, provider_user_id: 1},
         options: {unique: true}
+      },
+      idx_oauth_account_provider: {
+        keys: {provider: 1}
+      },
+      idx_oauth_account_created_at: {
+        keys: {created_at: -1}
       }
     }
   }
 })
-export class TwoFactorAuthMethod extends Entity {
+export class OauthAccount extends Entity {
   @property({
     type: 'number',
     required: true,
@@ -42,44 +51,44 @@ export class TwoFactorAuthMethod extends Entity {
     jsonSchema: {nullable: false},
     length: 255,
     generated: false,
-    postgresql: {columnName: 'method_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'provider', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  method_type: string;
+  provider: string;
 
   @property({
-    type: 'boolean',
+    type: 'string',
+    required: true,
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'provider_user_id', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+  })
+  provider_user_id: string;
+
+  @property({
+    type: 'string',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    postgresql: {columnName: 'is_primary', dataType: 'boolean', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'access_token', dataType: 'text', nullable: 'NO', generated: false},
   })
-  is_primary: boolean;
-
-  @property({
-    type: 'boolean',
-    required: true,
-    jsonSchema: {nullable: false},
-    generated: false,
-    postgresql: {columnName: 'enabled', dataType: 'boolean', nullable: 'NO', generated: false},
-  })
-  enabled: boolean;
-
-  @property({
-    type: 'boolean',
-    required: true,
-    jsonSchema: {nullable: false},
-    generated: false,
-    postgresql: {columnName: 'verified', dataType: 'boolean', nullable: 'NO', generated: false},
-  })
-  verified: boolean;
+  access_token: string;
 
   @property({
     type: 'string',
     jsonSchema: {nullable: true},
     generated: false,
-    postgresql: {columnName: 'secret_data', dataType: 'text', nullable: 'YES', generated: false},
+    postgresql: {columnName: 'refresh_token', dataType: 'text', nullable: 'YES', generated: false},
   })
-  secret_data?: string;
+  refresh_token?: string;
+
+  @property({
+    type: 'date',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'token_expires_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
+  })
+  token_expires_at?: string;
 
   @property({
     type: 'date',
@@ -105,13 +114,13 @@ export class TwoFactorAuthMethod extends Entity {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [prop: string]: any;
 
-  constructor(data?: Partial<TwoFactorAuthMethod>) {
+  constructor(data?: Partial<OauthAccount>) {
     super(data);
   }
 }
 
-export interface TwoFactorAuthMethodRelations {
+export interface OauthAccountRelations {
   // describe navigational properties here
 }
 
-export type TwoFactorAuthMethodWithRelations = TwoFactorAuthMethod & TwoFactorAuthMethodRelations;
+export type OauthAccountWithRelations = OauthAccount & OauthAccountRelations;

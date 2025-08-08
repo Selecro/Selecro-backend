@@ -1,142 +1,115 @@
 import {Entity, model, property} from '@loopback/repository';
 
-export enum LanguagePreference {
-  en = 'en',
-  cz = 'cz',
-}
-
-export enum UserDisplayStatus {
-  online = 'online',
-  away = 'away',
-  do_not_disturb = 'do_not_disturb',
-  invisible = 'invisible',
-}
-
 @model({
-  name: 'user_setting',
   settings: {
-    postgresql: {
-      table: 'user_setting',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'user_setting'},
     foreignKeys: {
-      fk_user_setting_userId: {
-        name: 'fk_user_setting_userId',
-        entity: 'user',
+      user_setting_user_id_fkeyRel: {
+        name: 'user_setting_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'user_id'
       },
-      fk_user_setting_profilePictureFileId: {
-        name: 'fk_user_setting_profilePictureFileId',
-        entity: 'file',
+      user_setting_profile_picture_file_id_fkeyRel: {
+        name: 'user_setting_profile_picture_file_id_fkeyRel',
+        entity: 'File',
         entityKey: 'id',
-        foreignKey: 'profile_picture_file_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'profile_picture_file_id'
+      }
     },
+    indexes: {
+      idx_user_setting_user_id: {
+        keys: {user_id: 1},
+        options: {unique: true}
+      },
+      idx_user_setting_language_preference: {
+        keys: {language_preference: 1}
+      },
+      idx_user_setting_profile_picture_file_id: {
+        keys: {profile_picture_file_id: 1}
+      }
+    }
   }
 })
 export class UserSetting extends Entity {
   @property({
     type: 'number',
     required: true,
-    id: true,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'user_id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  userId: number;
+  user_id: number;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'bio',
-      dataType: 'text',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'bio', dataType: 'text', nullable: 'YES', generated: false},
   })
   bio?: string;
 
   @property({
     type: 'boolean',
     required: true,
-    default: false,
-    postgresql: {
-      columnName: 'dark_mode',
-      dataType: 'boolean',
-      nullable: 'NO',
-      default: false,
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'dark_mode', dataType: 'boolean', nullable: 'NO', generated: false},
   })
-  darkMode: boolean;
+  dark_mode: boolean;
 
   @property({
     type: 'string',
     required: true,
-    default: LanguagePreference.cz,
-    jsonSchema: {
-      enum: Object.values(LanguagePreference),
-    },
-    postgresql: {
-      columnName: 'language_preference',
-      dataType: 'text',
-      nullable: 'NO',
-      default: 'cz',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'language_preference', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  languagePreference: LanguagePreference;
+  language_preference: string;
 
   @property({
     type: 'string',
-    required: false,
-    jsonSchema: {
-      enum: Object.values(UserDisplayStatus),
-    },
-    postgresql: {
-      columnName: 'user_display_status',
-      dataType: 'text',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'user_display_status', dataType: 'character varying', dataLength: 255, nullable: 'YES', generated: false},
   })
-  userDisplayStatus?: UserDisplayStatus;
+  user_display_status?: string;
 
   @property({
     type: 'date',
-    required: false,
-    postgresql: {
-      columnName: 'terms_privacy_agreement_accepted_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'terms_privacy_agreement_accepted_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
   })
-  termsPrivacyAgreementAcceptedAt?: Date;
+  terms_privacy_agreement_accepted_at?: string;
 
   @property({
     type: 'date',
-    required: false,
-    postgresql: {
-      columnName: 'gdpr_consent_given_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'gdpr_consent_given_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
   })
-  gdprConsentGivenAt?: Date;
+  gdpr_consent_given_at?: string;
 
   @property({
     type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'profile_picture_file_id',
-      dataType: 'bigint',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'profile_picture_file_id', dataType: 'bigint', dataScale: 0, nullable: 'YES', generated: false},
   })
-  profilePictureFileId?: number;
+  profile_picture_file_id?: number;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<UserSetting>) {
     super(data);
@@ -144,6 +117,7 @@ export class UserSetting extends Entity {
 }
 
 export interface UserSettingRelations {
+  // describe navigational properties here
 }
 
 export type UserSettingWithRelations = UserSetting & UserSettingRelations;

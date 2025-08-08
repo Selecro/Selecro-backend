@@ -1,238 +1,168 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {File, User} from '.';
 
-export enum ManualDifficulty {
-  beginner = 'beginner',
-  intermediate = 'intermediate',
-  advanced = 'advanced',
-}
-
-export enum ManualType {
-  assembly = 'assembly',
-  repair = 'repair',
-  how_to = 'how_to',
-  guide = 'guide',
-  other = 'other',
-}
-
-export enum ManualStatus {
-  public = 'public',
-  private = 'private',
-  premium = 'premium',
-  draft = 'draft',
-  archived = 'archived',
-}
-
 @model({
-  name: 'manual',
   settings: {
-    postgresql: {
-      table: 'manual',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'manual'},
     foreignKeys: {
-      fk_manual_creatorUserId: {
-        name: 'fk_manual_creatorUserId',
-        entity: 'user',
+      manual_creator_user_id_fkeyRel: {
+        name: 'manual_creator_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'creator_user_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'creator_user_id'
       },
-      fk_manual_imageFileId: {
-        name: 'fk_manual_imageFileId',
-        entity: 'file',
+      manual_image_file_id_fkeyRel: {
+        name: 'manual_image_file_id_fkeyRel',
+        entity: 'File',
         entityKey: 'id',
-        foreignKey: 'image_file_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'image_file_id'
+      }
     },
+    indexes: {
+      idx_manual_creator_user_id: {
+        keys: {creator_user_id: 1}
+      },
+      idx_manual_image_file_id: {
+        keys: {image_file_id: 1}
+      },
+      uq_manual_uuid: {
+        keys: {uuid: 1},
+        options: {unique: true}
+      }
+    }
   }
 })
 export class Manual extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {
-      columnName: 'id',
-      dataType: 'bigint',
-      nullable: 'NO',
-      generated: true,
-    },
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  id?: number;
+  id: number;
 
   @property({
     type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
+    required: true,
+    jsonSchema: {nullable: false},
+    length: 36,
+    generated: false,
+    index: {unique: true},
+    postgresql: {columnName: 'uuid', dataType: 'character varying', dataLength: 36, nullable: 'NO', generated: false},
   })
   uuid: string;
 
-  @property({
-    type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'creator_user_id',
-      dataType: 'bigint',
-      nullable: 'YES',
-    },
-  })
-  creatorUserId?: number;
+  @belongsTo(() => User)
+  creator_user_id?: number;
 
-  @property({
-    type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'image_file_id',
-      dataType: 'bigint',
-      nullable: 'YES',
-    },
-  })
-  imageFileId?: number;
+  @belongsTo(() => File)
+  image_file_id?: number;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'title_cz',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'title_cz', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  titleCz: string;
+  title_cz: string;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'title_en',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'title_en', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  titleEn: string;
+  title_en: string;
 
   @property({
     type: 'string',
     required: true,
-    default: ManualDifficulty.beginner,
-    jsonSchema: {
-      enum: Object.values(ManualDifficulty),
-    },
-    postgresql: {
-      columnName: 'difficulty',
-      dataType: 'text',
-      nullable: 'NO',
-      default: 'beginner',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'difficulty', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  difficulty: ManualDifficulty;
+  difficulty: string;
 
   @property({
     type: 'number',
     required: true,
-    default: 0.00,
-    postgresql: {
-      columnName: 'price',
-      dataType: 'decimal',
-      dataPrecision: 10,
-      dataScale: 2,
-      nullable: 'NO',
-      default: 0.00,
-    },
+    jsonSchema: {nullable: false},
+    precision: 10,
+    scale: 2,
+    generated: false,
+    postgresql: {columnName: 'price', dataType: 'numeric', dataPrecision: 10, dataScale: 2, nullable: 'NO', generated: false},
   })
   price: number;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'crochet_abbreviation',
-      dataType: 'varchar',
-      dataLength: 50,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 50,
+    generated: false,
+    postgresql: {columnName: 'crochet_abbreviation', dataType: 'character varying', dataLength: 50, nullable: 'YES', generated: false},
   })
-  crochetAbbreviation?: string;
+  crochet_abbreviation?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'crochet_tool',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'crochet_tool', dataType: 'character varying', dataLength: 255, nullable: 'YES', generated: false},
   })
-  crochetTool?: string;
+  crochet_tool?: string;
 
   @property({
     type: 'string',
-    required: false,
-    jsonSchema: {
-      enum: Object.values(ManualType),
-    },
-    postgresql: {
-      columnName: 'manual_type',
-      dataType: 'text',
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'manual_type', dataType: 'character varying', dataLength: 255, nullable: 'YES', generated: false},
   })
-  manualType?: ManualType;
+  manual_type?: string;
 
   @property({
     type: 'string',
     required: true,
-    default: ManualStatus.draft,
-    jsonSchema: {
-      enum: Object.values(ManualStatus),
-    },
-    postgresql: {
-      columnName: 'status',
-      dataType: 'text',
-      nullable: 'NO',
-      default: 'draft',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  status: ManualStatus;
+  status: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    postgresql: {
-      columnName: 'created_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  createdAt: Date;
+  created_at: string;
 
   @property({
     type: 'date',
     required: true,
-    defaultFn: 'now',
-    updateDefaultFn: 'now',
-    postgresql: {
-      columnName: 'updated_at',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-      default: 'CURRENT_TIMESTAMP',
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  updatedAt: Date;
+  updated_at: string;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<Manual>) {
     super(data);
@@ -240,8 +170,7 @@ export class Manual extends Entity {
 }
 
 export interface ManualRelations {
-  creatorUser?: User;
-  imageFile?: File;
+  // describe navigational properties here
 }
 
 export type ManualWithRelations = Manual & ManualRelations;

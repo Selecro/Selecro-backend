@@ -1,123 +1,104 @@
 import {Entity, model, property} from '@loopback/repository';
-import {User} from '.';
 
 @model({
-  name: 'user_location',
   settings: {
-    postgresql: {
-      table: 'user_location',
-    },
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'user_location'},
     foreignKeys: {
-      fk_user_location_userId: {
-        name: 'fk_user_location_userId',
-        entity: 'user',
+      user_location_user_id_fkeyRel: {
+        name: 'user_location_user_id_fkeyRel',
+        entity: 'User',
         entityKey: 'id',
-        foreignKey: 'user_id',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
-      },
+        foreignKey: 'user_id'
+      }
     },
+    indexes: {
+      idx_user_location_user_id: {
+        keys: {user_id: 1},
+        options: {unique: true}
+      },
+      idx_user_location_country: {
+        keys: {country: 1}
+      },
+      idx_user_location_city: {
+        keys: {city: 1}
+      }
+    }
   }
 })
 export class UserLocation extends Entity {
   @property({
     type: 'number',
     required: true,
-    id: true,
-    postgresql: {
-      columnName: 'user_id',
-      dataType: 'bigint',
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'user_id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
-  userId: number;
+  user_id: number;
 
   @property({
     type: 'string',
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'uuid',
-      dataType: 'varchar',
-      dataLength: 36,
-      nullable: 'NO',
-      unique: true,
-    },
-  })
-  uuid: string;
-
-  @property({
-    type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'country',
-      dataType: 'varchar',
-      dataLength: 100,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 100,
+    generated: false,
+    postgresql: {columnName: 'country', dataType: 'character varying', dataLength: 100, nullable: 'YES', generated: false},
   })
   country?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'city',
-      dataType: 'varchar',
-      dataLength: 100,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 100,
+    generated: false,
+    postgresql: {columnName: 'city', dataType: 'character varying', dataLength: 100, nullable: 'YES', generated: false},
   })
   city?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'postal_code',
-      dataType: 'varchar',
-      dataLength: 20,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 20,
+    generated: false,
+    postgresql: {columnName: 'postal_code', dataType: 'character varying', dataLength: 20, nullable: 'YES', generated: false},
   })
-  postalCode?: string;
+  postal_code?: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'street_address',
-      dataType: 'varchar',
-      dataLength: 255,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'street_address', dataType: 'character varying', dataLength: 255, nullable: 'YES', generated: false},
   })
-  streetAddress?: string;
+  street_address?: string;
 
   @property({
     type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'latitude',
-      dataType: 'decimal',
-      dataPrecision: 10,
-      dataScale: 8,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    precision: 10,
+    scale: 8,
+    generated: false,
+    postgresql: {columnName: 'latitude', dataType: 'numeric', dataPrecision: 10, dataScale: 8, nullable: 'YES', generated: false},
   })
   latitude?: number;
 
   @property({
     type: 'number',
-    required: false,
-    postgresql: {
-      columnName: 'longitude',
-      dataType: 'decimal',
-      dataPrecision: 11,
-      dataScale: 8,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    precision: 11,
+    scale: 8,
+    generated: false,
+    postgresql: {columnName: 'longitude', dataType: 'numeric', dataPrecision: 11, dataScale: 8, nullable: 'YES', generated: false},
   })
   longitude?: number;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<UserLocation>) {
     super(data);
@@ -125,7 +106,7 @@ export class UserLocation extends Entity {
 }
 
 export interface UserLocationRelations {
-  user?: User;
+  // describe navigational properties here
 }
 
 export type UserLocationWithRelations = UserLocation & UserLocationRelations;
