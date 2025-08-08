@@ -18,7 +18,7 @@ import helmet from 'helmet';
 import path from 'path';
 import {PingController} from './controllers';
 import {KafkaDataSource, KmsDataSource, PostgresqlDataSource, RedisDataSource} from './datasources';
-import {COOKIE_PARSER_OPTIONS, CorrelationIdBindings, FirebaseBindings, IpFilterBindings, RATE_LIMIT_OPTIONS} from './keys';
+import {COOKIE_PARSER_OPTIONS, CorrelationIdBindings, FirebaseBindings, IpFilterBindings} from './keys';
 import {
   CookieParserMiddlewareProvider,
   CorrelationIdMiddlewareProvider,
@@ -85,10 +85,14 @@ export class SelecroBackendApplication extends BootMixin(
     this.sequence(MySequence);
     this.static('/', path.join(__dirname, '../public'));
     this.restServer.expressMiddleware(helmetMiddlewareFactory);
-    this.configureMiddleware();
+
+    // BINDINGS FOR APPLICATION LIFECYCLE AND SERVICES
     this.bind(FirebaseBindings.ADMIN).toProvider(FirebaseAdminProvider);
     this.service(RemoteConfigService);
     this.lifeCycleObserver(RemoteConfigObserver);
+
+    this.configureMiddleware();
+
     this.configure(RestExplorerBindings.COMPONENT).to({
       path: '/explorer',
     });
@@ -96,6 +100,8 @@ export class SelecroBackendApplication extends BootMixin(
     this.component(AuthenticationComponent);
     this.component(JWTAuthenticationComponent);
     this.controller(PingController);
+
+    // REPOSITORY BINDINGS
     this.repository(UserRepository);
     this.repository(FileRepository);
     this.repository(UserFileRepository);
@@ -132,10 +138,14 @@ export class SelecroBackendApplication extends BootMixin(
     this.repository(ManualPurchaseRepository);
     this.repository(UserManualInteractionRepository);
     this.repository(CommentRepository);
+
+    // DATASOURCE BINDINGS
     this.dataSource(PostgresqlDataSource);
     this.dataSource(KafkaDataSource);
     this.dataSource(RedisDataSource);
     this.dataSource(KmsDataSource);
+
+    // BOOTSTRAP CONFIGURATION
     this.projectRoot = __dirname;
     this.bootOptions = {
       controllers: {
@@ -160,6 +170,7 @@ export class SelecroBackendApplication extends BootMixin(
     this.bind('middleware.cookieParser').toProvider(CookieParserMiddlewareProvider);
     this.bind('middleware.csrf').toProvider(CsrfMiddlewareProvider);
 
+    // Bindings for IP filtering
     this.bind(IpFilterBindings.IP_LIST).to(process.env.DENIED_IPS?.split(',').map(s => s.trim()) || []);
     this.bind(IpFilterBindings.OPTIONS).to({
       mode: 'deny',
@@ -167,15 +178,10 @@ export class SelecroBackendApplication extends BootMixin(
       logLevel: 'deny',
     });
 
+    // Binding for correlation ID
     this.bind(CorrelationIdBindings.HEADER_NAME).to('X-Request-ID');
 
-    this.bind(RATE_LIMIT_OPTIONS).to({
-      windowMs: 15 * 60 * 1000,
-      max: 100,
-      message: 'Too many requests from this IP, please try again after 15 minutes.',
-      keyGenerator: (req) => (req.headers['x-forwarded-for'] || req.socket.remoteAddress) as string,
-    });
-
+    // Binding for cookie parser secret and options
     const cookieParserSecret = process.env.COOKIE_PARSER_SECRET || 'your-super-secret-key-please-change-this';
     if (cookieParserSecret === 'your-super-secret-key-please-change-this' && process.env.NODE_ENV === 'production') {
       console.warn('WARNING: COOKIE_PARSER_SECRET is not set in production. Please set a strong, unique secret!');
@@ -192,6 +198,7 @@ export class SelecroBackendApplication extends BootMixin(
     };
     this.bind(COOKIE_PARSER_OPTIONS).to(cookieParserOptions);
 
+    // Binding for CSRF options
     const csrfOptions: csurf.CookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

@@ -24,7 +24,6 @@ export class RemoteConfigService {
     @inject(FirebaseBindings.ADMIN) firebaseAdmin: typeof admin
   ) {
     this.firebaseAdmin = firebaseAdmin;
-    const firebaseApp = this.firebaseAdmin.app();
   }
 
   public async getConfigValues(): Promise<RemoteConfigParameters> {
