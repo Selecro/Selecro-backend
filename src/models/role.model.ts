@@ -24,10 +24,6 @@ export enum RoleName {
     indexes: {
       idx_role_creator_user_id: {
         keys: {creator_user_id: 1}
-      },
-      uq_role_role_name: {
-        keys: {role_name: 1},
-        options: {unique: true}
       }
     }
   }

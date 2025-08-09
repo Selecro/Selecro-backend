@@ -57,12 +57,12 @@ INSERT INTO public.manual (id, uuid, creator_user_id, image_file_id, title_cz, t
 (5, 'manual-5-uuid', 4, 1, 'Háčkovaná deka', 'Crochet blanket', 'intermediate', 0.00, 'řetízek, sloupek', 'háčky 6mm', 'how_to', 'public', '2025-06-15 11:04:00', '2025-06-15 11:04:00');
 
 INSERT INTO public.permission (id, creator_user_id, resource_type, action_type, permission_description, created_at, updated_at) VALUES
-(1, 1, 'user_read', 'read', 'Allows reading user profiles.', '2025-06-01 08:10:00', '2025-06-01 08:10:00'),
-(2, 1, 'file_write', 'write', 'Allows uploading new files.', '2025-06-01 08:11:00', '2025-06-01 08:11:00'),
-(3, 1, 'manual_update', 'update', 'Allows updating manual content.', '2025-06-01 08:12:00', '2025-06-01 08:12:00'),
-(4, 1, 'news_write', 'write', 'Allows creating new news articles.', '2025-06-01 08:13:00', '2025-06-01 08:13:00'),
-(5, 1, 'user_delete', 'delete', 'Allows deleting user accounts.', '2025-06-01 08:14:00', '2025-06-01 08:14:00'),
-(6, 1, 'role_read', 'read', 'Allows reading role information.', '2025-06-01 08:15:00', '2025-06-01 08:15:00');
+(1, 1, 'user', 'read', 'Allows reading user profiles.', '2025-06-01 08:10:00', '2025-06-01 08:10:00'),
+(2, 1, 'file', 'write', 'Allows uploading new files.', '2025-06-01 08:11:00', '2025-06-01 08:11:00'),
+(3, 1, 'manual', 'update', 'Allows updating manual content.', '2025-06-01 08:12:00', '2025-06-01 08:12:00'),
+(4, 1, 'news', 'write', 'Allows creating new news articles.', '2025-06-01 08:13:00', '2025-06-01 08:13:00'),
+(5, 1, 'user', 'delete', 'Allows deleting user accounts.', '2025-06-01 08:14:00', '2025-06-01 08:14:00'),
+(6, 1, 'role', 'read', 'Allows reading role information.', '2025-06-01 08:15:00', '2025-06-01 08:15:00');
 
 --------------------------------------------------------------------------------
 
@@ -72,7 +72,7 @@ INSERT INTO public.role (id, creator_user_id, role_name, role_description, creat
 (3, 3, 'marketer', 'User with permissions to manage news and promotions.', '2025-06-01 08:02:00', '2025-06-01 08:02:00'),
 (4, 4, 'educator', 'User who can create educational content and manuals.', '2025-06-01 08:03:00', '2025-06-01 08:03:00'),
 (5, 5, 'customer', 'User with limited access, primarily for purchasing and viewing content.', '2025-06-01 08:04:00', '2025-06-01 08:04:00'),
-(6, 1, 'user1', 'Another standard user.', '2025-06-01 08:05:00', '2025-06-01 08:05:00');
+(6, 1, 'user', 'Another standard user.', '2025-06-01 08:05:00', '2025-06-01 08:05:00');
 
 INSERT INTO public.manual_step (id, manual_id, image_file_id, title_cz, title_en, description_cz, description_en, step_order, created_at, updated_at) VALUES
 (1, 1, 1, 'Nahazování ok', 'Casting on stitches', 'První krok k pletení šály.', 'The first step to knitting a scarf.', 1, '2025-06-16 09:00:00', '2025-06-16 09:00:00'),
@@ -234,11 +234,11 @@ INSERT INTO public.manual_progress (id, user_id, manual_id, current_step_id, tot
 (5, 6, 3, NULL, 1200, '2025-06-24 15:00:00', '2025-06-24 15:20:00', FALSE);
 
 INSERT INTO public.manual_purchase (id, user_id, manual_id, purchase_date, price_paid, currency, transaction_id, payment_status, created_at, updated_at) VALUES
-(1, 1, 2, '2025-06-28 10:00:00', 99.00, 'CZK', 'txn_001', 'completed', '2025-06-28 10:00:00', '2025-06-28 10:00:00'),
-(2, 3, 2, '2025-06-29 11:00:00', 99.00, 'CZK', 'txn_002', 'completed', '2025-06-29 11:00:00', '2025-06-29 11:00:00'),
-(3, 4, 4, '2025-06-30 12:00:00', 199.00, 'CZK', 'txn_003', 'completed', '2025-06-30 12:00:00', '2025-06-30 12:00:00'),
-(4, 5, 2, '2025-07-01 13:00:00', 99.00, 'CZK', 'txn_004', 'pending', '2025-07-01 13:00:00', '2025-07-01 13:00:00'),
-(5, 6, 4, '2025-07-02 14:00:00', 199.00, 'CZK', 'txn_005', 'failed', '2025-07-02 14:00:00', '2025-07-02 14:00:00');
+(1, 1, 2, '2025-06-28 10:00:00', 99.00, 'czk', 'txn_001', 'completed', '2025-06-28 10:00:00', '2025-06-28 10:00:00'),
+(2, 3, 2, '2025-06-29 11:00:00', 99.00, 'czk', 'txn_002', 'completed', '2025-06-29 11:00:00', '2025-06-29 11:00:00'),
+(3, 4, 4, '2025-06-30 12:00:00', 199.00, 'czk', 'txn_003', 'completed', '2025-06-30 12:00:00', '2025-06-30 12:00:00'),
+(4, 5, 2, '2025-07-01 13:00:00', 99.00, 'czk', 'txn_004', 'pending', '2025-07-01 13:00:00', '2025-07-01 13:00:00'),
+(5, 6, 4, '2025-07-02 14:00:00', 199.00, 'czk', 'txn_005', 'failed', '2025-07-02 14:00:00', '2025-07-02 14:00:00');
 
 INSERT INTO public.user_manual_interaction (id, user_id, manual_id, user_manual_interaction_type, created_at) VALUES
 (1, 1, 1, 'view', '2025-07-01 10:00:00'),
