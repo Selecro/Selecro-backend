@@ -5,8 +5,7 @@ import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
 import {User} from '../models'; // Assuming User model is still needed for UserProfile conversion
-import {UserSecurityRepository} from '../repositories/user-security.repository'; // Import UserSecurityRepository
-import {UserRepository} from '../repositories/user.repository';
+import {UserRepository, UserSecurityRepository} from '../repositories'; // Import UserSecurityRepository
 import {BcryptHasher} from './hash.password';
 
 export class MyUserService implements UserService<User, Credentials> {

@@ -26,11 +26,11 @@ import {
   InputSanitizerMiddlewareProvider,
   IpFilterMiddlewareProvider,
   MaintenanceMiddlewareProvider,
-  RateLimitMiddlewareProvider
+  RateLimitMiddlewareProvider,
+  TenantResolverMiddlewareProvider
 } from './middleware';
-import {RemoteConfigObserver} from './observers/remote-config.observer';
-import {FirebaseAdminProvider} from './providers/firebase-admin.provider';
-import {RemoteConfigService} from './providers/remote-config.provider';
+import {RemoteConfigObserver} from './observers';
+import {FirebaseAdminProvider, RemoteConfigService} from './providers';
 import {
   BadgeRepository,
   CommentRepository,
@@ -69,7 +69,7 @@ import {
   UserSettingRepository
 } from './repositories';
 import {MySequence} from './sequence';
-import {FcmService} from './services/fcm.service';
+import {FcmService, TenantService} from './services';
 
 dotenv.config();
 
@@ -146,6 +146,8 @@ export class SelecroBackendApplication extends BootMixin(
     this.dataSource(RedisDataSource);
     this.dataSource(KmsDataSource);
 
+    this.service(TenantService);
+
     this.projectRoot = __dirname;
     this.bootOptions = {
       controllers: {
@@ -169,6 +171,7 @@ export class SelecroBackendApplication extends BootMixin(
     this.bind('middleware.inputSanitizer').toProvider(InputSanitizerMiddlewareProvider);
     this.bind('middleware.cookieParser').toProvider(CookieParserMiddlewareProvider);
     this.bind('middleware.csrf').toProvider(CsrfMiddlewareProvider);
+    this.bind('middleware.tenant').toProvider(TenantResolverMiddlewareProvider);
 
     this.bind(IpFilterBindings.IP_LIST).to(process.env.DENIED_IPS?.split(',').map(s => s.trim()) || []);
     this.bind(IpFilterBindings.OPTIONS).to({

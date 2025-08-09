@@ -1,6 +1,6 @@
 // src/middleware/logger.middleware.ts
 import {Middleware} from '@loopback/rest';
-import {httpRequestCounter, httpRequestDurationSeconds, logErrorToCrashlytics} from '../utils/monitoring';
+import {httpRequestCounter, httpRequestDurationSeconds, logErrorToCrashlytics} from '.';
 
 export const loggerMiddleware: Middleware = async (ctx, next) => {
   const start = process.hrtime.bigint(); // Use high-resolution time for better precision

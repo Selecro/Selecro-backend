@@ -2,7 +2,7 @@ import {bind, BindingScope, inject, injectable} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import * as admin from 'firebase-admin';
 import {FcmBindings} from '../keys';
-import {DeviceRepository} from '../repositories/device.repository';
+import {DeviceRepository} from '../repositories';
 
 // Interface for the notification payload
 export interface NotificationPayload {

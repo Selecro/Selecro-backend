@@ -4,10 +4,9 @@ import {CorsOptions} from 'cors';
 import {IpFilterOptions, IpList} from 'express-ipfilter';
 import {Options as RateLimitOptions} from 'express-rate-limit';
 import * as admin from 'firebase-admin';
-import {RemoteConfigParameters} from './providers/remote-config.provider';
-import {FcmService} from './services/fcm.service';
-import {FirebaseAdminService} from './services/firebase-admin.service';
-import {FirebaseOauthStrategy} from './strategies/firebase-oauth.strategy';
+import {RemoteConfigParameters} from './providers';
+import {FcmService, FirebaseAdminService} from './services';
+import {FirebaseOauthStrategy} from './strategies';
 
 export interface CookieParserOptions extends cookieParser.CookieParseOptions { }
 
@@ -77,3 +76,5 @@ export namespace FcmBindings {
   export const ADMIN = BindingKey.create<typeof admin>('fcm.admin');
   export const SERVICE = BindingKey.create<FcmService>('services.FcmService');
 }
+
+export const TENANT_BINDING_KEY = BindingKey.create<string>('tenant.id');

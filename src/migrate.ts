@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {SelecroBackendApplication} from './application';
-import {PostgresqlDataSource} from './datasources/postgresql.datasource';
+import {PostgresqlDataSource} from './datasources';
 
 export async function migrate(args: string[]) {
   const rebuild = args.includes('--rebuild');

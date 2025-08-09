@@ -1,6 +1,6 @@
 import {inject, Provider} from '@loopback/core';
 import {Middleware} from '@loopback/rest';
-import {RemoteConfigService} from '../providers/remote-config.provider';
+import {RemoteConfigService} from '../providers';
 
 export class MaintenanceMiddlewareProvider implements Provider<Middleware> {
   constructor(

@@ -4,7 +4,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import jwt from 'jsonwebtoken';
 import {User} from '../models'; // Import UserSetting model
-import {UserSettingRepository} from '../repositories/user-setting.repository'; // Import UserSettingRepository
+import {UserSettingRepository} from '../repositories'; // Import UserSettingRepository
 
 dotenv.config();
 

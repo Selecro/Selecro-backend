@@ -8,9 +8,8 @@ import {securityId, UserProfile} from '@loopback/security';
 import admin from 'firebase-admin';
 import {FirebaseBindings} from '../keys';
 import {User} from '../models';
-import {OauthAccountRepository} from '../repositories/oauth-account.repository';
-import {UserRepository} from '../repositories/user.repository';
-import {FirebaseAdminService} from '../services/firebase-admin.service';
+import {OauthAccountRepository, UserRepository} from '../repositories';
+import {FirebaseAdminService} from '../services';
 
 @injectable({scope: BindingScope.TRANSIENT})
 export class FirebaseOauthStrategy implements AuthenticationStrategy {

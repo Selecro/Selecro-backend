@@ -28,6 +28,7 @@ export class MySequence implements SequenceHandler {
     @inject('middleware.inputSanitizer') private inputSanitizerMiddleware: Middleware,
     @inject('middleware.cookieParser') private cookieParserMiddleware: Middleware,
     @inject('middleware.csrf') private csrfMiddleware: Middleware,
+    @inject('middleware.tenant') private tenantMiddleware: Middleware,
   ) { }
 
   async handle(context: RequestContext) {
@@ -41,6 +42,7 @@ export class MySequence implements SequenceHandler {
       await this.inputSanitizerMiddleware(context, () => Promise.resolve());
       await this.cookieParserMiddleware(context, () => Promise.resolve());
       await this.csrfMiddleware(context, () => Promise.resolve());
+      await this.tenantMiddleware(context, () => Promise.resolve());
 
       const route = this.findRoute(request);
       const args = await this.parseParams(request, route);

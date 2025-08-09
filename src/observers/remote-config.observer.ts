@@ -3,7 +3,7 @@ import {
   LifeCycleObserver,
   lifeCycleObserver,
 } from '@loopback/core';
-import {RemoteConfigService} from '../providers/remote-config.provider';
+import {RemoteConfigService} from '../providers';
 
 @lifeCycleObserver('RemoteConfigObserver')
 export class RemoteConfigObserver implements LifeCycleObserver {

@@ -2,7 +2,7 @@ import {inject, Provider} from '@loopback/core';
 import {Middleware, Request, Response} from '@loopback/rest';
 import rateLimit from 'express-rate-limit';
 import {RATE_LIMIT_OPTIONS, RateLimitConfig} from '../keys';
-import {RemoteConfigParameters, RemoteConfigService} from '../providers/remote-config.provider';
+import {RemoteConfigParameters, RemoteConfigService} from '../providers';
 
 type RateLimitHandler = (req: Request, res: Response, next: (err?: any) => any) => void;
 
