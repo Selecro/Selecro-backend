@@ -1,6 +1,12 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {File, User} from '.';
 
+export enum DictionaryStatus {
+  Active = 'active',
+  Draft = 'draft',
+  Archived = 'archived'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -44,8 +50,8 @@ import {File, User} from '.';
       idx_dictionary_mark_file_id: {
         keys: {mark_file_id: 1}
       },
-      idx_dictionary_creator_status: {
-        keys: {creator_user_id: 1, status: 1}
+      idx_dictionary_creator_dictionary_status: {
+        keys: {creator_user_id: 1, dictionary_status: 1}
       }
     }
   }
@@ -142,18 +148,23 @@ export class Dictionary extends Entity {
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(DictionaryStatus)
+    },
     length: 255,
     generated: false,
-    postgresql: {columnName: 'status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    default: DictionaryStatus.Draft,
+    postgresql: {columnName: 'dictionary_status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  status: string;
+  dictionary_status: DictionaryStatus;
 
   @property({
     type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   created_at: string;
@@ -163,6 +174,7 @@ export class Dictionary extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;

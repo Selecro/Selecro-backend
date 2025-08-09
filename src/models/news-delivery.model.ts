@@ -1,6 +1,11 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {Device, News, User} from '.';
 
+export enum NewsDeliveryLanguage {
+  CZ = 'cz',
+  EN = 'en'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -35,8 +40,8 @@ import {Device, News, User} from '.';
       idx_news_delivery_device_id: {
         keys: {device_id: 1}
       },
-      idx_news_delivery_language: {
-        keys: {language: 1}
+      idx_news_delivery_news_delivery_language: {
+        keys: {news_delivery_language: 1}
       }
     }
   }
@@ -65,18 +70,23 @@ export class NewsDelivery extends Entity {
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(NewsDeliveryLanguage),
+    },
     length: 255,
     generated: false,
-    postgresql: {columnName: 'language', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    default: NewsDeliveryLanguage.CZ,
+    postgresql: {columnName: 'news_delivery_language', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  language: string;
+  news_delivery_language: NewsDeliveryLanguage;
 
   @property({
     type: 'boolean',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: false,
     postgresql: {columnName: 'sent_as_push', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   sent_as_push: boolean;
@@ -86,6 +96,7 @@ export class NewsDelivery extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: false,
     postgresql: {columnName: 'delivered_as_in_app', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   delivered_as_in_app: boolean;
@@ -103,6 +114,7 @@ export class NewsDelivery extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   created_at: string;

@@ -1,6 +1,13 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {Manual, User} from '.';
 
+export enum UserManualInteractionType {
+  View = 'view',
+  Like = 'like',
+  Share = 'share',
+  Save = 'save'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -30,7 +37,7 @@ import {Manual, User} from '.';
         keys: {created_at: 1}
       },
       uq_user_manual_interaction: {
-        keys: {user_id: 1, manual_id: 1, interaction_type: 1},
+        keys: {user_id: 1, manual_id: 1, user_manual_interaction_type: 1},
         options: {unique: true}
       }
     }
@@ -57,18 +64,22 @@ export class UserManualInteraction extends Entity {
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(UserManualInteractionType)
+    },
     length: 255,
     generated: false,
-    postgresql: {columnName: 'interaction_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'user_manual_interaction_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  interaction_type: string;
+  user_manual_interaction_type: UserManualInteractionType;
 
   @property({
     type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   created_at: string;

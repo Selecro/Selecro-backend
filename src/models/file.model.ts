@@ -1,6 +1,23 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from '.';
 
+export enum FileType {
+  Image = 'image',
+  Video = 'video',
+  Document = 'document',
+  Other = 'other'
+}
+
+export enum FileCategory {
+  ProfilePicture = 'profile_picture',
+  UserUploadedDocument = 'user_uploaded_document',
+  SystemGeneratedDocument = 'system_generated_document',
+  Invoice = 'invoice',
+  Report = 'report',
+  Contract = 'contract',
+  OtherCategory = 'other_category'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -59,22 +76,28 @@ export class File extends Entity {
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(FileType)
+    },
     length: 255,
     generated: false,
     postgresql: {columnName: 'file_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  file_type: string;
+  file_type: FileType;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(FileCategory)
+    },
     length: 255,
     generated: false,
     postgresql: {columnName: 'file_category', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  file_category: string;
+  file_category: FileCategory;
 
   @property({
     type: 'number',
@@ -99,9 +122,9 @@ export class File extends Entity {
     jsonSchema: {nullable: true},
     length: 64,
     generated: false,
-    postgresql: {columnName: 'checksum', dataType: 'character varying', dataLength: 64, nullable: 'YES', generated: false},
+    postgresql: {columnName: 'file_checksum', dataType: 'character varying', dataLength: 64, nullable: 'YES', generated: false},
   })
-  checksum?: string;
+  file_checksum?: string;
 
   @property({
     type: 'string',
@@ -138,6 +161,7 @@ export class File extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'uploaded_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   uploaded_at: string;

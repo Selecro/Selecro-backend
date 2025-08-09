@@ -70,6 +70,7 @@ export class Session extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'login_time', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   login_time: string;
@@ -79,6 +80,7 @@ export class Session extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'last_active', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   last_active: string;
@@ -97,6 +99,7 @@ export class Session extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: true,
     postgresql: {columnName: 'is_active', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   is_active: boolean;
@@ -170,6 +173,7 @@ export class Session extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: false,
     postgresql: {columnName: 'cookie_consent', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   cookie_consent: boolean;

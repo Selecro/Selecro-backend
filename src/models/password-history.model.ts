@@ -53,6 +53,7 @@ export class PasswordHistory extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'changed_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   changed_at: string;

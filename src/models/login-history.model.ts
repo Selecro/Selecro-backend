@@ -1,6 +1,12 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from '.';
 
+export enum LoginStatus {
+  Success = 'success',
+  Failure = 'failure',
+  Pending2FA = 'pending_2fa'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -43,6 +49,7 @@ export class LoginHistory extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'login_time', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   login_time: string;
@@ -50,12 +57,15 @@ export class LoginHistory extends Entity {
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(LoginStatus)
+    },
     length: 255,
     generated: false,
-    postgresql: {columnName: 'status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'login_status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  status: string;
+  login_status: LoginStatus;
 
   @property({
     type: 'string',

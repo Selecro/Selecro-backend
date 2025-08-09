@@ -1,6 +1,12 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {File, User} from '.';
 
+export enum NewsStatus {
+  Active = 'active',
+  Draft = 'draft',
+  Archived = 'archived'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -26,8 +32,8 @@ import {File, User} from '.';
       idx_news_image_file_id: {
         keys: {image_file_id: 1}
       },
-      idx_news_status: {
-        keys: {status: 1}
+      idx_news_news_status: {
+        keys: {news_status: 1}
       },
       idx_news_published_at: {
         keys: {published_at: 1}
@@ -104,24 +110,6 @@ export class News extends Entity {
 
   @property({
     type: 'date',
-    required: true,
-    jsonSchema: {nullable: false},
-    generated: false,
-    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
-  })
-  created_at: string;
-
-  @property({
-    type: 'date',
-    required: true,
-    jsonSchema: {nullable: false},
-    generated: false,
-    postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
-  })
-  updated_at: string;
-
-  @property({
-    type: 'date',
     jsonSchema: {nullable: true},
     generated: false,
     postgresql: {columnName: 'published_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
@@ -131,12 +119,36 @@ export class News extends Entity {
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(NewsStatus)
+    },
     length: 255,
     generated: false,
-    postgresql: {columnName: 'status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    default: NewsStatus.Draft,
+    postgresql: {columnName: 'news_status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  status: string;
+  news_status: NewsStatus;
+
+  @property({
+    type: 'date',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    default: new Date(),
+    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
+  })
+  created_at: string;
+
+  @property({
+    type: 'date',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    default: new Date(),
+    postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
+  })
+  updated_at: string;
 
   // Define well-known properties here
 

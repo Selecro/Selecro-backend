@@ -1,6 +1,12 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {File, User} from '.';
 
+export enum EducationModeStatus {
+  Active = 'active',
+  Draft = 'draft',
+  Archived = 'archived'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -26,8 +32,8 @@ import {File, User} from '.';
       idx_education_mode_image_file_id: {
         keys: {image_file_id: 1}
       },
-      idx_education_mode_creator_status: {
-        keys: {creator_user_id: 1, status: 1}
+      idx_education_mode_creator_education_mode_status: {
+        keys: {creator_user_id: 1, education_mode_status: 1}
       }
     }
   }
@@ -99,6 +105,20 @@ export class EducationMode extends Entity {
 
   @property({
     type: 'string',
+    required: true,
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(EducationModeStatus)
+    },
+    length: 255,
+    generated: false,
+    default: EducationModeStatus.Draft,
+    postgresql: {columnName: 'education_mode_status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+  })
+  education_mode_status: EducationModeStatus;
+
+  @property({
+    type: 'string',
     jsonSchema: {nullable: true},
     length: 255,
     generated: false,
@@ -107,20 +127,11 @@ export class EducationMode extends Entity {
   tool?: string;
 
   @property({
-    type: 'string',
-    required: true,
-    jsonSchema: {nullable: false},
-    length: 255,
-    generated: false,
-    postgresql: {columnName: 'status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
-  })
-  status: string;
-
-  @property({
     type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   created_at: string;
@@ -130,6 +141,7 @@ export class EducationMode extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;

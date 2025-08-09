@@ -1,6 +1,14 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from '.';
 
+export enum RoleName {
+  Admin = 'admin',
+  User = 'user',
+  Marketer = 'marketer',
+  Educator = 'educator',
+  Customer = 'customer'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -17,8 +25,8 @@ import {User} from '.';
       idx_role_creator_user_id: {
         keys: {creator_user_id: 1}
       },
-      uq_role_name: {
-        keys: {name: 1},
+      uq_role_role_name: {
+        keys: {role_name: 1},
         options: {unique: true}
       }
     }
@@ -42,26 +50,31 @@ export class Role extends Entity {
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(RoleName)
+    },
     length: 255,
     generated: false,
-    postgresql: {columnName: 'name', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    default: RoleName.User,
+    postgresql: {columnName: 'role_name', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  name: string;
+  role_name: RoleName;
 
   @property({
     type: 'string',
     jsonSchema: {nullable: true},
     generated: false,
-    postgresql: {columnName: 'description', dataType: 'text', nullable: 'YES', generated: false},
+    postgresql: {columnName: 'role_description', dataType: 'text', nullable: 'YES', generated: false},
   })
-  description?: string;
+  role_description?: string;
 
   @property({
     type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   created_at: string;
@@ -71,6 +84,7 @@ export class Role extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;

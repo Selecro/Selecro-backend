@@ -64,6 +64,7 @@ export class Device extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: false,
     postgresql: {columnName: 'is_trusted', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   is_trusted: boolean;
@@ -73,6 +74,7 @@ export class Device extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: false,
     postgresql: {columnName: 'biometric_enabled', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   biometric_enabled: boolean;
@@ -125,6 +127,7 @@ export class Device extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   created_at: string;
@@ -134,6 +137,7 @@ export class Device extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;

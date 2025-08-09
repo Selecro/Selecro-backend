@@ -1,6 +1,28 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {File, User} from '.';
 
+export enum ManualDifficulty {
+  Beginner = 'beginner',
+  Intermediate = 'intermediate',
+  Advanced = 'advanced'
+}
+
+export enum ManualType {
+  Assembly = 'assembly',
+  Repair = 'repair',
+  HowTo = 'how_to',
+  Guide = 'guide',
+  Other = 'other'
+}
+
+export enum ManualStatus {
+  Public = 'public',
+  Private = 'private',
+  Premium = 'premium',
+  Draft = 'draft',
+  Archived = 'archived'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -85,12 +107,15 @@ export class Manual extends Entity {
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(ManualDifficulty)
+    },
     length: 255,
     generated: false,
-    postgresql: {columnName: 'difficulty', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'manual_difficulty', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  difficulty: string;
+  manual_difficulty: ManualDifficulty;
 
   @property({
     type: 'number',
@@ -99,6 +124,7 @@ export class Manual extends Entity {
     precision: 10,
     scale: 2,
     generated: false,
+    default: 99.90,
     postgresql: {columnName: 'price', dataType: 'numeric', dataPrecision: 10, dataScale: 2, nullable: 'NO', generated: false},
   })
   price: number;
@@ -123,28 +149,36 @@ export class Manual extends Entity {
 
   @property({
     type: 'string',
-    jsonSchema: {nullable: true},
+    jsonSchema: {
+      nullable: true,
+      enum: Object.values(ManualType)
+    },
     length: 255,
     generated: false,
     postgresql: {columnName: 'manual_type', dataType: 'character varying', dataLength: 255, nullable: 'YES', generated: false},
   })
-  manual_type?: string;
+  manual_type?: ManualType;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(ManualStatus)
+    },
     length: 255,
     generated: false,
-    postgresql: {columnName: 'status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    default: ManualStatus.Draft,
+    postgresql: {columnName: 'manual_status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  status: string;
+  manual_status: ManualStatus;
 
   @property({
     type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   created_at: string;
@@ -154,6 +188,7 @@ export class Manual extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;

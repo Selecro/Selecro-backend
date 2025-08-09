@@ -65,23 +65,24 @@ export class Badge extends Entity {
     length: 255,
     generated: false,
     index: {unique: true},
-    postgresql: {columnName: 'name', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'badge_name', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  name: string;
+  badge_name: string;
 
   @property({
     type: 'string',
     jsonSchema: {nullable: true},
     generated: false,
-    postgresql: {columnName: 'description', dataType: 'text', nullable: 'YES', generated: false},
+    postgresql: {columnName: 'badge_description', dataType: 'text', nullable: 'YES', generated: false},
   })
-  description?: string;
+  badge_description?: string;
 
   @property({
     type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   created_at: string;
@@ -91,6 +92,7 @@ export class Badge extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;

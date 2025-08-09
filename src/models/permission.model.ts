@@ -1,6 +1,52 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from '.';
 
+export enum ResourceType {
+  User = 'user',
+  UserSetting = 'user_setting',
+  UserLocation = 'user_location',
+  UserNotificationSetting = 'user_notification_setting',
+  UserSecurity = 'user_security',
+  File = 'file',
+  UserFile = 'user_file',
+  Role = 'role',
+  Permission = 'permission',
+  Device = 'device',
+  LoginHistory = 'login_history',
+  TwoFactorAuthLog = 'two_factor_auth_log',
+  SystemLog = 'system_log',
+  TwoFactorAuthMethod = 'two_factor_auth_method',
+  PasswordHistory = 'password_history',
+  OauthAccount = 'oauth_account',
+  TwoFactorAuthBackupCode = 'two_factor_auth_backup_code',
+  UserRole = 'user_role',
+  RolePermission = 'role_permission',
+  Session = 'session',
+  Follower = 'follower',
+  Badge = 'badge',
+  UserBadge = 'user_badge',
+  Notification = 'notification',
+  News = 'news',
+  NewsDelivery = 'news_delivery',
+  EducationMode = 'education_mode',
+  Tool = 'tool',
+  EducationStep = 'education_step',
+  Dictionary = 'dictionary',
+  Manual = 'manual',
+  ManualStep = 'manual_step',
+  ManualProgress = 'manual_progress',
+  ManualPurchase = 'manual_purchase',
+  UserManualInteraction = 'user_manual_interaction',
+  Comment = 'comment'
+}
+
+export enum ActionType {
+  Read = 'read',
+  Write = 'write',
+  Delete = 'delete',
+  Update = 'update'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -45,36 +91,43 @@ export class Permission extends Entity {
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(ResourceType)
+    },
     length: 255,
     generated: false,
     postgresql: {columnName: 'resource_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  resource_type: string;
+  resource_type: ResourceType;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(ActionType)
+    },
     length: 255,
     generated: false,
     postgresql: {columnName: 'action_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  action_type: string;
+  action_type: ActionType;
 
   @property({
     type: 'string',
     jsonSchema: {nullable: true},
     generated: false,
-    postgresql: {columnName: 'description', dataType: 'text', nullable: 'YES', generated: false},
+    postgresql: {columnName: 'permission_description', dataType: 'text', nullable: 'YES', generated: false},
   })
-  description?: string;
+  permission_description?: string;
 
   @property({
     type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   created_at: string;
@@ -84,6 +137,7 @@ export class Permission extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;

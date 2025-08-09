@@ -56,6 +56,7 @@ export class Follower extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'followed_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   followed_at: string;
@@ -65,6 +66,7 @@ export class Follower extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: true,
     postgresql: {columnName: 'is_active', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   is_active: boolean;

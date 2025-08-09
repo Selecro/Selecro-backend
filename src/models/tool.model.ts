@@ -1,6 +1,12 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {File, User} from '.';
 
+export enum ToolStatus {
+  Active = 'active',
+  draft = 'draft',
+  Archived = 'archived'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -104,18 +110,23 @@ export class Tool extends Entity {
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(ToolStatus)
+    },
     length: 255,
     generated: false,
-    postgresql: {columnName: 'status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    default: ToolStatus.draft,
+    postgresql: {columnName: 'tool_status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  status: string;
+  tool_status: ToolStatus;
 
   @property({
     type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   created_at: string;
@@ -125,6 +136,7 @@ export class Tool extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;

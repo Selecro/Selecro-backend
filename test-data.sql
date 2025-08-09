@@ -6,7 +6,7 @@ INSERT INTO public.user (id, uuid, first_name, last_name, username, email, email
 (5, 'e5f6g7h8-i9i0-j1k2-3l4m-5n6o7p8q9r0s', 'Lenka', 'Nováková', 'lenka.n', 'lenka.novakova@example.com', TRUE, '1995-01-30', 'active', '2025-06-30 18:00:00', '2025-06-30 18:05:00', '2025-06-30 17:55:00', '2025-06-30 17:55:00', '+420603444555', FALSE),
 (6, 'f6g7h8i9-j0j1-k2l3-4m5n-6o7p8q9r0s1t', 'Martin', 'Pospíšil', 'martin.p', 'martin.pospisil@example.com', TRUE, '1989-07-10', 'active', '2025-07-01 12:00:00', '2025-07-01 12:30:00', '2025-07-01 11:55:00', '2025-07-01 11:55:00', '+420777999888', FALSE);
 
-INSERT INTO public.file (id, uuid, file_name, file_type, file_category, file_size_bytes, mime_type, checksum, storage_url, storage_service, storage_identifier, uploaded_at, creator_user_id) VALUES
+INSERT INTO public.file (id, uuid, file_name, file_type, file_category, file_size_bytes, mime_type, file_checksum, storage_url, storage_service, storage_identifier, uploaded_at, creator_user_id) VALUES
 (1, 'f81d4fae-7dec-11d0-a765-00a0c91e6bf6', 'profile_pic_jan.jpg', 'image', 'profile_picture', 15000, 'image/jpeg', 'abcef12345', 'https://storage.example.com/profiles/jan_profile.jpg', 'S3', 'jan_profile_s3_id', '2025-07-01 09:01:00', 1),
 (2, 'f81d4fae-7dec-11d0-a765-00a0c91e6bf7', 'document_petr.pdf', 'document', 'user_uploaded_document', 250000, 'application/pdf', 'b1c2d3e4f5', 'https://storage.example.com/documents/petr_doc.pdf', 'S3', 'petr_doc_s3_id', '2025-07-01 09:06:00', 2),
 (3, 'f81d4fae-7dec-11d0-a765-00a0c91e6bf8', 'invoice_marie.pdf', 'document', 'invoice', 50000, 'application/pdf', 'c1d2e3f4g5', 'https://storage.example.com/invoices/marie_inv.pdf', 'S3', 'marie_inv_s3_id', '2025-06-25 14:01:00', 3),
@@ -14,49 +14,49 @@ INSERT INTO public.file (id, uuid, file_name, file_type, file_category, file_siz
 (5, 'f81d4fae-7dec-11d0-a765-00a0c91e6bfa', 'video_lenka.mp4', 'video', 'other_category', 5000000, 'video/mp4', 'e1f2g3h4i5', 'https://storage.example.com/videos/lenka_video.mp4', 'S3', 'lenka_video_s3_id', '2025-06-30 17:56:00', 5),
 (6, 'f81d4fae-7dec-11d0-a765-00a0c91e6bfb', 'system_contract.pdf', 'document', 'system_generated_document', 75000, 'application/pdf', 'f1g2h3i4j5', 'https://storage.example.com/system/contract.pdf', 'S3', 'system_contract_s3_id', '2025-07-01 09:02:00', 1);
 
-INSERT INTO public.badge (id, uuid, creator_user_id, image_file_id, name, description, created_at, updated_at) VALUES
+INSERT INTO public.badge (id, uuid, creator_user_id, image_file_id, badge_name, badge_description, created_at, updated_at) VALUES
 (1, 'badge-1-uuid', 1, 1, 'First Login', 'Awarded for the first login.', '2025-06-01 08:30:00', '2025-06-01 08:30:00'),
 (2, 'badge-2-uuid', 1, 1, 'First Upload', 'Awarded for uploading a file.', '2025-06-01 08:31:00', '2025-06-01 08:31:00'),
 (3, 'badge-3-uuid', 1, 1, 'Community Member', 'Awarded for commenting on a post.', '2025-06-01 08:32:00', '2025-06-01 08:32:00'),
 (4, 'badge-4-uuid', 1, 1, 'Trusted User', 'Awarded for being an active and trusted user.', '2025-06-01 08:33:00', '2025-06-01 08:33:00'),
 (5, 'badge-5-uuid', 1, 1, 'Super Contributor', 'Awarded for contributing a lot of content.', '2025-06-01 08:34:00', '2025-06-01 08:34:00');
 
-INSERT INTO public.news (id, uuid, creator_user_id, image_file_id, title_cz, title_en, content_cz, content_en, published_at, status, created_at, updated_at) VALUES
-(1, 'news-1-uuid', 1, 6, 'Novinky v naší aplikaci', 'News in our app', 'Dnes jsme vydali novou verzi aplikace.', 'We have released a new version of the app today.', '2025-07-01 08:00:00', 'published', '2025-06-25 09:00:00', '2025-06-25 09:00:00'),
-(2, 'news-2-uuid', 1, 6, 'Letní akce', 'Summer promotion', 'Užijte si léto s našimi slevami!', 'Enjoy the summer with our discounts!', '2025-06-30 09:00:00', 'published', '2025-06-25 09:01:00', '2025-06-25 09:01:00'),
-(3, 'news-3-uuid', 3, 6, 'Nový průvodce', 'New guide', 'Připravili jsme pro vás nový průvodce.', 'We have prepared a new guide for you.', '2025-06-25 10:00:00', 'published', '2025-06-25 09:02:00', '2025-06-25 09:02:00'),
-(4, 'news-4-uuid', 3, 6, 'Úspěchy komunity', 'Community achievements', 'Představujeme vám nejlepší projekty.', 'We present you the best projects.', '2025-06-20 11:00:00', 'published', '2025-06-20 10:00:00', '2025-06-20 10:00:00'),
+INSERT INTO public.news (id, uuid, creator_user_id, image_file_id, title_cz, title_en, content_cz, content_en, published_at, news_status, created_at, updated_at) VALUES
+(1, 'news-1-uuid', 1, 6, 'Novinky v naší aplikaci', 'News in our app', 'Dnes jsme vydali novou verzi aplikace.', 'We have released a new version of the app today.', '2025-07-01 08:00:00', 'active', '2025-06-25 09:00:00', '2025-06-25 09:00:00'),
+(2, 'news-2-uuid', 1, 6, 'Letní akce', 'Summer promotion', 'Užijte si léto s našimi slevami!', 'Enjoy the summer with our discounts!', '2025-06-30 09:00:00', 'active', '2025-06-25 09:01:00', '2025-06-25 09:01:00'),
+(3, 'news-3-uuid', 3, 6, 'Nový průvodce', 'New guide', 'Připravili jsme pro vás nový průvodce.', 'We have prepared a new guide for you.', '2025-06-25 10:00:00', 'active', '2025-06-25 09:02:00', '2025-06-25 09:02:00'),
+(4, 'news-4-uuid', 3, 6, 'Úspěchy komunity', 'Community achievements', 'Představujeme vám nejlepší projekty.', 'We present you the best projects.', '2025-06-20 11:00:00', 'active', '2025-06-20 10:00:00', '2025-06-20 10:00:00'),
 (5, 'news-5-uuid', 3, 6, 'Technická údržba', 'Technical maintenance', 'Plánovaná údržba systému.', 'Scheduled system maintenance.', NULL, 'draft', '2025-07-01 10:00:00', '2025-07-01 10:00:00');
 
-INSERT INTO public.tool (id, uuid, creator_user_id, image_file_id, title_cz, title_en, description_cz, description_en, video_url, status, created_at, updated_at) VALUES
+INSERT INTO public.tool (id, uuid, creator_user_id, image_file_id, title_cz, title_en, description_cz, description_en, video_url, tool_status, created_at, updated_at) VALUES
 (1, 'tool-1-uuid', 4, 1, 'Pletací jehlice', 'Knitting needles', 'Různé velikosti a materiály jehlic.', 'Different sizes and materials of needles.', 'https://video.example.com/needles', 'active', '2025-06-01 08:50:00', '2025-06-01 08:50:00'),
 (2, 'tool-2-uuid', 4, 1, 'Háčkovací háčky', 'Crochet hooks', 'Sada háčků pro pokročilé.', 'A set of hooks for advanced users.', 'https://video.example.com/hooks', 'active', '2025-06-01 08:51:00', '2025-06-01 08:51:00'),
 (3, 'tool-3-uuid', 4, 1, 'Šicí stroj', 'Sewing machine', 'Základní model pro začátečníky.', 'Basic model for beginners.', 'https://video.example.com/sewing_machine', 'active', '2025-06-01 08:52:00', '2025-06-01 08:52:00'),
 (4, 'tool-4-uuid', 4, 1, 'Sada nití', 'Thread set', 'Barevná sada nití pro všechny projekty.', 'A colorful set of threads for all projects.', 'https://video.example.com/threads', 'active', '2025-06-01 08:53:00', '2025-06-01 08:53:00'),
 (5, 'tool-5-uuid', 4, 1, 'Krejčovské nůžky', 'Tailor''s scissors', 'Kvalitní nůžky pro přesný střih.', 'Quality scissors for precise cutting.', 'https://video.example.com/scissors', 'active', '2025-06-01 08:54:00', '2025-06-01 08:54:00');
 
-INSERT INTO public.education_mode (id, uuid, creator_user_id, image_file_id, title_cz, title_en, description_cz, description_en, status, created_at, updated_at) VALUES
-(1, 'edu-1-uuid', 4, 1, 'Základy pletení', 'Knitting basics', 'Naučte se základní techniky pletení.', 'Learn basic knitting techniques.', 'active', '2025-06-01 08:40:00', '2025-06-01 08:40:00'),
-(2, 'edu-2-uuid', 4, 1, 'Pokročilé háčkování', 'Advanced crochet', 'Pro ty, kteří již umí základy.', 'For those who already know the basics.', 'active', '2025-06-01 08:41:00', '2025-06-01 08:41:00'),
-(3, 'edu-3-uuid', 4, 1, 'Úvod do šití', 'Introduction to sewing', 'První kroky se šicím strojem.', 'First steps with a sewing machine.', 'draft', '2025-06-01 08:42:00', '2025-06-01 08:42:00'),
-(4, 'edu-4-uuid', 4, 1, 'Oprava oděvů', 'Garment repair', 'Jak opravit a prodloužit životnost oblečení.', 'How to repair and extend the life of clothes.', 'active', '2025-06-01 08:43:00', '2025-06-01 08:43:00'),
-(5, 'edu-5-uuid', 4, 1, 'Design triček', 'T-shirt design', 'Vytvořte si vlastní originální tričko.', 'Create your own original T-shirt.', 'draft', '2025-06-01 08:44:00', '2025-06-01 08:44:00');
+INSERT INTO public.education_mode (id, uuid, creator_user_id, image_file_id, title_cz, title_en, description_cz, description_en, education_mode_status, tool, created_at, updated_at) VALUES
+(1, 'edu-1-uuid', 4, 1, 'Základy pletení', 'Knitting basics', 'Naučte se základní techniky pletení.', 'Learn basic knitting techniques.', 'active', 'some tool', '2025-06-01 08:40:00', '2025-06-01 08:40:00'),
+(2, 'edu-2-uuid', 4, 1, 'Pokročilé háčkování', 'Advanced crochet', 'Pro ty, kteří již umí základy.', 'For those who already know the basics.', 'active', 'some tool', '2025-06-01 08:41:00', '2025-06-01 08:41:00'),
+(3, 'edu-3-uuid', 4, 1, 'Úvod do šití', 'Introduction to sewing', 'První kroky se šicím strojem.', 'First steps with a sewing machine.', 'draft', 'some tool', '2025-06-01 08:42:00', '2025-06-01 08:42:00'),
+(4, 'edu-4-uuid', 4, 1, 'Oprava oděvů', 'Garment repair', 'Jak opravit a prodloužit životnost oblečení.', 'How to repair and extend the life of clothes.', 'active', 'some tool', '2025-06-01 08:43:00', '2025-06-01 08:43:00'),
+(5, 'edu-5-uuid', 4, 1, 'Design triček', 'T-shirt design', 'Vytvořte si vlastní originální tričko.', 'Create your own original T-shirt.', 'draft', 'some tool', '2025-06-01 08:44:00', '2025-06-01 08:44:00');
 
-INSERT INTO public.dictionary (id, uuid, creator_user_id, image_file_id, animation_file_id, mark_file_id, title_cz, title_en, description_cz, description_en, abbrevation_cz, abbrevation_en, status, created_at, updated_at) VALUES
+INSERT INTO public.dictionary (id, uuid, creator_user_id, image_file_id, animation_file_id, mark_file_id, title_cz, title_en, description_cz, description_en, abbrevation_cz, abbrevation_en, dictionary_status, created_at, updated_at) VALUES
 (1, 'dict-1-uuid', 4, 1, 5, 1, 'Oko', 'Stitch', 'Základní jednotka pletení.', 'The basic unit of knitting.', 'O', 'st', 'active', '2025-06-10 10:00:00', '2025-06-10 10:00:00'),
 (2, 'dict-2-uuid', 4, 1, 5, 1, 'Hladce', 'Knit', 'Základní typ oka v pletení.', 'The basic type of stitch in knitting.', 'HL', 'k', 'active', '2025-06-10 10:01:00', '2025-06-10 10:01:00'),
 (3, 'dict-3-uuid', 4, 1, 5, 1, 'Obrace', 'Purl', 'Opak hladce, tvoří lícovou stranu.', 'The reverse of a knit stitch, creates the right side.', 'OB', 'p', 'active', '2025-06-10 10:02:00', '2025-06-10 10:02:00'),
 (4, 'dict-4-uuid', 4, 1, 5, 1, 'Řetízek', 'Chain', 'Základní prvek v háčkování.', 'The basic element in crochet.', 'ŘO', 'ch', 'active', '2025-06-10 10:03:00', '2025-06-10 10:03:00'),
 (5, 'dict-5-uuid', 4, 1, 5, 1, 'Sloupek', 'Post', 'Výškový sloupek v háčkování.', 'A tall stitch in crochet.', 'SL', 'ps', 'draft', '2025-06-10 10:04:00', '2025-06-10 10:04:00');
 
-INSERT INTO public.manual (id, uuid, creator_user_id, image_file_id, title_cz, title_en, difficulty, price, crochet_abbreviation, crochet_tool, manual_type, status, created_at, updated_at) VALUES
+INSERT INTO public.manual (id, uuid, creator_user_id, image_file_id, title_cz, title_en, manual_difficulty, price, crochet_abbreviation, crochet_tool, manual_type, manual_status, created_at, updated_at) VALUES
 (1, 'manual-1-uuid', 4, 1, 'První šála', 'First scarf', 'beginner', 0.00, 'hladce', 'jehlice 5mm', 'how_to', 'public', '2025-06-15 11:00:00', '2025-06-15 11:00:00'),
 (2, 'manual-2-uuid', 4, 1, 'Vlněná čepice', 'Wool hat', 'intermediate', 99.00, 'kruhové pletení', 'háčky 4mm', 'how_to', 'premium', '2025-06-15 11:01:00', '2025-06-15 11:01:00'),
 (3, 'manual-3-uuid', 4, 1, 'Oprava svetru', 'Sweater repair', 'beginner', 0.00, NULL, NULL, 'repair', 'public', '2025-06-15 11:02:00', '2025-06-15 11:02:00'),
-(4, 'manual-4-uuid', 4, 1, 'Pokročilé pletení', 'Advanced knitting', 'advanced', 199.00, NULL, NULL, 'how_to', 'premium', '2025-06-15 11:03:00', '2025-06-15 11:03:00'),
+(4, 'manual-4-uuid', 4, 1, 'Pokročilé pletení', 'Advanced knitting', 'advanced', 199.90, NULL, NULL, 'how_to', 'premium', '2025-06-15 11:03:00', '2025-06-15 11:03:00'),
 (5, 'manual-5-uuid', 4, 1, 'Háčkovaná deka', 'Crochet blanket', 'intermediate', 0.00, 'řetízek, sloupek', 'háčky 6mm', 'how_to', 'public', '2025-06-15 11:04:00', '2025-06-15 11:04:00');
 
-INSERT INTO public.permission (id, creator_user_id, resource_type, action_type, description, created_at, updated_at) VALUES
+INSERT INTO public.permission (id, creator_user_id, resource_type, action_type, permission_description, created_at, updated_at) VALUES
 (1, 1, 'user_read', 'read', 'Allows reading user profiles.', '2025-06-01 08:10:00', '2025-06-01 08:10:00'),
 (2, 1, 'file_write', 'write', 'Allows uploading new files.', '2025-06-01 08:11:00', '2025-06-01 08:11:00'),
 (3, 1, 'manual_update', 'update', 'Allows updating manual content.', '2025-06-01 08:12:00', '2025-06-01 08:12:00'),
@@ -66,7 +66,7 @@ INSERT INTO public.permission (id, creator_user_id, resource_type, action_type, 
 
 --------------------------------------------------------------------------------
 
-INSERT INTO public.role (id, creator_user_id, name, description, created_at, updated_at) VALUES
+INSERT INTO public.role (id, creator_user_id, role_name, role_description, created_at, updated_at) VALUES
 (1, 1, 'admin', 'Administrator with full access.', '2025-06-01 08:00:00', '2025-06-01 08:00:00'),
 (2, 1, 'user', 'Standard user with basic permissions.', '2025-06-01 08:01:00', '2025-06-01 08:01:00'),
 (3, 3, 'marketer', 'User with permissions to manage news and promotions.', '2025-06-01 08:02:00', '2025-06-01 08:02:00'),
@@ -81,7 +81,7 @@ INSERT INTO public.manual_step (id, manual_id, image_file_id, title_cz, title_en
 (4, 2, 1, 'Začátek čepice', 'Starting the hat', 'Pletení v kruhu.', 'Knitting in the round.', 1, '2025-06-17 10:00:00', '2025-06-17 10:00:00'),
 (5, 2, 1, 'Zmenšování', 'Decreasing', 'Postupné zmenšování obvodu čepice.', 'Gradually decreasing the circumference of the hat.', 2, '2025-06-17 10:01:00', '2025-06-17 10:01:00');
 
-INSERT INTO public.user_setting (user_id, bio, dark_mode, language_preference, user_display_status, terms_privacy_agreement_accepted_at, gdpr_consent_given_at, profile_picture_file_id) VALUES
+INSERT INTO public.user_setting (user_id, bio, dark_mode, user_language_preference, user_display_status, terms_privacy_agreement_accepted_at, gdpr_consent_given_at, profile_picture_file_id) VALUES
 (1, 'Hello, I''m Jan!', TRUE, 'en', 'online', '2025-05-01 10:00:00', '2025-05-01 10:05:00', 1),
 (2, 'Hi, I''m Petr.', FALSE, 'cz', 'invisible', NULL, NULL, NULL),
 (3, 'My bio here.', TRUE, 'cz', 'away', '2025-06-01 12:00:00', '2025-06-01 12:05:00', 3),
@@ -116,7 +116,7 @@ INSERT INTO public.device (id, user_id, device_name, last_used_at, is_trusted, b
 (4, 4, 'Jiri''s Tablet', '2025-07-01 09:30:00', TRUE, TRUE, 'iPadOS', '18.0', 'fingerprint4', 'token4', '203.0.113.1', '2025-06-28 10:03:00', '2025-06-28 10:03:00'),
 (5, 5, 'Lenka''s Desktop', '2025-06-30 18:05:00', FALSE, FALSE, 'Linux', '22.04', 'fingerprint5', 'token5', '2001:db8::1', '2025-06-28 10:04:00', '2025-06-28 10:04:00');
 
-INSERT INTO public.login_history (id, user_id, login_time, status, failure_reason, ip_address, user_agent) VALUES
+INSERT INTO public.login_history (id, user_id, login_time, login_status, failure_reason, ip_address, user_agent) VALUES
 (1, 1, '2025-07-01 10:00:00', 'success', NULL, '192.168.1.1', 'Mozilla/5.0 (iPhone)'),
 (2, 2, '2025-07-01 10:01:00', 'failure', 'wrong_password', '10.0.0.1', 'Mozilla/5.0 (Android)'),
 (3, 2, '2025-07-01 10:05:00', 'pending_2fa', NULL, '10.0.0.1', 'Mozilla/5.0 (Android)'),
@@ -124,21 +124,21 @@ INSERT INTO public.login_history (id, user_id, login_time, status, failure_reaso
 (5, 4, '2025-07-01 09:15:00', 'success', NULL, '203.0.113.1', 'Mozilla/5.0 (iPad)'),
 (6, 5, '2025-06-30 18:00:00', 'success', NULL, '2001:db8::1', 'Mozilla/5.0 (X11)');
 
-INSERT INTO public.two_factor_auth_log (id, user_id, method_type, success, attempted_at, ip_address) VALUES
+INSERT INTO public.two_factor_auth_log (id, user_id, two_factor_auth_log_method_type, success, attempted_at, ip_address) VALUES
 (1, 1, 'email', TRUE, '2025-07-01 10:02:00', '192.168.1.1'),
 (2, 2, 'TOTP', FALSE, '2025-07-01 10:06:00', '10.0.0.1'),
 (3, 3, 'email', TRUE, '2025-06-25 14:31:00', '172.16.0.1'),
 (4, 4, 'email', FALSE, '2025-07-01 09:16:00', '203.0.113.1'),
 (5, 5, 'TOTP', TRUE, '2025-06-30 18:01:00', '2001:db8::1');
 
-INSERT INTO public.system_log (id, user_id, log_type, log_time, action, resource_id, severity, details, metadata) VALUES
+INSERT INTO public.system_log (id, user_id, system_log_type, system_log_time, system_action, resource_id, system_severity, details, metadata) VALUES
 (1, 1, 'authentication', '2025-07-01 10:00:00', 'login', '1', 'info', 'User 1 logged in successfully.', '{"user_agent": "Mozilla/5.0"}'),
 (2, 2, 'error', '2025-07-01 10:01:00', 'login', '2', 'warning', 'User 2 failed login attempt.', '{"ip": "10.0.0.1"}'),
 (3, 3, 'data_access', '2025-06-25 14:35:00', 'read', '5', 'info', 'User 3 read file 5.', '{"file_id": 5}'),
 (4, 4, 'system_event', '2025-07-01 09:30:00', 'update', '4', 'debug', 'User 4 updated a report.', NULL),
 (5, 5, 'authentication', '2025-06-30 18:05:00', 'logout', '5', 'info', 'User 5 logged out.', '{"session_id": "xyz"}');
 
-INSERT INTO public.two_factor_auth_method (id, user_id, method_type, is_primary, enabled, verified, secret_data, created_at, updated_at) VALUES
+INSERT INTO public.two_factor_auth_method (id, user_id, two_factor_auth_method_type, is_primary, two_factor_auth_method_enabled, verified, secret_data, created_at, updated_at) VALUES
 (1, 1, 'email', TRUE, TRUE, TRUE, 'jan.novak@example.com', '2025-06-28 10:10:00', '2025-06-28 10:10:00'),
 (2, 2, 'email', TRUE, TRUE, FALSE, 'petr.svoboda@example.com', '2025-06-28 10:11:00', '2025-06-28 10:11:00'),
 (3, 3, 'TOTP', TRUE, TRUE, TRUE, 'secret_totp_3', '2025-06-28 10:12:00', '2025-06-28 10:12:00'),
@@ -152,7 +152,7 @@ INSERT INTO public.password_history (id, user_id, password_hash, changed_at) VAL
 (4, 3, 'old_hashed_password_marie', '2025-06-15 14:00:00'),
 (5, 4, 'old_hashed_password_jiri', '2025-06-20 11:00:00');
 
-INSERT INTO public.oauth_account (id, user_id, provider, provider_user_id, access_token, refresh_token, token_expires_at, created_at, updated_at) VALUES
+INSERT INTO public.oauth_account (id, user_id, oauth_provider, provider_user_id, access_token, refresh_token, token_expires_at, created_at, updated_at) VALUES
 (1, 1, 'google', 'google_jan', 'google_access_token_1', 'google_refresh_token_1', '2025-07-02 10:00:00', '2025-06-28 10:20:00', '2025-06-28 10:20:00'),
 (2, 3, 'github', 'github_marie', 'github_access_token_2', NULL, NULL, '2025-06-28 10:21:00', '2025-06-28 10:21:00'),
 (3, 4, 'facebook', 'facebook_jiri', 'facebook_access_token_3', 'facebook_refresh_token_3', '2025-07-03 09:15:00', '2025-06-28 10:22:00', '2025-06-28 10:22:00'),
@@ -166,7 +166,7 @@ INSERT INTO public.two_factor_auth_backup_code (id, user_id, code_hash, used_at,
 (4, 3, 'hash_code4', NULL, '2025-07-01 10:00:00', 'batch2'),
 (5, 5, 'hash_code5', NULL, '2025-07-01 10:01:00', 'batch3');
 
-INSERT INTO public.notification (id, user_id, creator_user_id, title, message, type, delivery_method, created_at) VALUES
+INSERT INTO public.notification (id, user_id, creator_user_id, title, notification_message, notification_type, delivery_method, created_at) VALUES
 (1, 1, 1, 'Welcome to our platform!', 'Your account has been successfully created.', 'success', 'in_app', '2025-08-07 21:51:58'),
 (2, 2, 1, 'Verify your email address', 'Please click the link to verify your email.', 'warning', 'email', '2025-08-07 21:51:58'),
 (3, 3, 1, 'New message from Jan', 'Hello Marie, how are you?', 'activity', 'push', '2025-08-07 21:51:58'),
@@ -180,12 +180,12 @@ INSERT INTO public.comment (id, uuid, parent_comment_id, user_id, manual_id, edu
 (4, 'comment-4-uuid', NULL, 5, NULL, 2, 'Máte v plánu další lekce?', 'education_mode', NULL, '2025-08-07 21:52:44'),
 (5, 'comment-5-uuid', 4, 1, NULL, 2, 'Taky bych ráda věděla.', 'education_mode', NULL, '2025-08-07 21:52:44');
 
-INSERT INTO public.education_step (id, education_mode_id, description_cz, description_en, video_url, step_order, created_at, updated_at) VALUES
-(1, 1, 'První oko', 'First stitch', 'https://video.example.com/step1', 1, '2025-06-05 08:00:00', '2025-06-05 08:00:00'),
-(2, 1, 'Hladce a obrace', 'Knit and purl', 'https://video.example.com/step2', 2, '2025-06-05 08:01:00', '2025-06-05 08:01:00'),
-(3, 1, 'Ukončení pleteniny', 'Binding off', 'https://video.example.com/step3', 3, '2025-06-05 08:02:00', '2025-06-05 08:02:00'),
-(4, 2, 'Kruhové háčkování', 'Crocheting in the round', 'https://video.example.com/step4', 1, '2025-06-06 09:00:00', '2025-06-06 09:00:00'),
-(5, 2, 'Změna barvy', 'Changing color', 'https://video.example.com/step5', 2, '2025-06-06 09:01:00', '2025-06-06 09:01:00');
+INSERT INTO public.education_step (id, education_mode_id, description_cz, description_en, video_url, tool, step_order, created_at, updated_at) VALUES
+(1, 1, 'První oko', 'First stitch', 'https://video.example.com/step1', 'some tool', 1, '2025-06-05 08:00:00', '2025-06-05 08:00:00'),
+(2, 1, 'Hladce a obrace', 'Knit and purl', 'https://video.example.com/step2', 'some tool', 2, '2025-06-05 08:01:00', '2025-06-05 08:01:00'),
+(3, 1, 'Ukončení pleteniny', 'Binding off', 'https://video.example.com/step3', 'some tool', 3, '2025-06-05 08:02:00', '2025-06-05 08:02:00'),
+(4, 2, 'Kruhové háčkování', 'Crocheting in the round', 'https://video.example.com/step4', 'some tool', 1, '2025-06-06 09:00:00', '2025-06-06 09:00:00'),
+(5, 2, 'Změna barvy', 'Changing color', 'https://video.example.com/step5', 'some tool', 2, '2025-06-06 09:01:00', '2025-06-06 09:01:00');
 
 --------------------------------------------------------------------------------
 
@@ -219,7 +219,7 @@ INSERT INTO public.user_badge (id, badge_id, user_id, awarded_at, visible_on_pro
 (4, 4, 4, '2025-07-01 09:15:00', TRUE),
 (5, 5, 5, '2025-07-01 09:20:00', TRUE);
 
-INSERT INTO public.news_delivery (id, news_id, user_id, device_id, language, sent_as_push, delivered_as_in_app, read_at, created_at) VALUES
+INSERT INTO public.news_delivery (id, news_id, user_id, device_id, news_delivery_language, sent_as_push, delivered_as_in_app, read_at, created_at) VALUES
 (1, 1, 1, 1, 'en', TRUE, TRUE, '2025-07-01 08:05:00', '2025-07-01 08:05:00'),
 (2, 1, 3, 3, 'cz', FALSE, TRUE, NULL, '2025-07-01 08:05:00'),
 (3, 2, 4, 4, 'en', TRUE, TRUE, '2025-06-30 09:05:00', '2025-06-30 09:05:00'),
@@ -240,7 +240,7 @@ INSERT INTO public.manual_purchase (id, user_id, manual_id, purchase_date, price
 (4, 5, 2, '2025-07-01 13:00:00', 99.00, 'CZK', 'txn_004', 'pending', '2025-07-01 13:00:00', '2025-07-01 13:00:00'),
 (5, 6, 4, '2025-07-02 14:00:00', 199.00, 'CZK', 'txn_005', 'failed', '2025-07-02 14:00:00', '2025-07-02 14:00:00');
 
-INSERT INTO public.user_manual_interaction (id, user_id, manual_id, interaction_type, created_at) VALUES
+INSERT INTO public.user_manual_interaction (id, user_id, manual_id, user_manual_interaction_type, created_at) VALUES
 (1, 1, 1, 'view', '2025-07-01 10:00:00'),
 (2, 1, 1, 'like', '2025-06-29 11:00:00'),
 (3, 3, 2, 'view', '2025-06-25 14:30:00'),

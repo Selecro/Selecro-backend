@@ -40,6 +40,7 @@ export class UserSecurity extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: false,
     postgresql: {columnName: 'two_factor_enabled', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   two_factor_enabled: boolean;
@@ -59,6 +60,7 @@ export class UserSecurity extends Entity {
     jsonSchema: {nullable: false},
     scale: 0,
     generated: false,
+    default: 0,
     postgresql: {columnName: 'failed_login_attempts', dataType: 'integer', dataScale: 0, nullable: 'NO', generated: false},
   })
   failed_login_attempts: number;

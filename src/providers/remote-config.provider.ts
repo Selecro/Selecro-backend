@@ -33,10 +33,11 @@ export class RemoteConfigService {
     }
 
     try {
-      console.log('Attempting to fetch initial Remote Config values using server-side template...');
-      const rc = this.firebaseAdmin.remoteConfig(this.firebaseAdmin.app());
+      const rc = this.firebaseAdmin.remoteConfig();
+
       const template = rc.initServerTemplate();
       await template.load();
+
       const config = template.evaluate();
 
       const values: RemoteConfigParameters = {
@@ -48,21 +49,11 @@ export class RemoteConfigService {
         api_request_window_minutes: config.getNumber('api_request_window_minutes'),
       };
 
-      console.log('Fetched Remote Config values:');
-      console.log('maintenance_mode:', values.maintenance_mode);
-      console.log('maintenance_message:', values.maintenance_message);
-      console.log('redis_cache_expiry_seconds:', values.redis_cache_expiry_seconds);
-      console.log('api_rate_limit_per_second:', values.api_rate_limit_per_second);
-      console.log('max_file_upload_size_mb:', values.max_file_upload_size_mb);
-      console.log('api_request_window_minutes:', values.api_request_window_minutes);
-
       cachedConfig = values;
       lastFetchTime = now;
-      console.log('Successfully fetched and cached new Remote Config values.');
       return values;
     } catch (error) {
-      console.error('Failed to fetch Remote Config template:', error);
-      console.warn('Using default fallback Remote Config values.');
+      console.error('Failed to fetch Firebase Remote Config:', error);
       return this.getSafeDefaults();
     }
   }
@@ -77,17 +68,5 @@ export class RemoteConfigService {
       max_file_upload_size_mb: 10,
       api_request_window_minutes: 1
     };
-  }
-
-  private parseBoolean(value: string | undefined): boolean {
-    return value === 'true';
-  }
-
-  private parseNumber(value: string | undefined): number {
-    if (value === undefined) {
-      return 0;
-    }
-    const num = parseFloat(value);
-    return isNaN(num) ? 0 : num;
   }
 }

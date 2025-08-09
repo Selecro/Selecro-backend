@@ -1,6 +1,19 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {Manual, User} from '.';
 
+export enum Currency {
+  CZK = 'czk',
+  EUR = 'eur',
+  USD = 'usd'
+}
+
+export enum PaymentStatus {
+  Pending = 'pending',
+  Completed = 'completed',
+  Failed = 'failed',
+  refunded = 'refunded'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -59,6 +72,7 @@ export class ManualPurchase extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'purchase_date', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   purchase_date: string;
@@ -77,12 +91,16 @@ export class ManualPurchase extends Entity {
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(Currency)
+    },
     length: 255,
     generated: false,
+    default: Currency.CZK,
     postgresql: {columnName: 'currency', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  currency: string;
+  currency: Currency;
 
   @property({
     type: 'string',
@@ -97,18 +115,22 @@ export class ManualPurchase extends Entity {
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(PaymentStatus)
+    },
     length: 255,
     generated: false,
     postgresql: {columnName: 'payment_status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  payment_status: string;
+  payment_status: PaymentStatus;
 
   @property({
     type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   created_at: string;
@@ -118,6 +140,7 @@ export class ManualPurchase extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;

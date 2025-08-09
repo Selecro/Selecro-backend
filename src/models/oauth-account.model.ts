@@ -1,6 +1,15 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from '.';
 
+export enum OauthProvider {
+  Google = 'google',
+  Apple = 'apple',
+  Github = 'github',
+  Facebook = 'facebook',
+  Microsoft = 'microsoft',
+  Linkedin = 'linkedin'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -18,11 +27,11 @@ import {User} from '.';
         keys: {user_id: 1}
       },
       uq_oauth_account_provider_provider_user_id: {
-        keys: {provider: 1, provider_user_id: 1},
+        keys: {oauth_provider: 1, provider_user_id: 1},
         options: {unique: true}
       },
-      idx_oauth_account_provider: {
-        keys: {provider: 1}
+      idx_oauth_account_oauth_provider: {
+        keys: {oauth_provider: 1}
       },
       idx_oauth_account_created_at: {
         keys: {created_at: -1}
@@ -48,12 +57,15 @@ export class OauthAccount extends Entity {
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(OauthProvider)
+    },
     length: 255,
     generated: false,
-    postgresql: {columnName: 'provider', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'oauth_provider', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  provider: string;
+  oauth_provider: OauthProvider;
 
   @property({
     type: 'string',
@@ -95,6 +107,7 @@ export class OauthAccount extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   created_at: string;
@@ -104,6 +117,7 @@ export class OauthAccount extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;

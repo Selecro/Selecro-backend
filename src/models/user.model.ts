@@ -1,5 +1,12 @@
 import {Entity, model, property} from '@loopback/repository';
 
+export enum AccountStatus {
+  Active = 'active',
+  Suspended = 'suspended',
+  Deleted = 'deleted',
+  PendingVerification = 'pending_verification'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -88,6 +95,7 @@ export class User extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: false,
     postgresql: {columnName: 'email_verified', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   email_verified: boolean;
@@ -103,12 +111,16 @@ export class User extends Entity {
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(AccountStatus)
+    },
     length: 255,
     generated: false,
+    default: AccountStatus.PendingVerification,
     postgresql: {columnName: 'account_status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  account_status: string;
+  account_status: AccountStatus;
 
   @property({
     type: 'date',
@@ -131,6 +143,7 @@ export class User extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   created_at: string;
@@ -140,6 +153,7 @@ export class User extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;
@@ -158,6 +172,7 @@ export class User extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: false,
     postgresql: {columnName: 'is_oauth_user', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   is_oauth_user: boolean;

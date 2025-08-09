@@ -69,6 +69,7 @@ export class ManualProgress extends Entity {
     jsonSchema: {nullable: false},
     scale: 0,
     generated: false,
+    default: 0,
     postgresql: {columnName: 'total_time_seconds', dataType: 'integer', dataScale: 0, nullable: 'NO', generated: false},
   })
   total_time_seconds: number;
@@ -78,6 +79,7 @@ export class ManualProgress extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'started_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   started_at: string;
@@ -87,6 +89,7 @@ export class ManualProgress extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'last_updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   last_updated_at: string;
@@ -96,6 +99,7 @@ export class ManualProgress extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: false,
     postgresql: {columnName: 'is_finished', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   is_finished: boolean;

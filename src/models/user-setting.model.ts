@@ -1,5 +1,17 @@
 import {Entity, model, property} from '@loopback/repository';
 
+export enum UserLanguagePreference {
+  EN = 'en',
+  CZ = 'cz'
+}
+
+export enum UserDisplayStatus {
+  Online = 'online',
+  Away = 'away',
+  DoNotDisturb = 'do_not_disturb',
+  Invisible = 'invisible'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -23,8 +35,8 @@ import {Entity, model, property} from '@loopback/repository';
         keys: {user_id: 1},
         options: {unique: true}
       },
-      idx_user_setting_language_preference: {
-        keys: {language_preference: 1}
+      idx_user_setting_user_language_preference: {
+        keys: {user_language_preference: 1}
       },
       idx_user_setting_profile_picture_file_id: {
         keys: {profile_picture_file_id: 1}
@@ -57,6 +69,7 @@ export class UserSetting extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: false,
     postgresql: {columnName: 'dark_mode', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   dark_mode: boolean;
@@ -64,21 +77,28 @@ export class UserSetting extends Entity {
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(UserLanguagePreference)
+    },
     length: 255,
     generated: false,
-    postgresql: {columnName: 'language_preference', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    default: UserLanguagePreference.CZ,
+    postgresql: {columnName: 'user_language_preference', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  language_preference: string;
+  user_language_preference: UserLanguagePreference;
 
   @property({
     type: 'string',
-    jsonSchema: {nullable: true},
+    jsonSchema: {
+      nullable: true,
+      enum: Object.values(UserDisplayStatus)
+    },
     length: 255,
     generated: false,
     postgresql: {columnName: 'user_display_status', dataType: 'character varying', dataLength: 255, nullable: 'YES', generated: false},
   })
-  user_display_status?: string;
+  user_display_status?: UserDisplayStatus;
 
   @property({
     type: 'date',

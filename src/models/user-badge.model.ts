@@ -56,6 +56,7 @@ export class UserBadge extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'awarded_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   awarded_at: string;
@@ -65,6 +66,7 @@ export class UserBadge extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: true,
     postgresql: {columnName: 'visible_on_profile', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   visible_on_profile: boolean;

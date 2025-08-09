@@ -1,6 +1,11 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {EducationMode, Manual, User} from '.';
 
+export enum CommentOnType {
+  Manual = 'manual',
+  EducationMode = 'education_mode'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -95,23 +100,17 @@ export class Comment extends Entity {
   comment_text: string;
 
   @property({
-    type: 'date',
-    required: true,
-    jsonSchema: {nullable: false},
-    generated: false,
-    postgresql: {columnName: 'commented_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
-  })
-  commented_at: string;
-
-  @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(CommentOnType)
+    },
     length: 255,
     generated: false,
     postgresql: {columnName: 'comment_on_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  comment_on_type: string;
+  comment_on_type: CommentOnType;
 
   @property({
     type: 'number',
@@ -121,6 +120,16 @@ export class Comment extends Entity {
     postgresql: {columnName: 'rating', dataType: 'integer', dataScale: 0, nullable: 'YES', generated: false},
   })
   rating?: number;
+
+  @property({
+    type: 'date',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    default: new Date(),
+    postgresql: {columnName: 'commented_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
+  })
+  commented_at: string;
 
   // Define well-known properties here
 

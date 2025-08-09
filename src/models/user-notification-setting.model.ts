@@ -37,6 +37,7 @@ export class UserNotificationSetting extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: true,
     postgresql: {columnName: 'receive_news', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   receive_news: boolean;
@@ -46,6 +47,7 @@ export class UserNotificationSetting extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: true,
     postgresql: {columnName: 'receive_private_messages', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   receive_private_messages: boolean;

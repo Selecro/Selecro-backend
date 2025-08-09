@@ -13,7 +13,6 @@ export class RemoteConfigObserver implements LifeCycleObserver {
   ) { }
 
   async start(): Promise<void> {
-    console.log('Attempting to fetch initial Remote Config values...');
     await this.remoteConfigService.getConfigValues();
   }
 }

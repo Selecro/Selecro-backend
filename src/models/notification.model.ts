@@ -1,6 +1,21 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from '.';
 
+export enum NotificationType {
+  Info = 'info',
+  Warning = 'warning',
+  Error = 'error',
+  Success = 'success',
+  Promotion = 'promotion',
+  Activity = 'activity'
+}
+
+export enum DeliveryMethod {
+  Email = 'email',
+  Push = 'push',
+  InApp = 'in_app'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -26,8 +41,8 @@ import {User} from '.';
       idx_notification_creator_user_id: {
         keys: {creator_user_id: 1}
       },
-      idx_notification_type: {
-        keys: {type: 1}
+      idx_notification_notification_type: {
+        keys: {notification_type: 1}
       },
       idx_notification_delivery_method: {
         keys: {delivery_method: 1}
@@ -71,29 +86,35 @@ export class Notification extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    postgresql: {columnName: 'message', dataType: 'text', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'notification_message', dataType: 'text', nullable: 'NO', generated: false},
   })
-  message: string;
+  notification_message: string;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(NotificationType)
+    },
     length: 255,
     generated: false,
-    postgresql: {columnName: 'type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'notification_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  type: string;
+  notification_type: NotificationType;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(DeliveryMethod)
+    },
     length: 255,
     generated: false,
     postgresql: {columnName: 'delivery_method', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  delivery_method: string;
+  delivery_method: DeliveryMethod;
 
   @property({
     type: 'string',
@@ -134,6 +155,7 @@ export class Notification extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   created_at: string;

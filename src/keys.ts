@@ -4,10 +4,10 @@ import {CorsOptions} from 'cors';
 import {IpFilterOptions, IpList} from 'express-ipfilter';
 import {Options as RateLimitOptions} from 'express-rate-limit';
 import * as admin from 'firebase-admin';
-import {FirebaseOauthStrategy} from './providers/firebase-oauth.strategy';
 import {RemoteConfigParameters} from './providers/remote-config.provider';
 import {FcmService} from './services/fcm.service';
 import {FirebaseAdminService} from './services/firebase-admin.service';
+import {FirebaseOauthStrategy} from './strategies/firebase-oauth.strategy';
 
 export interface CookieParserOptions extends cookieParser.CookieParseOptions { }
 

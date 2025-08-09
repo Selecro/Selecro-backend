@@ -1,6 +1,13 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from '.';
 
+export enum TwoFactorAuthMethodType {
+  Email = 'email',
+  TOTP = 'TOTP',
+  Biometric = 'biometric',
+  U2F = 'U2F'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -14,8 +21,8 @@ import {User} from '.';
       }
     },
     indexes: {
-      uq_user_method_type: {
-        keys: {user_id: 1, method_type: 1},
+      uq_user_two_factor_auth_method_type: {
+        keys: {user_id: 1, two_factor_auth_method_type: 1},
         options: {unique: true}
       }
     }
@@ -39,18 +46,22 @@ export class TwoFactorAuthMethod extends Entity {
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {nullable: false},
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(TwoFactorAuthMethodType)
+    },
     length: 255,
     generated: false,
-    postgresql: {columnName: 'method_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'two_factor_auth_method_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  method_type: string;
+  two_factor_auth_method_type: TwoFactorAuthMethodType;
 
   @property({
     type: 'boolean',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: false,
     postgresql: {columnName: 'is_primary', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   is_primary: boolean;
@@ -60,15 +71,17 @@ export class TwoFactorAuthMethod extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    postgresql: {columnName: 'enabled', dataType: 'boolean', nullable: 'NO', generated: false},
+    default: false,
+    postgresql: {columnName: 'two_factor_auth_method_enabled', dataType: 'boolean', nullable: 'NO', generated: false},
   })
-  enabled: boolean;
+  two_factor_auth_method_enabled: boolean;
 
   @property({
     type: 'boolean',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: false,
     postgresql: {columnName: 'verified', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   verified: boolean;
@@ -86,6 +99,7 @@ export class TwoFactorAuthMethod extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   created_at: string;
@@ -95,6 +109,7 @@ export class TwoFactorAuthMethod extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
+    default: new Date(),
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;
