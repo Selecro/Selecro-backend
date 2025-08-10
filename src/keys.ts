@@ -1,6 +1,7 @@
 import {BindingKey} from '@loopback/core';
 import cookieParser from 'cookie-parser';
 import {CorsOptions} from 'cors';
+import {CookieOptions} from 'csurf';
 import {IpFilterOptions, IpList} from 'express-ipfilter';
 import {Options as RateLimitOptions} from 'express-rate-limit';
 import * as admin from 'firebase-admin';
@@ -14,7 +15,9 @@ export const COOKIE_PARSER_OPTIONS = BindingKey.create<CookieParserOptions | und
   'cookieParser.options',
 );
 
-export interface CsrfMiddlewareOptions extends CorsOptions { }
+export interface CsrfMiddlewareOptions extends CorsOptions {
+  cookie?: CookieOptions;
+}
 
 export const CSRF_OPTIONS = BindingKey.create<CsrfMiddlewareOptions | undefined>(
   'csrf.options',

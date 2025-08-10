@@ -12,16 +12,25 @@ export class CsrfMiddlewareProvider implements Provider<Middleware> {
     @inject(CSRF_OPTIONS, {optional: true})
     private options: CsrfMiddlewareOptions = {},
   ) {
-    this.csrfHandler = csurf({
-      cookie: {
-        key: 'selecro_csrf',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
-        sameSite: 'lax',
-      },
+    const defaultCookieOptions: csurf.CookieOptions = {
+      key: 'selecro_csrf',
+      path: '/',
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      sameSite: 'lax',
+    };
+
+    const mergedCookieOptions = {
+      ...defaultCookieOptions,
+      ...(this.options.cookie || {}),
+    };
+
+    const csurfOptions = {
       ...this.options,
-    });
+      cookie: mergedCookieOptions,
+    };
+
+    this.csrfHandler = csurf(csurfOptions);
   }
 
   value(): Middleware {

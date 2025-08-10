@@ -23,6 +23,7 @@ import {
   CookieParserMiddlewareProvider,
   CorrelationIdMiddlewareProvider,
   CsrfMiddlewareProvider,
+  HmacMiddlewareProvider,
   InputSanitizerMiddlewareProvider,
   IpFilterMiddlewareProvider,
   MaintenanceMiddlewareProvider,
@@ -172,6 +173,7 @@ export class SelecroBackendApplication extends BootMixin(
     this.bind('middleware.cookieParser').toProvider(CookieParserMiddlewareProvider);
     this.bind('middleware.csrf').toProvider(CsrfMiddlewareProvider);
     this.bind('middleware.tenant').toProvider(TenantResolverMiddlewareProvider);
+    this.bind('middleware.hmac').toProvider(HmacMiddlewareProvider);
 
     this.bind(IpFilterBindings.IP_LIST).to(process.env.DENIED_IPS?.split(',').map(s => s.trim()) || []);
     this.bind(IpFilterBindings.OPTIONS).to({

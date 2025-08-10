@@ -29,20 +29,33 @@ export class MySequence implements SequenceHandler {
     @inject('middleware.cookieParser') private cookieParserMiddleware: Middleware,
     @inject('middleware.csrf') private csrfMiddleware: Middleware,
     @inject('middleware.tenant') private tenantMiddleware: Middleware,
+    @inject('middleware.hmac') private hmacMiddleware: Middleware,
   ) { }
 
   async handle(context: RequestContext) {
-    try {
-      const {request, response} = context;
+    const {request, response} = context;
 
-      await this.maintenanceMiddleware(context, () => Promise.resolve());
-      await this.rateLimitMiddleware(context, () => Promise.resolve());
-      await this.ipFilterMiddleware(context, () => Promise.resolve());
-      await this.correlationIdMiddleware(context, () => Promise.resolve());
-      await this.inputSanitizerMiddleware(context, () => Promise.resolve());
-      await this.cookieParserMiddleware(context, () => Promise.resolve());
-      await this.csrfMiddleware(context, () => Promise.resolve());
-      await this.tenantMiddleware(context, () => Promise.resolve());
+    const runMiddleware = async (middleware: Middleware) => {
+      let nextCalled = false;
+      await middleware(context, () => {
+        nextCalled = true;
+        return Promise.resolve();
+      });
+      return nextCalled;
+    };
+
+    try {
+      if (!(await runMiddleware(this.maintenanceMiddleware))) return;
+      if (!(await runMiddleware(this.rateLimitMiddleware))) return;
+      if (!(await runMiddleware(this.ipFilterMiddleware))) return;
+      if (!(await runMiddleware(this.correlationIdMiddleware))) return;
+      if (!(await runMiddleware(this.inputSanitizerMiddleware))) return;
+      if (!(await runMiddleware(this.cookieParserMiddleware))) return;
+      if (process.env.NODE_ENV === 'production') {
+        if (!(await runMiddleware(this.hmacMiddleware))) return;
+      }
+      if (!(await runMiddleware(this.csrfMiddleware))) return;
+      if (!(await runMiddleware(this.tenantMiddleware))) return;
 
       const route = this.findRoute(request);
       const args = await this.parseParams(request, route);
