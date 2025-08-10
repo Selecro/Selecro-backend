@@ -25,6 +25,7 @@ import {
   CorrelationIdMiddlewareProvider,
   CsrfMiddlewareProvider,
   FeatureFlagMiddlewareProvider,
+  GeoipMiddlewareProvider,
   HmacMiddlewareProvider,
   InputSanitizerMiddlewareProvider,
   IpFilterMiddlewareProvider,
@@ -178,6 +179,7 @@ export class SelecroBackendApplication extends BootMixin(
     this.bind('middleware.hmac').toProvider(HmacMiddlewareProvider);
     this.bind('middleware.apiVersioning').toProvider(ApiVersioningMiddlewareProvider);
     this.bind('middleware.featureFlags').toProvider(FeatureFlagMiddlewareProvider);
+    this.bind('middleware.geoip').toProvider(GeoipMiddlewareProvider);
 
     this.bind(IpFilterBindings.IP_LIST).to(process.env.DENIED_IPS?.split(',').map(s => s.trim()) || []);
     this.bind(IpFilterBindings.OPTIONS).to({

@@ -32,6 +32,7 @@ export class MySequence implements SequenceHandler {
     @inject('middleware.tenant') private tenantMiddleware: Middleware,
     @inject('middleware.hmac') private hmacMiddleware: Middleware,
     @inject('middleware.featureFlags') private featureFlagsMiddleware: Middleware,
+    @inject('middleware.geoip') private geoipMiddleware: Middleware,
   ) { }
 
   async handle(context: RequestContext) {
@@ -52,6 +53,7 @@ export class MySequence implements SequenceHandler {
       if (!(await runMiddleware(this.rateLimitMiddleware))) return;
       if (!(await runMiddleware(this.ipFilterMiddleware))) return;
       if (!(await runMiddleware(this.correlationIdMiddleware))) return;
+      if (!(await runMiddleware(this.geoipMiddleware))) return;
       if (!(await runMiddleware(this.featureFlagsMiddleware))) return;
       if (!(await runMiddleware(this.inputSanitizerMiddleware))) return;
       if (!(await runMiddleware(this.cookieParserMiddleware))) return;
