@@ -3,12 +3,13 @@ import {Middleware, MiddlewareContext} from '@loopback/rest';
 
 export interface ApiVersioningOptions {
   supportedVersions?: string[];
+  headerName?: string;
 }
 
 export class ApiVersioningMiddlewareProvider implements Provider<Middleware> {
   constructor(
     @inject('versioning.options', {optional: true})
-    private opts: ApiVersioningOptions = {},
+    private opts: ApiVersioningOptions = {headerName: 'X-API-Version'},
   ) { }
 
   value(): Middleware {
@@ -26,13 +27,25 @@ export class ApiVersioningMiddlewareProvider implements Provider<Middleware> {
       return nums.length ? `v${Math.max(...nums)}` : undefined;
     })();
 
-    const latestAlias = 'latest';
+    const latestAliasRe = new RegExp(`^/${'latest'}(/.*|$)`, 'i');
     const versionPrefixRe = /^\/(v\d+)(\/.*|$)/i;
-    const latestAliasRe = new RegExp(`^/${latestAlias}(/.*|$)`, 'i');
 
     const mergeUrl = (newPath: string, origUrl: string) => {
       const q = origUrl && origUrl.includes('?') ? origUrl.slice(origUrl.indexOf('?')) : '';
       return newPath + q;
+    };
+
+    const tryNext = async (ctx: MiddlewareContext, next: Next) => {
+      try {
+        await next();
+        return true;
+      } catch (err) {
+        const status = (err && (err.status || err.statusCode)) || undefined;
+        if (status === 404 || (err && err.name === 'NotFoundError')) {
+          return false;
+        }
+        throw err;
+      }
     };
 
     return async (ctx: MiddlewareContext, next: Next) => {
@@ -40,58 +53,58 @@ export class ApiVersioningMiddlewareProvider implements Provider<Middleware> {
       const origUrl = req.url || '/';
       const origPath = req.path || '/';
 
-      const tryNext = async () => {
-        try {
-          await next();
-          return true;
-        } catch (err) {
-          const status = (err && (err.status || err.statusCode)) || undefined;
-          if (status === 404 || (err && err.name === 'NotFoundError')) {
-            return false;
-          }
-          throw err;
+      const urlMatch = origPath.match(versionPrefixRe);
+      if (urlMatch) {
+        const versionInPath = urlMatch[1].toLowerCase();
+        if (supported.includes(versionInPath)) {
+          return next();
+        } else {
+          const error = new Error(`Unsupported API version in URL: ${versionInPath}`);
+          (error as any).statusCode = 400;
+          throw error;
         }
-      };
-
-      const m = origPath.match(versionPrefixRe);
-      if (m) {
-        return next();
       }
 
-      const n = origPath.match(latestAliasRe);
-      if (n) {
-        const rest = n[1] || '/';
-
-        if (latestVersion) {
-          const newPath = `/${latestVersion}${rest}`;
-          req.url = mergeUrl(newPath, origUrl);
-          if (await tryNext()) {
-            return;
-          }
+      const latestAliasMatch = origPath.match(latestAliasRe);
+      if (latestAliasMatch) {
+        if (!latestVersion) {
+          const error = new Error('No latest API version defined.');
+          (error as any).statusCode = 404;
+          throw error;
         }
-
-        const newPath = `${rest}`;
+        const rest = latestAliasMatch[1] || '';
+        const newPath = `/${latestVersion}${rest}`;
         req.url = mergeUrl(newPath, origUrl);
-
-        if (await tryNext()) {
-          return;
-        }
-
         return next();
       }
 
-      req.url = origUrl;
-      if (await tryNext()) {
+      const initialAttemptSuccess = await tryNext(ctx, next);
+      if (initialAttemptSuccess) {
         return;
       }
 
-      if (latestVersion) {
-        const newPath = `/${latestVersion}${origPath}`;
-        req.url = mergeUrl(newPath, origUrl);
+      let versionToUse: string | undefined;
 
-        if (await tryNext()) {
-          return;
+      if (this.opts.headerName) {
+        const versionFromHeader = req.headers[this.opts.headerName.toLowerCase()] as string;
+        if (versionFromHeader) {
+          versionToUse = versionFromHeader.toLowerCase();
+          if (!supported.includes(versionToUse)) {
+            const error = new Error(`Unsupported API version in header: ${versionToUse}`);
+            (error as any).statusCode = 400;
+            throw error;
+          }
         }
+      }
+
+      if (!versionToUse && latestVersion) {
+        versionToUse = latestVersion;
+      }
+
+      if (versionToUse) {
+        const newPath = `/${versionToUse}${origPath}`;
+        req.url = mergeUrl(newPath, origUrl);
+        return next();
       }
 
       return next();

@@ -220,8 +220,11 @@ export class SelecroBackendApplication extends BootMixin(
 
     const supported = ['', ...supportedFromEnv];
 
+    const versionHeaderFromEnv = process.env.API_VERSION_HEADER || 'x-api-version';
+
     this.bind('versioning.options').to({
       supportedVersions: supported.map(s => s.toLowerCase()),
+      versionHeader: versionHeaderFromEnv,
     });
 
     this.bind('feature.flags.options').to({
