@@ -21,6 +21,7 @@ export class MySequence implements SequenceHandler {
     @inject(SequenceActions.SEND) protected send: Send,
     @inject(SequenceActions.REJECT) protected reject: Reject,
 
+    @inject('middleware.apiVersioning') private apiVersioningMiddleware: Middleware,
     @inject('middleware.maintenance') private maintenanceMiddleware: Middleware,
     @inject('middleware.rateLimit') private rateLimitMiddleware: Middleware,
     @inject('middleware.ipFilter') private ipFilterMiddleware: Middleware,
@@ -45,6 +46,7 @@ export class MySequence implements SequenceHandler {
     };
 
     try {
+      if (!(await runMiddleware(this.apiVersioningMiddleware))) return;
       if (!(await runMiddleware(this.maintenanceMiddleware))) return;
       if (!(await runMiddleware(this.rateLimitMiddleware))) return;
       if (!(await runMiddleware(this.ipFilterMiddleware))) return;

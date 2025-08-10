@@ -20,6 +20,7 @@ import {PingController} from './controllers';
 import {KafkaDataSource, KmsDataSource, PostgresqlDataSource, RedisDataSource} from './datasources';
 import {COOKIE_PARSER_OPTIONS, CorrelationIdBindings, FcmBindings, FirebaseBindings, IpFilterBindings} from './keys';
 import {
+  ApiVersioningMiddlewareProvider,
   CookieParserMiddlewareProvider,
   CorrelationIdMiddlewareProvider,
   CsrfMiddlewareProvider,
@@ -174,6 +175,7 @@ export class SelecroBackendApplication extends BootMixin(
     this.bind('middleware.csrf').toProvider(CsrfMiddlewareProvider);
     this.bind('middleware.tenant').toProvider(TenantResolverMiddlewareProvider);
     this.bind('middleware.hmac').toProvider(HmacMiddlewareProvider);
+    this.bind('middleware.apiVersioning').toProvider(ApiVersioningMiddlewareProvider);
 
     this.bind(IpFilterBindings.IP_LIST).to(process.env.DENIED_IPS?.split(',').map(s => s.trim()) || []);
     this.bind(IpFilterBindings.OPTIONS).to({
@@ -206,6 +208,17 @@ export class SelecroBackendApplication extends BootMixin(
       sameSite: 'lax',
     };
     this.bind('csrf.options').to({cookie: csrfOptions});
+
+    const supportedFromEnv = (process.env.API_SUPPORTED_VERSIONS || 'v1,v2')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const supported = ['', ...supportedFromEnv];
+
+    this.bind('versioning.options').to({
+      supportedVersions: supported.map(s => s.toLowerCase()),
+    });
 
     this.bind(FcmBindings.SERVICE).toClass(FcmService);
   }
