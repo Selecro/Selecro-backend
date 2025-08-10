@@ -2,6 +2,7 @@ export * from './api-versioning.middleware';
 export * from './cookie-parser.middleware';
 export * from './correlation-id.middleware';
 export * from './csrf.middleware';
+export * from './feature-flag.middleware';
 export * from './hmac.middleware';
 export * from './input-sanitizer.middleware';
 export * from './ip-filter.middleware';

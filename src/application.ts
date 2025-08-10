@@ -24,6 +24,7 @@ import {
   CookieParserMiddlewareProvider,
   CorrelationIdMiddlewareProvider,
   CsrfMiddlewareProvider,
+  FeatureFlagMiddlewareProvider,
   HmacMiddlewareProvider,
   InputSanitizerMiddlewareProvider,
   IpFilterMiddlewareProvider,
@@ -176,6 +177,7 @@ export class SelecroBackendApplication extends BootMixin(
     this.bind('middleware.tenant').toProvider(TenantResolverMiddlewareProvider);
     this.bind('middleware.hmac').toProvider(HmacMiddlewareProvider);
     this.bind('middleware.apiVersioning').toProvider(ApiVersioningMiddlewareProvider);
+    this.bind('middleware.featureFlags').toProvider(FeatureFlagMiddlewareProvider);
 
     this.bind(IpFilterBindings.IP_LIST).to(process.env.DENIED_IPS?.split(',').map(s => s.trim()) || []);
     this.bind(IpFilterBindings.OPTIONS).to({
@@ -218,6 +220,10 @@ export class SelecroBackendApplication extends BootMixin(
 
     this.bind('versioning.options').to({
       supportedVersions: supported.map(s => s.toLowerCase()),
+    });
+
+    this.bind('feature.flags.options').to({
+      supportedFlags: ['new-product-page', 'beta-analytics'],
     });
 
     this.bind(FcmBindings.SERVICE).toClass(FcmService);
