@@ -1,8 +1,6 @@
-// src/middleware/encryption.middleware.ts
 import {Middleware} from '@loopback/rest';
 import * as crypto from 'crypto';
 
-// Retrieve the RSA private key from environment variables once
 const rsaPrivateKey = process.env.RSA_PRIVATE_KEY || '';
 if (!rsaPrivateKey) {
   console.warn('RSA_PRIVATE_KEY is not set. Encryption middleware will not function correctly.');
@@ -44,7 +42,6 @@ export const encryptionMiddleware: Middleware = async (context, next) => {
 
       request.body = JSON.parse(decryptedData.toString('utf8'));
 
-      console.log('Request body decrypted successfully.');
     } catch (error) {
       console.error('EncryptionMiddleware: Decryption failed:', error);
     }

@@ -67,15 +67,16 @@ services:
     restart: unless-stopped
     ports:
       - '${KAFKA_PORT}:9092'
+      - '29092:29092'
     environment:
       KAFKA_PROCESS_ROLES: 'broker,controller'
       KAFKA_NODE_ID: '1'
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
-      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093'
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT'
-      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
-      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       CLUSTER_ID: '2r2Mkf7oQLOdA2vH6Z5TJw'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '1'
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: '1'
@@ -83,11 +84,47 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
     healthcheck:
-      test: nc -z kafka 9092 || exit 1
+      test: nc -z localhost 9092 || exit 1
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+
+  kafdrop:
+    container_name: selecro_kafdrop
+    image: obsidiandynamics/kafdrop:latest
+    restart: unless-stopped
+    ports:
+      - '${KAFDROP_PORT}:9000'
+    environment:
+      KAFKA_BROKERCONNECT: 'kafka:9092'
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: wget --spider -q http://localhost:9000/ || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  redisinsight:
+    container_name: selecro_redisinsight
+    image: redis/redisinsight:latest
+    restart: unless-stopped
+    ports:
+      - '${REDISINSIGHT_PORT}:5540'
+    volumes:
+      - redisinsight_data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: wget --spider -q http://localhost:5540/ || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   vault:
     container_name: selecro_vault
@@ -182,3 +219,4 @@ volumes:
   kafka_data:
   vault_data:
   vault_logs:
+  redisinsight_data:

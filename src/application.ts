@@ -21,6 +21,7 @@ import {KafkaDataSource, KmsDataSource, PostgresqlDataSource, RedisDataSource} f
 import {COOKIE_PARSER_OPTIONS, CorrelationIdBindings, FcmBindings, FirebaseBindings, IpFilterBindings} from './keys';
 import {
   ApiVersioningMiddlewareProvider,
+  AuditTrailMiddlewareProvider,
   CookieParserMiddlewareProvider,
   CorrelationIdMiddlewareProvider,
   CsrfMiddlewareProvider,
@@ -94,6 +95,7 @@ export class SelecroBackendApplication extends BootMixin(
     this.bind(FirebaseBindings.ADMIN).toProvider(FirebaseAdminProvider);
     this.service(RemoteConfigService);
     this.lifeCycleObserver(RemoteConfigObserver);
+    this.lifeCycleObserver(AuditTrailMiddlewareProvider);
 
     this.configureMiddleware();
 
@@ -180,6 +182,7 @@ export class SelecroBackendApplication extends BootMixin(
     this.bind('middleware.apiVersioning').toProvider(ApiVersioningMiddlewareProvider);
     this.bind('middleware.featureFlags').toProvider(FeatureFlagMiddlewareProvider);
     this.bind('middleware.geoip').toProvider(GeoipMiddlewareProvider);
+    this.bind('middleware.auditTrail').toProvider(AuditTrailMiddlewareProvider);
 
     this.bind(IpFilterBindings.IP_LIST).to(process.env.DENIED_IPS?.split(',').map(s => s.trim()) || []);
     this.bind(IpFilterBindings.OPTIONS).to({

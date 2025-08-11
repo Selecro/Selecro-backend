@@ -33,6 +33,7 @@ export class MySequence implements SequenceHandler {
     @inject('middleware.hmac') private hmacMiddleware: Middleware,
     @inject('middleware.featureFlags') private featureFlagsMiddleware: Middleware,
     @inject('middleware.geoip') private geoipMiddleware: Middleware,
+    @inject('middleware.auditTrail') private auditTrailMiddleware: Middleware,
   ) { }
 
   async handle(context: RequestContext) {
@@ -53,6 +54,7 @@ export class MySequence implements SequenceHandler {
       if (!(await runMiddleware(this.rateLimitMiddleware))) return;
       if (!(await runMiddleware(this.ipFilterMiddleware))) return;
       if (!(await runMiddleware(this.correlationIdMiddleware))) return;
+      if (!(await runMiddleware(this.auditTrailMiddleware))) return;
       if (!(await runMiddleware(this.geoipMiddleware))) return;
       if (!(await runMiddleware(this.featureFlagsMiddleware))) return;
       if (!(await runMiddleware(this.inputSanitizerMiddleware))) return;

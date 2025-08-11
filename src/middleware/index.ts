@@ -1,4 +1,5 @@
 export * from './api-versioning.middleware';
+export * from './audit-trail.middleware';
 export * from './cookie-parser.middleware';
 export * from './correlation-id.middleware';
 export * from './csrf.middleware';

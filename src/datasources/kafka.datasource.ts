@@ -1,6 +1,7 @@
 import {inject, lifeCycleObserver, LifeCycleObserver} from '@loopback/core';
 import {juggler} from '@loopback/repository';
 import * as dotenv from 'dotenv';
+import {Kafka} from 'kafkajs';
 dotenv.config();
 
 const kafkaHost = process.env.KAFKA_HOST || 'localhost';
@@ -23,10 +24,16 @@ export class KafkaDataSource extends juggler.DataSource
   static dataSourceName = 'kafka';
   static readonly defaultConfig = config;
 
+  public client: Kafka;
+
   constructor(
     @inject('datasources.config.kafka', {optional: true})
     dsConfig: object = config,
   ) {
     super(dsConfig);
+    this.client = new Kafka({
+      clientId: 'loopback-app',
+      brokers: [config.connectionString],
+    });
   }
 }
