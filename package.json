@@ -82,6 +82,7 @@
     "loopback-connector-postgresql": "^7.2.3",
     "loopback-connector-rest": "^5.0.8",
     "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.5",
     "path": "^0.12.7",
     "path-to-regexp": "^8.2.0",

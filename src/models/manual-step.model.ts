@@ -1,5 +1,5 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
-import {File, Manual} from '.';
+import {File, Manual, User} from '.';
 
 @model({
   settings: {
@@ -17,6 +17,12 @@ import {File, Manual} from '.';
         entity: 'Manual',
         entityKey: 'id',
         foreignKey: 'manual_id'
+      },
+      manual_step_deleted_by_fkeyRel: {
+        name: 'manual_step_deleted_by_fkeyRel',
+        entity: 'User',
+        entityKey: 'id',
+        foreignKey: 'deleted_by'
       }
     },
     indexes: {
@@ -29,6 +35,9 @@ import {File, Manual} from '.';
       uq_manual_step_manual_step_order: {
         keys: {manual_id: 1, step_order: 1},
         options: {unique: true}
+      },
+      idx_manual_step_deleted_by: {
+        keys: {deleted_by: 1}
       }
     }
   }
@@ -116,6 +125,27 @@ export class ManualStep extends Entity {
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;
+
+  @property({
+    type: 'boolean',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    default: false,
+    postgresql: {columnName: 'deleted', dataType: 'boolean', nullable: 'NO', generated: false},
+  })
+  deleted: boolean;
+
+  @property({
+    type: 'date',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'deleted_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
+  })
+  deleted_at?: string;
+
+  @belongsTo(() => User)
+  deleted_by?: number;
 
   // Define well-known properties here
 

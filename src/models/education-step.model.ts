@@ -1,5 +1,5 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
-import {EducationMode} from '.';
+import {EducationMode, User} from '.';
 
 @model({
   settings: {
@@ -11,6 +11,12 @@ import {EducationMode} from '.';
         entity: 'EducationMode',
         entityKey: 'id',
         foreignKey: 'education_mode_id'
+      },
+      education_step_deleted_by_fkeyRel: {
+        name: 'education_step_deleted_by_fkeyRel',
+        entity: 'User',
+        entityKey: 'id',
+        foreignKey: 'deleted_by'
       }
     },
     indexes: {
@@ -22,6 +28,9 @@ import {EducationMode} from '.';
       },
       idx_education_step_mode_order: {
         keys: {education_mode_id: 1, step_order: 1}
+      },
+      idx_education_step_deleted_by: {
+        keys: {deleted_by: 1}
       }
     }
   }
@@ -104,6 +113,27 @@ export class EducationStep extends Entity {
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;
+
+  @property({
+    type: 'boolean',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    default: false,
+    postgresql: {columnName: 'deleted', dataType: 'boolean', nullable: 'NO', generated: false},
+  })
+  deleted: boolean;
+
+  @property({
+    type: 'date',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'deleted_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
+  })
+  deleted_at?: string;
+
+  @belongsTo(() => User)
+  deleted_by?: number;
 
   // Define well-known properties here
 

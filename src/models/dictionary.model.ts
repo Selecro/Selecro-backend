@@ -35,6 +35,12 @@ export enum DictionaryStatus {
         entity: 'File',
         entityKey: 'id',
         foreignKey: 'mark_file_id'
+      },
+      dictionary_deleted_by_fkeyRel: {
+        name: 'dictionary_deleted_by_fkeyRel',
+        entity: 'User',
+        entityKey: 'id',
+        foreignKey: 'deleted_by'
       }
     },
     indexes: {
@@ -52,6 +58,9 @@ export enum DictionaryStatus {
       },
       idx_dictionary_creator_dictionary_status: {
         keys: {creator_user_id: 1, dictionary_status: 1}
+      },
+      idx_dictionary_deleted_by: {
+        keys: {deleted_by: 1}
       }
     }
   }
@@ -178,6 +187,27 @@ export class Dictionary extends Entity {
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;
+
+  @property({
+    type: 'boolean',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    default: false,
+    postgresql: {columnName: 'deleted', dataType: 'boolean', nullable: 'NO', generated: false},
+  })
+  deleted: boolean;
+
+  @property({
+    type: 'date',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'deleted_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
+  })
+  deleted_at?: string;
+
+  @belongsTo(() => User)
+  deleted_by?: number;
 
   // Define well-known properties here
 

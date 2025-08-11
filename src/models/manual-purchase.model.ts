@@ -30,6 +30,12 @@ export enum PaymentStatus {
         entity: 'User',
         entityKey: 'id',
         foreignKey: 'user_id'
+      },
+      manual_purchase_deleted_by_fkeyRel: {
+        name: 'manual_purchase_deleted_by_fkeyRel',
+        entity: 'User',
+        entityKey: 'id',
+        foreignKey: 'deleted_by'
       }
     },
     indexes: {
@@ -45,6 +51,9 @@ export enum PaymentStatus {
       uq_manual_purchase_transaction_id: {
         keys: {transaction_id: 1},
         options: {unique: true}
+      },
+      idx_manual_purchase_deleted_by: {
+        keys: {deleted_by: 1}
       }
     }
   }
@@ -144,6 +153,27 @@ export class ManualPurchase extends Entity {
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;
+
+  @property({
+    type: 'boolean',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    default: false,
+    postgresql: {columnName: 'deleted', dataType: 'boolean', nullable: 'NO', generated: false},
+  })
+  deleted: boolean;
+
+  @property({
+    type: 'date',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'deleted_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
+  })
+  deleted_at?: string;
+
+  @belongsTo(() => User)
+  deleted_by?: number;
 
   // Define well-known properties here
 

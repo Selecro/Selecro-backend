@@ -18,6 +18,7 @@ import helmet from 'helmet';
 import path from 'path';
 import {PingController} from './controllers';
 import {KafkaDataSource, KmsDataSource, PostgresqlDataSource, RedisDataSource} from './datasources';
+import {startHardDeleteJob} from './jobs/hard-delete.job';
 import {COOKIE_PARSER_OPTIONS, CorrelationIdBindings, FcmBindings, FirebaseBindings, IpFilterBindings} from './keys';
 import {
   ApiVersioningMiddlewareProvider,
@@ -167,6 +168,7 @@ export class SelecroBackendApplication extends BootMixin(
         nested: true,
       },
     };
+    startHardDeleteJob(this);
   }
 
   configureMiddleware() {

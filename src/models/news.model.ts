@@ -23,6 +23,12 @@ export enum NewsStatus {
         entity: 'File',
         entityKey: 'id',
         foreignKey: 'image_file_id'
+      },
+      news_deleted_by_fkeyRel: {
+        name: 'news_deleted_by_fkeyRel',
+        entity: 'User',
+        entityKey: 'id',
+        foreignKey: 'deleted_by'
       }
     },
     indexes: {
@@ -37,6 +43,9 @@ export enum NewsStatus {
       },
       idx_news_published_at: {
         keys: {published_at: 1}
+      },
+      idx_news_deleted_by: {
+        keys: {deleted_by: 1}
       }
     }
   }
@@ -149,6 +158,27 @@ export class News extends Entity {
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;
+
+  @property({
+    type: 'boolean',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    default: false,
+    postgresql: {columnName: 'deleted', dataType: 'boolean', nullable: 'NO', generated: false},
+  })
+  deleted: boolean;
+
+  @property({
+    type: 'date',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'deleted_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
+  })
+  deleted_at?: string;
+
+  @belongsTo(() => User)
+  deleted_by?: number;
 
   // Define well-known properties here
 

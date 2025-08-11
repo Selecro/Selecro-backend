@@ -23,6 +23,12 @@ import {Manual, ManualStep, User} from '.';
         entity: 'User',
         entityKey: 'id',
         foreignKey: 'user_id'
+      },
+      manual_progress_deleted_by_fkeyRel: {
+        name: 'manual_progress_deleted_by_fkeyRel',
+        entity: 'User',
+        entityKey: 'id',
+        foreignKey: 'deleted_by'
       }
     },
     indexes: {
@@ -38,6 +44,9 @@ import {Manual, ManualStep, User} from '.';
       uq_manual_progress_user_manual: {
         keys: {user_id: 1, manual_id: 1},
         options: {unique: true}
+      },
+      idx_manual_progress_deleted_by: {
+        keys: {deleted_by: 1}
       }
     }
   }
@@ -103,6 +112,27 @@ export class ManualProgress extends Entity {
     postgresql: {columnName: 'is_finished', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   is_finished: boolean;
+
+  @property({
+    type: 'boolean',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    default: false,
+    postgresql: {columnName: 'deleted', dataType: 'boolean', nullable: 'NO', generated: false},
+  })
+  deleted: boolean;
+
+  @property({
+    type: 'date',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'deleted_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
+  })
+  deleted_at?: string;
+
+  @belongsTo(() => User)
+  deleted_by?: number;
 
   // Define well-known properties here
 

@@ -57,6 +57,12 @@ export enum ActionType {
         entity: 'User',
         entityKey: 'id',
         foreignKey: 'creator_user_id'
+      },
+      permission_deleted_by_fkeyRel: {
+        name: 'permission_deleted_by_fkeyRel',
+        entity: 'User',
+        entityKey: 'id',
+        foreignKey: 'deleted_by'
       }
     },
     indexes: {
@@ -69,6 +75,9 @@ export enum ActionType {
       },
       idx_permission_created_at: {
         keys: {created_at: -1},
+      },
+      idx_permission_deleted_by: {
+        keys: {deleted_by: 1}
       }
     }
   }
@@ -141,6 +150,27 @@ export class Permission extends Entity {
     postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   updated_at: string;
+
+  @property({
+    type: 'boolean',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    default: false,
+    postgresql: {columnName: 'deleted', dataType: 'boolean', nullable: 'NO', generated: false},
+  })
+  deleted: boolean;
+
+  @property({
+    type: 'date',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'deleted_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
+  })
+  deleted_at?: string;
+
+  @belongsTo(() => User)
+  deleted_by?: number;
 
   // Define well-known properties here
 

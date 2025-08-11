@@ -24,6 +24,12 @@ export enum UserManualInteractionType {
         entity: 'User',
         entityKey: 'id',
         foreignKey: 'user_id'
+      },
+      user_manual_interaction_deleted_by_fkeyRel: {
+        name: 'user_manual_interaction_deleted_by_fkeyRel',
+        entity: 'User',
+        entityKey: 'id',
+        foreignKey: 'deleted_by'
       }
     },
     indexes: {
@@ -39,6 +45,9 @@ export enum UserManualInteractionType {
       uq_user_manual_interaction: {
         keys: {user_id: 1, manual_id: 1, user_manual_interaction_type: 1},
         options: {unique: true}
+      },
+      idx_user_manual_interaction_deleted_by: {
+        keys: {deleted_by: 1}
       }
     }
   }
@@ -83,6 +92,27 @@ export class UserManualInteraction extends Entity {
     postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
   created_at: string;
+
+  @property({
+    type: 'boolean',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    default: false,
+    postgresql: {columnName: 'deleted', dataType: 'boolean', nullable: 'NO', generated: false},
+  })
+  deleted: boolean;
+
+  @property({
+    type: 'date',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'deleted_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
+  })
+  deleted_at?: string;
+
+  @belongsTo(() => User)
+  deleted_by?: number;
 
   // Define well-known properties here
 
