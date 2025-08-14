@@ -17,7 +17,6 @@ import {
   FcmBindings
 } from '../keys';
 import {
-  DeliveryMethod,
   DeviceLanguagePreference,
   Notification,
   NotificationType
@@ -140,7 +139,6 @@ export class ZFcmService {
       title: payload.title,
       notification_message: payload.body,
       notification_type: payload.type,
-      delivery_method: DeliveryMethod.Push,
       creator_user_id: creatorId,
       extra_data: JSON.stringify(payload.data),
     });

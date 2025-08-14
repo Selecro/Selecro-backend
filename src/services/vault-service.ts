@@ -1,8 +1,6 @@
-import {inject} from '@loopback/core';
 import {HttpErrors} from '@loopback/rest';
 import fetch from 'cross-fetch';
 import * as dotenv from 'dotenv';
-import {EmailService} from '.';
 dotenv.config();
 
 export class VaultService {
@@ -14,14 +12,9 @@ export class VaultService {
   ];
   private readonly rootToken = process.env.ROOT_VAULT_TOKEN ?? '';
 
-  constructor(
-    @inject('services.email')
-    public emailService: EmailService,
-  ) {
+  constructor() {
     this.checkAndUnsealIfNeeded().catch(async error => {
-      await this.emailService.sendError(
-        'Error during initialization: ' + error,
-      );
+      console.error('Error during initialization: ' + error);
       throw new HttpErrors.InternalServerError('Error during initialization');
     });
   }
@@ -29,14 +22,13 @@ export class VaultService {
   private async checkAndUnsealIfNeeded(): Promise<void> {
     try {
       const response = await fetch(
-        `
-      ${this.vaultEndpoint}/v1/sys/seal-status`,
+        `${this.vaultEndpoint}/v1/sys/seal-status`,
         {
           method: 'GET',
         },
       );
       if (!response.ok) {
-        await this.emailService.sendError(
+        console.error(
           String('Status check error: ' + JSON.stringify(response, null, 2)),
         );
         throw new HttpErrors.InternalServerError('Status check error');
@@ -46,7 +38,7 @@ export class VaultService {
         await this.unseal();
       }
     } catch (error) {
-      await this.emailService.sendError('Status check error: ' + error);
+      console.error('Status check error: ' + error);
       throw new HttpErrors.InternalServerError('Status check error');
     }
   }
@@ -70,14 +62,14 @@ export class VaultService {
           }),
         });
         if (!response.ok) {
-          await this.emailService.sendError(
+          console.error(
             String('Unseal error: ' + JSON.stringify(response, null, 2)),
           );
           throw new HttpErrors.InternalServerError('Unseal error');
         }
       }
     } catch (error) {
-      await this.emailService.sendError('Unseal error: ' + error);
+      console.error('Unseal error: ' + error);
       throw new HttpErrors.InternalServerError('Unseal error');
     }
   }
@@ -99,13 +91,13 @@ export class VaultService {
         },
       );
       if (!response.ok) {
-        await this.emailService.sendError(
+        console.error(
           String('Unable to create user: ' + JSON.stringify(response, null, 2)),
         );
         throw new HttpErrors.InternalServerError('Unable to create user');
       }
     } catch (error) {
-      await this.emailService.sendError('Unable to create user: ' + error);
+      console.error('Unable to create user: ' + error);
       throw new HttpErrors.InternalServerError('Unable to create user');
     }
   }
@@ -140,7 +132,7 @@ path "auth/userpass/login/*" {
         },
       );
       if (!response.ok) {
-        await this.emailService.sendError(
+        console.error(
           String(
             'Unable to create policy: ' + JSON.stringify(response, null, 2),
           ),
@@ -148,7 +140,7 @@ path "auth/userpass/login/*" {
         throw new HttpErrors.InternalServerError('Unable to create policy');
       }
     } catch (error) {
-      await this.emailService.sendError('Unable to create policy: ' + error);
+      console.error('Unable to create policy: ' + error);
       throw new HttpErrors.InternalServerError('Unable to create policy');
     }
   }
@@ -165,13 +157,13 @@ path "auth/userpass/login/*" {
         },
       );
       if (!response.ok) {
-        await this.emailService.sendError(
+        console.error(
           String('Unable to create key: ' + JSON.stringify(response, null, 2)),
         );
         throw new HttpErrors.InternalServerError('Unable to create key');
       }
     } catch (error) {
-      await this.emailService.sendError('Unable to create key: ' + error);
+      console.error('Unable to create key: ' + error);
       throw new HttpErrors.InternalServerError('Unable to create key');
     }
   }
@@ -192,7 +184,7 @@ path "auth/userpass/login/*" {
         },
       );
       if (!response.ok) {
-        await this.emailService.sendError(
+        console.error(
           String(
             'Unable to update password: ' + JSON.stringify(response, null, 2),
           ),
@@ -200,7 +192,7 @@ path "auth/userpass/login/*" {
         throw new HttpErrors.InternalServerError('Unable to update password');
       }
     } catch (error) {
-      await this.emailService.sendError('Unable to update password: ' + error);
+      console.error('Unable to update password: ' + error);
       throw new HttpErrors.InternalServerError('Unable to update password');
     }
   }
@@ -217,13 +209,13 @@ path "auth/userpass/login/*" {
         },
       );
       if (!response.ok) {
-        await this.emailService.sendError(
+        console.error(
           String('Unable to delete user: ' + JSON.stringify(response, null, 2)),
         );
         throw new HttpErrors.InternalServerError('Unable to delete user');
       }
     } catch (error) {
-      await this.emailService.sendError('Unable to delete user: ' + error);
+      console.error('Unable to delete user: ' + error);
       throw new HttpErrors.InternalServerError('Unable to delete user');
     }
   }
@@ -240,7 +232,7 @@ path "auth/userpass/login/*" {
         },
       );
       if (!response.ok) {
-        await this.emailService.sendError(
+        console.error(
           String(
             'Unable to delete policy: ' + JSON.stringify(response, null, 2),
           ),
@@ -248,7 +240,7 @@ path "auth/userpass/login/*" {
         throw new HttpErrors.InternalServerError('Unable to delete policy');
       }
     } catch (error) {
-      await this.emailService.sendError('Unable to delete policy: ' + error);
+      console.error('Unable to delete policy: ' + error);
       throw new HttpErrors.InternalServerError('Unable to delete policy');
     }
   }
@@ -265,13 +257,13 @@ path "auth/userpass/login/*" {
         },
       );
       if (!response.ok) {
-        await this.emailService.sendError(
+        console.error(
           String('Unable to delete key: ' + JSON.stringify(response, null, 2)),
         );
         throw new HttpErrors.InternalServerError('Unable to delete key');
       }
     } catch (error) {
-      await this.emailService.sendError('Unable to delete key: ' + error);
+      console.error('Unable to delete key: ' + error);
       throw new HttpErrors.InternalServerError('Unable to delete key');
     }
   }
