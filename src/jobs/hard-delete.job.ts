@@ -1,5 +1,6 @@
 import {Application} from '@loopback/core';
 import cron from 'node-cron';
+import {RemoteConfigService} from '../providers';
 import {
   BadgeRepository,
   CommentRepository,
@@ -19,10 +20,12 @@ import {
   UserManualInteractionRepository,
 } from '../repositories';
 
-const RETENTION_PERIOD_DAYS = 30;
-
 export function startHardDeleteJob(app: Application) {
   cron.schedule('0 2 * * *', async () => {
+    const remoteConfigService = await app.get<RemoteConfigService>('services.RemoteConfigService');
+    const config = await remoteConfigService.getConfigValues();
+    const RETENTION_PERIOD_DAYS = config.retention_period_days;
+
     const now = new Date();
     const hardDeleteThreshold = new Date(now.getTime() - RETENTION_PERIOD_DAYS * 24 * 60 * 60 * 1000);
 

@@ -21,7 +21,7 @@ interface AuditLogEntry {
 
 export class AuditTrailMiddlewareProvider implements Provider<Middleware>, LifeCycleObserver {
   private producer: Producer;
-  private auditTopic: string = 'audit-logs';
+  private auditTopic: string = 'audit-trail-logs';
   private connectionPromise: Promise<void>;
 
   constructor(

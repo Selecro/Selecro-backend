@@ -9,6 +9,7 @@ export interface RemoteConfigParameters {
   api_rate_limit_per_second: number;
   max_file_upload_size_mb: number;
   api_request_window_minutes: number;
+  retention_period_days: number;
 }
 
 let cachedConfig: RemoteConfigParameters | null = null;
@@ -47,6 +48,7 @@ export class RemoteConfigService {
         api_rate_limit_per_second: config.getNumber('api_rate_limit_per_second'),
         max_file_upload_size_mb: config.getNumber('max_file_upload_size_mb'),
         api_request_window_minutes: config.getNumber('api_request_window_minutes'),
+        retention_period_days: config.getNumber('retention_period_days'),
       };
 
       cachedConfig = values;
@@ -66,7 +68,8 @@ export class RemoteConfigService {
       redis_cache_expiry_seconds: 60,
       api_rate_limit_per_second: 10,
       max_file_upload_size_mb: 10,
-      api_request_window_minutes: 1
+      api_request_window_minutes: 1,
+      retention_period_days: 30
     };
   }
 }

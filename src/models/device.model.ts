@@ -1,6 +1,11 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {User} from '.';
 
+export enum DeviceLanguagePreference {
+  EN = 'en',
+  CZ = 'cz'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -22,6 +27,9 @@ import {User} from '.';
       },
       idx_device_device_token: {
         keys: {device_token: 1}
+      },
+      idx_device_device_language_preference: {
+        keys: {device_language_preference: 1}
       }
     }
   }
@@ -78,6 +86,20 @@ export class Device extends Entity {
     postgresql: {columnName: 'biometric_enabled', dataType: 'boolean', nullable: 'NO', generated: false},
   })
   biometric_enabled: boolean;
+
+  @property({
+    type: 'string',
+    required: true,
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(DeviceLanguagePreference)
+    },
+    length: 255,
+    generated: false,
+    default: DeviceLanguagePreference.CZ,
+    postgresql: {columnName: 'device_language_preference', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+  })
+  device_language_preference: DeviceLanguagePreference;
 
   @property({
     type: 'string',

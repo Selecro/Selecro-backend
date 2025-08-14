@@ -166,12 +166,12 @@ INSERT INTO public.two_factor_auth_backup_code (id, user_id, code_hash, used_at,
 (4, 3, 'hash_code4', NULL, '2025-07-01 10:00:00', 'batch2'),
 (5, 5, 'hash_code5', NULL, '2025-07-01 10:01:00', 'batch3');
 
-INSERT INTO public.notification (id, user_id, creator_user_id, title, notification_message, notification_type, delivery_method, created_at) VALUES
-(1, 1, 1, 'Welcome to our platform!', 'Your account has been successfully created.', 'success', 'in_app', '2025-08-07 21:51:58'),
-(2, 2, 1, 'Verify your email address', 'Please click the link to verify your email.', 'warning', 'email', '2025-08-07 21:51:58'),
-(3, 3, 1, 'New message from Jan', 'Hello Marie, how are you?', 'activity', 'push', '2025-08-07 21:51:58'),
-(4, 4, 1, 'Report generated', 'Your monthly report is ready for download.', 'info', 'in_app', '2025-08-07 21:51:58'),
-(5, 5, 1, 'New promotion', 'Check out our latest offers!', 'promotion', 'email', '2025-08-07 21:51:58');
+INSERT INTO public.notification (id, user_id, creator_user_id, title, notification_message, notification_type, created_at) VALUES
+(1, 1, 1, 'Welcome to our platform!', 'Your account has been successfully created.', 'success', '2025-08-07 21:51:58'),
+(2, 2, 1, 'Verify your email address', 'Please click the link to verify your email.', 'warning', '2025-08-07 21:51:58'),
+(3, 3, 1, 'New message from Jan', 'Hello Marie, how are you?', 'activity', '2025-08-07 21:51:58'),
+(4, 4, 1, 'Report generated', 'Your monthly report is ready for download.', 'info', '2025-08-07 21:51:58'),
+(5, 5, 1, 'New promotion', 'Check out our latest offers!', 'promotion', '2025-08-07 21:51:58');
 
 INSERT INTO public.comment (id, uuid, parent_comment_id, user_id, manual_id, education_mode_id, comment_text, comment_on_type, rating, commented_at) VALUES
 (1, 'comment-1-uuid', NULL, 1, 1, NULL, 'Skvělý návod pro začátečníky!', 'manual', 5, '2025-08-07 21:52:44'),

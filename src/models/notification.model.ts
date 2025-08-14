@@ -10,12 +10,6 @@ export enum NotificationType {
   Activity = 'activity'
 }
 
-export enum DeliveryMethod {
-  Email = 'email',
-  Push = 'push',
-  InApp = 'in_app'
-}
-
 @model({
   settings: {
     idInjection: false,
@@ -49,9 +43,6 @@ export enum DeliveryMethod {
       },
       idx_notification_notification_type: {
         keys: {notification_type: 1}
-      },
-      idx_notification_delivery_method: {
-        keys: {delivery_method: 1}
       },
       idx_notification_read_at: {
         keys: {read_at: 1}
@@ -111,19 +102,6 @@ export class Notification extends Entity {
     postgresql: {columnName: 'notification_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
   notification_type: NotificationType;
-
-  @property({
-    type: 'string',
-    required: true,
-    jsonSchema: {
-      nullable: false,
-      enum: Object.values(DeliveryMethod)
-    },
-    length: 255,
-    generated: false,
-    postgresql: {columnName: 'delivery_method', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
-  })
-  delivery_method: DeliveryMethod;
 
   @property({
     type: 'string',
