@@ -31,9 +31,10 @@ export class MySequence implements SequenceHandler {
     @inject('middleware.csrf') private csrfMiddleware: Middleware,
     @inject('middleware.tenant') private tenantMiddleware: Middleware,
     @inject('middleware.hmac') private hmacMiddleware: Middleware,
-    @inject('middleware.featureFlags') private featureFlagsMiddleware: Middleware,
+    @inject('middleware.feature-flags') private featureFlagsMiddleware: Middleware,
     @inject('middleware.geoip') private geoipMiddleware: Middleware,
     @inject('middleware.auditTrail') private auditTrailMiddleware: Middleware,
+    @inject('middleware.jwt-auth') private jwtAuthMiddleware: Middleware,
   ) { }
 
   async handle(context: RequestContext) {
@@ -59,6 +60,7 @@ export class MySequence implements SequenceHandler {
       if (!(await runMiddleware(this.featureFlagsMiddleware))) return;
       if (!(await runMiddleware(this.inputSanitizerMiddleware))) return;
       if (!(await runMiddleware(this.cookieParserMiddleware))) return;
+      if (!(await runMiddleware(this.jwtAuthMiddleware))) return;
       if (process.env.NODE_ENV === 'production') {
         if (!(await runMiddleware(this.hmacMiddleware))) return;
       }

@@ -6,6 +6,7 @@ export * from './jwt.service';
 export * from './logger.service';
 export * from './notification.service';
 export * from './pdf.service';
+export * from './permission.service';
 export * from './push-notification.service';
 export * from './tenant.service';
 export * from './user-service';

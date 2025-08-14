@@ -5,6 +5,7 @@ import {CookieOptions} from 'csurf';
 import {IpFilterOptions, IpList} from 'express-ipfilter';
 import {Options as RateLimitOptions} from 'express-rate-limit';
 import * as admin from 'firebase-admin';
+import {User} from './models';
 import {RemoteConfigParameters} from './providers';
 import {
   EmailService,
@@ -89,3 +90,7 @@ export namespace NotificationBindings {
 }
 
 export const TENANT_BINDING_KEY = BindingKey.create<string>('tenant.id');
+
+export namespace MyAuthBindings {
+  export const CURRENT_USER = BindingKey.create<User>('authentication.current-user');
+}

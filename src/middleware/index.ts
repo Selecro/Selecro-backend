@@ -8,6 +8,7 @@ export * from './geoip.middleware';
 export * from './hmac.middleware';
 export * from './input-sanitizer.middleware';
 export * from './ip-filter.middleware';
+export * from './jwt-auth.middleware';
 export * from './maintenance.middleware';
 export * from './rate-limit.middleware';
 export * from './tenant.middleware';

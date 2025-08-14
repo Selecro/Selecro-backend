@@ -4,7 +4,7 @@ import {
   UserRepository
 } from '@loopback/authentication-jwt';
 import {BootMixin} from '@loopback/boot';
-import {ApplicationConfig} from '@loopback/core';
+import {ApplicationConfig, createBindingFromClass} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
 import {RestApplication} from '@loopback/rest';
 import {
@@ -18,7 +18,8 @@ import helmet from 'helmet';
 import path from 'path';
 import {PingController} from './controllers';
 import {KafkaDataSource, KmsDataSource, PostgresqlDataSource, RedisDataSource} from './datasources';
-import {startHardDeleteJob} from './jobs/hard-delete.job';
+import {AuthorizationInterceptor} from './interceptors';
+import {startHardDeleteJob} from './jobs';
 import {COOKIE_PARSER_OPTIONS, CorrelationIdBindings, FirebaseBindings, IpFilterBindings} from './keys';
 import {
   ApiVersioningMiddlewareProvider,
@@ -35,6 +36,7 @@ import {
   RateLimitMiddlewareProvider,
   TenantResolverMiddlewareProvider
 } from './middleware';
+import {JwtAuthMiddleware} from './middleware/jwt-auth.middleware';
 import {RemoteConfigObserver} from './observers';
 import {FirebaseAdminProvider, RemoteConfigService} from './providers';
 import {
@@ -79,6 +81,7 @@ import {
   EmailService,
   InAppNotificationService,
   NotificationService,
+  PermissionService,
   PushNotificationService,
   TenantService
 } from './services';
@@ -104,6 +107,9 @@ export class SelecroBackendApplication extends BootMixin(
     this.lifeCycleObserver(RemoteConfigObserver);
     this.lifeCycleObserver(AuditTrailMiddlewareProvider);
 
+    // Correctly bind the custom JWT authentication middleware with a key
+    this.bind('middleware.jwt-auth').to(JwtAuthMiddleware);
+
     this.configureMiddleware();
 
     if (process.env.NODE_ENV !== 'production') {
@@ -117,6 +123,10 @@ export class SelecroBackendApplication extends BootMixin(
     this.component(JWTAuthenticationComponent);
     this.controller(PingController);
 
+    this.service(PermissionService);
+    this.add(createBindingFromClass(AuthorizationInterceptor));
+
+    // ... all of your existing repositories and datasources
     this.repository(UserRepository);
     this.repository(FileRepository);
     this.repository(UserFileRepository);
