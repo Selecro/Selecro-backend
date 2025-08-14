@@ -12,11 +12,6 @@ export class FirebaseAdminService {
     this.firebaseAdmin = firebaseAdmin;
   }
 
-  /**
-   * Verifies a Firebase ID token.
-   * @param idToken The Firebase ID token from the client.
-   * @returns The decoded token if valid.
-   */
   async verifyIdToken(idToken: string): Promise<admin.auth.DecodedIdToken> {
     try {
       const decodedToken = await this.firebaseAdmin.auth().verifyIdToken(idToken);
@@ -27,11 +22,6 @@ export class FirebaseAdminService {
     }
   }
 
-  /**
-   * Gets a user by UID from Firebase.
-   * @param uid The user's UID.
-   * @returns The user record.
-   */
   async getUserByUid(uid: string): Promise<admin.auth.UserRecord> {
     try {
       const userRecord = await this.firebaseAdmin.auth().getUser(uid);
