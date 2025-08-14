@@ -19,7 +19,7 @@ import path from 'path';
 import {PingController} from './controllers';
 import {KafkaDataSource, KmsDataSource, PostgresqlDataSource, RedisDataSource} from './datasources';
 import {startHardDeleteJob} from './jobs/hard-delete.job';
-import {COOKIE_PARSER_OPTIONS, CorrelationIdBindings, FcmBindings, FirebaseBindings, IpFilterBindings} from './keys';
+import {COOKIE_PARSER_OPTIONS, CorrelationIdBindings, FirebaseBindings, IpFilterBindings} from './keys';
 import {
   ApiVersioningMiddlewareProvider,
   AuditTrailMiddlewareProvider,
@@ -75,7 +75,13 @@ import {
   UserSettingRepository
 } from './repositories';
 import {MySequence} from './sequence';
-import {FcmService, TenantService} from './services';
+import {
+  EmailService,
+  InAppNotificationService,
+  NotificationService,
+  PushNotificationService,
+  TenantService
+} from './services';
 
 dotenv.config();
 
@@ -153,7 +159,12 @@ export class SelecroBackendApplication extends BootMixin(
     this.dataSource(RedisDataSource);
     this.dataSource(KmsDataSource);
 
+    // Register all of our new notification services
     this.service(TenantService);
+    this.service(NotificationService);
+    this.service(InAppNotificationService);
+    this.service(PushNotificationService);
+    this.service(EmailService);
 
     this.projectRoot = __dirname;
     this.bootOptions = {
@@ -182,7 +193,7 @@ export class SelecroBackendApplication extends BootMixin(
     this.bind('middleware.tenant').toProvider(TenantResolverMiddlewareProvider);
     this.bind('middleware.hmac').toProvider(HmacMiddlewareProvider);
     this.bind('middleware.apiVersioning').toProvider(ApiVersioningMiddlewareProvider);
-    this.bind('middleware.featureFlags').toProvider(FeatureFlagMiddlewareProvider);
+    this.bind('middleware.feature-flags').toProvider(FeatureFlagMiddlewareProvider);
     this.bind('middleware.geoip').toProvider(GeoipMiddlewareProvider);
     this.bind('middleware.auditTrail').toProvider(AuditTrailMiddlewareProvider);
 
@@ -232,10 +243,9 @@ export class SelecroBackendApplication extends BootMixin(
       versionHeader: versionHeaderFromEnv,
     });
 
-    this.bind('feature.flags.options').to({
+    this.bind('feature-flags.options').to({
       supportedFlags: ['new-product-page', 'beta-analytics'],
     });
 
-    this.bind(FcmBindings.SERVICE).toClass(FcmService);
   }
 }

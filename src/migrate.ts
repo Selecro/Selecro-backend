@@ -99,9 +99,7 @@ export async function migrate(args: string[]) {
     OauthAccount: `ALTER TABLE public.oauth_account ADD CONSTRAINT chk_oauth_provider
                            CHECK (oauth_provider IN ('google', 'apple', 'github', 'facebook', 'microsoft', 'linkedin'));`,
     Notification: `ALTER TABLE public.notification ADD CONSTRAINT chk_notification_type
-                           CHECK (notification_type IN ('info', 'warning', 'error', 'success', 'promotion', 'activity'));
-                         ALTER TABLE public.notification ADD CONSTRAINT chk_delivery_method
-                           CHECK (delivery_method IN ('email', 'push', 'in_app'));`,
+                           CHECK (notification_type IN ('info', 'warning', 'error', 'success', 'promotion', 'activity'));`,
     News: `ALTER TABLE public.news ADD CONSTRAINT chk_news_status
                    CHECK (news_status IN ('active', 'draft', 'archived'));`,
     NewsDelivery: `ALTER TABLE public.news_delivery ADD CONSTRAINT chk_news_delivery_language

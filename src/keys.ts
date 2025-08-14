@@ -6,7 +6,13 @@ import {IpFilterOptions, IpList} from 'express-ipfilter';
 import {Options as RateLimitOptions} from 'express-rate-limit';
 import * as admin from 'firebase-admin';
 import {RemoteConfigParameters} from './providers';
-import {FcmService, FirebaseAdminService} from './services';
+import {
+  EmailService,
+  FirebaseAdminService,
+  InAppNotificationService,
+  NotificationService,
+  PushNotificationService
+} from './services';
 import {FirebaseOauthStrategy} from './strategies';
 
 export interface CookieParserOptions extends cookieParser.CookieParseOptions { }
@@ -75,9 +81,11 @@ export namespace RemoteConfigBindings {
   export const REDIS_CACHE_EXPIRY_SECONDS = BindingKey.create<number>('services.remoteConfig.redisCacheExpirySeconds');
 }
 
-export namespace FcmBindings {
-  export const ADMIN = BindingKey.create<typeof admin>('fcm.admin');
-  export const SERVICE = BindingKey.create<FcmService>('services.FcmService');
+export namespace NotificationBindings {
+  export const NOTIFICATION_SERVICE = BindingKey.create<NotificationService>('services.NotificationService');
+  export const IN_APP_NOTIFICATION_SERVICE = BindingKey.create<InAppNotificationService>('services.InAppNotificationService');
+  export const PUSH_NOTIFICATION_SERVICE = BindingKey.create<PushNotificationService>('services.PushNotificationService');
+  export const EMAIL_SERVICE = BindingKey.create<EmailService>('services.EmailService');
 }
 
 export const TENANT_BINDING_KEY = BindingKey.create<string>('tenant.id');

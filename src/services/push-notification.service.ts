@@ -9,7 +9,7 @@ import {
 } from '@loopback/repository';
 import * as admin from 'firebase-admin';
 import {
-  FcmBindings
+  NotificationBindings
 } from '../keys';
 import {
   NotificationType
@@ -38,7 +38,7 @@ export class PushNotificationService {
   private readonly firebaseAdmin: typeof admin;
 
   constructor(
-    @inject(FcmBindings.ADMIN) firebaseAdmin: typeof admin,
+    @inject(NotificationBindings.PUSH_NOTIFICATION_SERVICE) firebaseAdmin: typeof admin,
     @repository(DeviceRepository) private deviceRepository: DeviceRepository,
   ) {
     this.firebaseAdmin = firebaseAdmin;
@@ -53,7 +53,7 @@ export class PushNotificationService {
     });
     const deviceTokens = devices
       .map(device => device.device_token)
-      .filter(token => token !== undefined);
+      .filter((token): token is string => token !== undefined);
 
     if (deviceTokens.length > 0) {
       const message: admin.messaging.MulticastMessage = {

@@ -9,7 +9,7 @@ import {
 } from '@loopback/repository';
 import * as admin from 'firebase-admin';
 import {
-  FcmBindings
+  NotificationBindings
 } from '../keys';
 import {
   Notification
@@ -32,7 +32,7 @@ export class InAppNotificationService {
   private readonly firebaseAdmin: typeof admin;
 
   constructor(
-    @inject(FcmBindings.ADMIN) firebaseAdmin: typeof admin,
+    @inject(NotificationBindings.IN_APP_NOTIFICATION_SERVICE) firebaseAdmin: typeof admin,
     @repository(NotificationRepository) private notificationRepository: NotificationRepository,
     @repository(UserRepository) private userRepository: UserRepository,
     @repository(DeviceRepository) private deviceRepository: DeviceRepository,
@@ -54,7 +54,7 @@ export class InAppNotificationService {
     });
     const deviceTokens = devices
       .map(device => device.device_token)
-      .filter(token => token !== undefined);
+      .filter((token): token is string => token !== undefined);
 
     if (deviceTokens.length > 0) {
       const message: admin.messaging.MulticastMessage = {
@@ -84,7 +84,9 @@ export class InAppNotificationService {
       user_id: userId,
     }))));
 
-    const deviceTokens = devices.map(device => device.device_token).filter(token => token !== undefined);
+    const deviceTokens = devices
+      .map(device => device.device_token)
+      .filter((token): token is string => token !== undefined);
 
     if (deviceTokens.length > 0) {
       const message: admin.messaging.MulticastMessage = {
