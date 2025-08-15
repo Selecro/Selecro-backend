@@ -20,12 +20,6 @@ import {Permission, Role} from '.';
       }
     },
     indexes: {
-      idx_role_permission_role_id: {
-        keys: {role_id: 1}
-      },
-      idx_role_permission_permission_id: {
-        keys: {permission_id: 1}
-      },
       uq_role_permission_role_permission: {
         keys: {role_id: 1, permission_id: 1},
         options: {unique: true}
@@ -36,12 +30,9 @@ import {Permission, Role} from '.';
 export class RolePermission extends Entity {
   @property({
     type: 'number',
-    required: true,
-    jsonSchema: {nullable: false},
-    scale: 0,
-    generated: false,
-    id: 1,
-    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
+    id: true,
+    generated: true,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: true},
   })
   id: number;
 

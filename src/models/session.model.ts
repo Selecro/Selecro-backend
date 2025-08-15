@@ -1,5 +1,5 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
-import {Device, User} from '.';
+import {User} from '.';
 
 @model({
   settings: {
@@ -39,19 +39,19 @@ import {Device, User} from '.';
 export class Session extends Entity {
   @property({
     type: 'number',
-    required: true,
-    jsonSchema: {nullable: false},
-    scale: 0,
-    generated: false,
-    id: 1,
-    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
+    id: true,
+    generated: true,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: true},
   })
   id: number;
 
   @belongsTo(() => User)
   user_id: number;
 
-  @belongsTo(() => Device)
+  @property({
+    type: 'number',
+    postgresql: {columnName: 'device_id', dataType: 'bigint', dataScale: 0, nullable: 'YES'},
+  })
   device_id?: number;
 
   @property({

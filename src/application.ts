@@ -18,7 +18,7 @@ import helmet from 'helmet';
 import path from 'path';
 import {PingController} from './controllers';
 import {KafkaDataSource, KmsDataSource, PostgresqlDataSource, RedisDataSource} from './datasources';
-import {AuthorizationInterceptor} from './interceptors';
+import {AuthorizationInterceptor, EncryptionInterceptor} from './interceptors';
 import {startHardDeleteJob} from './jobs';
 import {COOKIE_PARSER_OPTIONS, CorrelationIdBindings, FirebaseBindings, IpFilterBindings} from './keys';
 import {
@@ -27,6 +27,7 @@ import {
   CookieParserMiddlewareProvider,
   CorrelationIdMiddlewareProvider,
   CsrfMiddlewareProvider,
+  DeviceMiddlewareProvider,
   FeatureFlagMiddlewareProvider,
   GeoipMiddlewareProvider,
   HmacMiddlewareProvider,
@@ -34,6 +35,8 @@ import {
   IpFilterMiddlewareProvider,
   MaintenanceMiddlewareProvider,
   RateLimitMiddlewareProvider,
+  SessionGeoipUpdaterMiddlewareProvider,
+  SessionMiddlewareProvider,
   TenantResolverMiddlewareProvider
 } from './middleware';
 import {JwtAuthMiddleware} from './middleware/jwt-auth.middleware';
@@ -107,7 +110,6 @@ export class SelecroBackendApplication extends BootMixin(
     this.lifeCycleObserver(RemoteConfigObserver);
     this.lifeCycleObserver(AuditTrailMiddlewareProvider);
 
-    // Correctly bind the custom JWT authentication middleware with a key
     this.bind('middleware.jwt-auth').to(JwtAuthMiddleware);
 
     this.configureMiddleware();
@@ -119,6 +121,10 @@ export class SelecroBackendApplication extends BootMixin(
       this.component(RestExplorerComponent);
     }
 
+    if (process.env.NODE_ENV === 'production') {
+      this.add(createBindingFromClass(EncryptionInterceptor));
+    }
+
     this.component(AuthenticationComponent);
     this.component(JWTAuthenticationComponent);
     this.controller(PingController);
@@ -126,7 +132,6 @@ export class SelecroBackendApplication extends BootMixin(
     this.service(PermissionService);
     this.add(createBindingFromClass(AuthorizationInterceptor));
 
-    // ... all of your existing repositories and datasources
     this.repository(UserRepository);
     this.repository(FileRepository);
     this.repository(UserFileRepository);
@@ -169,7 +174,6 @@ export class SelecroBackendApplication extends BootMixin(
     this.dataSource(RedisDataSource);
     this.dataSource(KmsDataSource);
 
-    // Register all of our new notification services
     this.service(TenantService);
     this.service(NotificationService);
     this.service(InAppNotificationService);
@@ -206,6 +210,9 @@ export class SelecroBackendApplication extends BootMixin(
     this.bind('middleware.feature-flags').toProvider(FeatureFlagMiddlewareProvider);
     this.bind('middleware.geoip').toProvider(GeoipMiddlewareProvider);
     this.bind('middleware.auditTrail').toProvider(AuditTrailMiddlewareProvider);
+    this.bind('middleware.session').toProvider(SessionMiddlewareProvider);
+    this.bind('middleware.device').toProvider(DeviceMiddlewareProvider);
+    this.bind('middleware.sessionGeoipUpdater').toProvider(SessionGeoipUpdaterMiddlewareProvider);
 
     this.bind(IpFilterBindings.IP_LIST).to(process.env.DENIED_IPS?.split(',').map(s => s.trim()) || []);
     this.bind(IpFilterBindings.OPTIONS).to({

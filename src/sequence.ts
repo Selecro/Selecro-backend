@@ -35,37 +35,45 @@ export class MySequence implements SequenceHandler {
     @inject('middleware.geoip') private geoipMiddleware: Middleware,
     @inject('middleware.auditTrail') private auditTrailMiddleware: Middleware,
     @inject('middleware.jwt-auth') private jwtAuthMiddleware: Middleware,
+    @inject('middleware.session') private sessionMiddleware: Middleware,
+    @inject('middleware.device') private deviceMiddleware: Middleware,
+    @inject('middleware.sessionGeoipUpdater') private sessionGeoipUpdaterMiddleware: Middleware,
   ) { }
 
   async handle(context: RequestContext) {
     const {request, response} = context;
 
-    const runMiddleware = async (middleware: Middleware) => {
-      let nextCalled = false;
-      await middleware(context, () => {
-        nextCalled = true;
-        return Promise.resolve();
-      });
-      return nextCalled;
-    };
+    const chain = [
+      this.apiVersioningMiddleware,
+      this.maintenanceMiddleware,
+      this.rateLimitMiddleware,
+      this.ipFilterMiddleware,
+      this.correlationIdMiddleware,
+      this.auditTrailMiddleware,
+      this.geoipMiddleware,
+      this.featureFlagsMiddleware,
+      this.inputSanitizerMiddleware,
+      this.cookieParserMiddleware,
+      this.deviceMiddleware,
+      this.sessionMiddleware,
+      this.sessionGeoipUpdaterMiddleware,
+      this.jwtAuthMiddleware,
+      ...(process.env.NODE_ENV === 'production' ? [this.hmacMiddleware] : []),
+      this.csrfMiddleware,
+      this.tenantMiddleware,
+    ];
 
     try {
-      if (!(await runMiddleware(this.apiVersioningMiddleware))) return;
-      if (!(await runMiddleware(this.maintenanceMiddleware))) return;
-      if (!(await runMiddleware(this.rateLimitMiddleware))) return;
-      if (!(await runMiddleware(this.ipFilterMiddleware))) return;
-      if (!(await runMiddleware(this.correlationIdMiddleware))) return;
-      if (!(await runMiddleware(this.auditTrailMiddleware))) return;
-      if (!(await runMiddleware(this.geoipMiddleware))) return;
-      if (!(await runMiddleware(this.featureFlagsMiddleware))) return;
-      if (!(await runMiddleware(this.inputSanitizerMiddleware))) return;
-      if (!(await runMiddleware(this.cookieParserMiddleware))) return;
-      if (!(await runMiddleware(this.jwtAuthMiddleware))) return;
-      if (process.env.NODE_ENV === 'production') {
-        if (!(await runMiddleware(this.hmacMiddleware))) return;
+      for (const middleware of chain) {
+        let nextCalled = false;
+        await middleware(context, () => {
+          nextCalled = true;
+          return Promise.resolve();
+        });
+        if (!nextCalled) {
+          return;
+        }
       }
-      if (!(await runMiddleware(this.csrfMiddleware))) return;
-      if (!(await runMiddleware(this.tenantMiddleware))) return;
 
       const route = this.findRoute(request);
       const args = await this.parseParams(request, route);

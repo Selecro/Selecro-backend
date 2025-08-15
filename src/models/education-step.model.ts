@@ -38,12 +38,9 @@ import {EducationMode, User} from '.';
 export class EducationStep extends Entity {
   @property({
     type: 'number',
-    required: true,
-    jsonSchema: {nullable: false},
-    scale: 0,
-    generated: false,
-    id: 1,
-    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
+    id: true,
+    generated: true,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: true},
   })
   id: number;
 

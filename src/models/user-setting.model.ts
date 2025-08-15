@@ -47,11 +47,8 @@ export enum UserDisplayStatus {
 export class UserSetting extends Entity {
   @property({
     type: 'number',
-    required: true,
-    jsonSchema: {nullable: false},
-    scale: 0,
+    id: true,
     generated: false,
-    id: 1,
     postgresql: {columnName: 'user_id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: false},
   })
   user_id: number;
