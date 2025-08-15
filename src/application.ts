@@ -37,6 +37,7 @@ import {
   RateLimitMiddlewareProvider,
   SessionGeoipUpdaterMiddlewareProvider,
   SessionMiddlewareProvider,
+  StaticApiKeyMiddlewareProvider,
   TenantResolverMiddlewareProvider
 } from './middleware';
 import {JwtAuthMiddleware} from './middleware/jwt-auth.middleware';
@@ -207,12 +208,13 @@ export class SelecroBackendApplication extends BootMixin(
     this.bind('middleware.tenant').toProvider(TenantResolverMiddlewareProvider);
     this.bind('middleware.hmac').toProvider(HmacMiddlewareProvider);
     this.bind('middleware.apiVersioning').toProvider(ApiVersioningMiddlewareProvider);
-    this.bind('middleware.feature-flags').toProvider(FeatureFlagMiddlewareProvider);
+    this.bind('middleware.featureFlags').toProvider(FeatureFlagMiddlewareProvider);
     this.bind('middleware.geoip').toProvider(GeoipMiddlewareProvider);
     this.bind('middleware.auditTrail').toProvider(AuditTrailMiddlewareProvider);
     this.bind('middleware.session').toProvider(SessionMiddlewareProvider);
     this.bind('middleware.device').toProvider(DeviceMiddlewareProvider);
     this.bind('middleware.sessionGeoipUpdater').toProvider(SessionGeoipUpdaterMiddlewareProvider);
+    this.bind('middleware.staticApiKey').toProvider(StaticApiKeyMiddlewareProvider);
 
     this.bind(IpFilterBindings.IP_LIST).to(process.env.DENIED_IPS?.split(',').map(s => s.trim()) || []);
     this.bind(IpFilterBindings.OPTIONS).to({
