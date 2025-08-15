@@ -18,7 +18,6 @@ import {
   DeviceRepository
 } from '../repositories';
 
-// The payload for push notifications
 export interface PushPayload {
   title: string;
   notification_message: string;
@@ -88,13 +87,29 @@ export class PushNotificationService {
     await this.firebaseAdmin.messaging().send(message);
   }
 
-  public async sendToAllUsers(payload: PushPayload): Promise<void> {
+  public async sendToAllDevices(payload: PushPayload): Promise<void> {
     const devices = await this.deviceRepository.find({
       fields: ['device_token'],
     });
     const deviceTokens = devices
       .map(device => device.device_token)
-      .filter(token => token !== undefined);
+      .filter((token): token is string => token !== undefined);
+
+    if (deviceTokens.length > 0) {
+      const message: admin.messaging.MulticastMessage = {
+        notification: {
+          title: payload.title,
+          body: payload.notification_message,
+        },
+        data: {
+          actionUrl: payload.action_url || '',
+          notificationType: payload.notification_type,
+          extraData: payload.extra_data || '',
+        },
+        tokens: deviceTokens,
+      };
+      await this.firebaseAdmin.messaging().sendEachForMulticast(message);
+    }
   }
 
   public async sendToAllRegisteredUsers(payload: PushPayload): Promise<void> {
@@ -103,6 +118,22 @@ export class PushNotificationService {
     });
     const deviceTokens = devices
       .map(device => device.device_token)
-      .filter(token => token !== undefined);
+      .filter((token): token is string => token !== undefined);
+
+    if (deviceTokens.length > 0) {
+      const message: admin.messaging.MulticastMessage = {
+        notification: {
+          title: payload.title,
+          body: payload.notification_message,
+        },
+        data: {
+          actionUrl: payload.action_url || '',
+          notificationType: payload.notification_type,
+          extraData: payload.extra_data || '',
+        },
+        tokens: deviceTokens,
+      };
+      await this.firebaseAdmin.messaging().sendEachForMulticast(message);
+    }
   }
 }

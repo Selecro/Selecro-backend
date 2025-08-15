@@ -97,7 +97,7 @@ export class NotificationService {
     @inject('email.service') private emailService: EmailService,
   ) { }
 
-  public async sendToUser(notificationType: UserNotification, userId: number): Promise<void> {
+  public async sendToUser(notificationType: UserNotification, userId: number, creatorUserId: number): Promise<void> {
     const emailPayload: EmailPayload = {
       subject: `Notification: ${notificationType}`,
       templateName: notificationType,
@@ -116,11 +116,11 @@ export class NotificationService {
     };
 
     await this.emailService.sendToUser(userId, emailPayload);
-    await this.inAppNotificationService.sendForUser(userId, inAppPayload);
+    await this.inAppNotificationService.sendForUser(userId, creatorUserId, inAppPayload);
     await this.pushNotificationService.sendToUser(userId, pushPayload);
   }
 
-  public async sendToAllRegisteredUsers(notificationType: GroupNotification): Promise<void> {
+  public async sendToAllRegisteredUsers(notificationType: GroupNotification, creatorUserId: number): Promise<void> {
     const emailPayload: EmailPayload = {
       subject: `Group Notification: ${notificationType}`,
       templateName: notificationType,
@@ -139,7 +139,7 @@ export class NotificationService {
     };
 
     await this.emailService.sendToAllRegisteredUsers(emailPayload);
-    await this.inAppNotificationService.sendForAllRegisteredUsers(inAppPayload);
+    await this.inAppNotificationService.sendForAllRegisteredUsers(creatorUserId, inAppPayload);
     await this.pushNotificationService.sendToAllRegisteredUsers(pushPayload);
   }
 

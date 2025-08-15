@@ -20,7 +20,16 @@ import {
   UserRepository
 } from '../repositories';
 
-export type InAppPayload = Omit<Notification, 'id' | 'user_id' | 'creator_user_id' | 'created_at' | 'read_at' | 'deleted' | 'deleted_at' | 'deleted_by'>;
+export type InAppPayload = Pick<Notification,
+  'title' |
+  'notification_message' |
+  'notification_type' |
+  'image_url' |
+  'action_url' |
+  'extra_data' |
+  'read_at' |
+  'deleted_by'
+>;
 
 @injectable({
   scope: BindingScope.SINGLETON
@@ -40,10 +49,11 @@ export class InAppNotificationService {
     this.firebaseAdmin = firebaseAdmin;
   }
 
-  public async sendForUser(userId: number, payload: InAppPayload): Promise<void> {
+  public async sendForUser(userId: number, creatorUserId: number, payload: InAppPayload): Promise<void> {
     const savedNotification = await this.notificationRepository.create(new Notification({
       ...payload,
       user_id: userId,
+      creator_user_id: creatorUserId,
     }));
 
     const devices = await this.deviceRepository.find({
@@ -73,7 +83,7 @@ export class InAppNotificationService {
     }
   }
 
-  public async sendForAllRegisteredUsers(payload: InAppPayload): Promise<void> {
+  public async sendForAllRegisteredUsers(creatorUserId: number, payload: InAppPayload): Promise<void> {
     const devices = await this.deviceRepository.find({
       fields: ['user_id', 'device_token'],
     });
@@ -82,7 +92,33 @@ export class InAppNotificationService {
     await Promise.all(userIds.map(userId => this.notificationRepository.create(new Notification({
       ...payload,
       user_id: userId,
+      creator_user_id: creatorUserId,
     }))));
+
+    const deviceTokens = devices
+      .map(device => device.device_token)
+      .filter((token): token is string => token !== undefined);
+
+    if (deviceTokens.length > 0) {
+      const message: admin.messaging.MulticastMessage = {
+        notification: {
+          title: payload.title,
+          body: payload.notification_message,
+        },
+        data: {
+          notificationType: payload.notification_type,
+          actionUrl: payload.action_url || '',
+        },
+        tokens: deviceTokens,
+      };
+      await this.firebaseAdmin.messaging().sendEachForMulticast(message);
+    }
+  }
+
+  public async sendToAllDevices(payload: InAppPayload): Promise<void> {
+    const devices = await this.deviceRepository.find({
+      fields: ['device_token'],
+    });
 
     const deviceTokens = devices
       .map(device => device.device_token)
