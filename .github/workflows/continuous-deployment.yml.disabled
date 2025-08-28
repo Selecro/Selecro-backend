@@ -1,5 +1,4 @@
 name: Deploy LoopBack 4 to K3s via Tailscale
-name: Deploy LoopBack 4 to K3s via Tailscale
 
 on:
   push:
@@ -7,9 +6,6 @@ on:
       - dev
       - main
   workflow_dispatch:
-
-env:
-  IMAGE_REGISTRY: selecro
 
 env:
   IMAGE_REGISTRY: selecro
@@ -54,7 +50,6 @@ jobs:
           fetch-depth: 0
 
       - name: Set deployment variables
-        id: vars
         id: vars
         run: |
           BRANCH="${GITHUB_REF#refs/heads/}"
@@ -124,9 +119,6 @@ jobs:
       - name: Install kubectl
         uses: azure/setup-kubectl@0c5e050edfed71b2b50731ab044d42489d51c129
         with:
-          version: 'latest'
-
-      - name: Configure kubectl
           version: 'latest'
 
       - name: Configure kubectl
