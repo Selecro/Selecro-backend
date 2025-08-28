@@ -1,10 +1,10 @@
 import {AuthenticationComponent} from '@loopback/authentication';
 import {
   JWTAuthenticationComponent,
-  JWTService,
+  UserRepository
 } from '@loopback/authentication-jwt';
 import {BootMixin} from '@loopback/boot';
-import {ApplicationConfig} from '@loopback/core';
+import {ApplicationConfig, createBindingFromClass} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
 import {RestApplication} from '@loopback/rest';
 import {
@@ -12,29 +12,87 @@ import {
   RestExplorerComponent,
 } from '@loopback/rest-explorer';
 import {ServiceMixin} from '@loopback/service-proxy';
+import csurf from 'csurf';
 import * as dotenv from 'dotenv';
+import helmet from 'helmet';
 import path from 'path';
+import {PingController} from './controllers';
+import {KafkaDataSource, KmsDataSource, PostgresqlDataSource, RedisDataSource} from './datasources';
+import {AuthorizationInterceptor, EncryptionInterceptor} from './interceptors';
+import {startHardDeleteJob} from './jobs';
+import {COOKIE_PARSER_OPTIONS, CorrelationIdBindings, FirebaseBindings, IpFilterBindings} from './keys';
 import {
-  InstructionStepController,
-  PingController,
-  UserController,
-  UserInstructionController,
-  UserLinkController,
-  UserProgressController,
-} from './controllers';
-import {DbDataSource} from './datasources';
+  ApiVersioningMiddlewareProvider,
+  AuditTrailMiddlewareProvider,
+  CookieParserMiddlewareProvider,
+  CorrelationIdMiddlewareProvider,
+  CsrfMiddlewareProvider,
+  DeviceMiddlewareProvider,
+  FeatureFlagMiddlewareProvider,
+  GeoipMiddlewareProvider,
+  HmacMiddlewareProvider,
+  InputSanitizerMiddlewareProvider,
+  IpFilterMiddlewareProvider,
+  MaintenanceMiddlewareProvider,
+  RateLimitMiddlewareProvider,
+  SessionGeoipUpdaterMiddlewareProvider,
+  SessionMiddlewareProvider,
+  StaticApiKeyMiddlewareProvider,
+  TenantResolverMiddlewareProvider
+} from './middleware';
+import {JwtAuthMiddleware} from './middleware/jwt-auth.middleware';
+import {RemoteConfigObserver} from './observers';
+import {FirebaseAdminProvider, RemoteConfigService} from './providers';
 import {
-  InstructionRepository,
-  ProgressRepository,
-  StepRepository,
-  UserLinkRepository,
-  UserRepository,
+  BadgeRepository,
+  CommentRepository,
+  DeviceRepository,
+  DictionaryRepository,
+  EducationModeRepository,
+  EducationStepRepository,
+  FileRepository,
+  FollowerRepository,
+  LoginHistoryRepository,
+  ManualProgressRepository,
+  ManualPurchaseRepository,
+  ManualRepository,
+  ManualStepRepository,
+  NewsDeliveryRepository,
+  NewsRepository,
+  NotificationRepository,
+  OauthAccountRepository,
+  PasswordHistoryRepository,
+  PermissionRepository,
+  RolePermissionRepository,
+  RoleRepository,
+  SessionRepository,
+  SystemLogRepository,
+  ToolRepository,
+  TwoFactorAuthBackupCodeRepository,
+  TwoFactorAuthLogRepository,
+  TwoFactorAuthMethodRepository,
+  UserBadgeRepository,
+  UserFileRepository,
+  UserLocationRepository,
+  UserManualInteractionRepository,
+  UserNotificationSettingRepository,
+  UserRoleRepository,
+  UserSecurityRepository,
+  UserSettingRepository
 } from './repositories';
 import {MySequence} from './sequence';
-import {ImgurService, MyUserService, VaultService} from './services';
-import {EmailService} from './services/email';
-import {BcryptHasher} from './services/hash.password';
+import {
+  EmailService,
+  InAppNotificationService,
+  NotificationService,
+  PermissionService,
+  PushNotificationService,
+  TenantService
+} from './services';
+
 dotenv.config();
+
+const helmetMiddlewareFactory = () => helmet();
 
 export {ApplicationConfig};
 
@@ -44,51 +102,169 @@ export class SelecroBackendApplication extends BootMixin(
   constructor(options: ApplicationConfig = {}) {
     super(options);
 
-    // Set up the custom sequence
     this.sequence(MySequence);
-
-    // Set up default home page
     this.static('/', path.join(__dirname, '../public'));
+    this.restServer.expressMiddleware(helmetMiddlewareFactory);
 
-    // Customize @loopback/rest-explorer configuration here
-    this.configure(RestExplorerBindings.COMPONENT).to({
-      path: '/explorer',
-    });
-    this.component(RestExplorerComponent);
+    this.bind(FirebaseBindings.ADMIN).toProvider(FirebaseAdminProvider);
+    this.service(RemoteConfigService);
+    this.lifeCycleObserver(RemoteConfigObserver);
+    this.lifeCycleObserver(AuditTrailMiddlewareProvider);
+
+    this.bind('middleware.jwt-auth').to(JwtAuthMiddleware);
+
+    this.configureMiddleware();
+
+    if (process.env.NODE_ENV !== 'production') {
+      this.configure(RestExplorerBindings.COMPONENT).to({
+        path: '/explorer',
+      });
+      this.component(RestExplorerComponent);
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      this.add(createBindingFromClass(EncryptionInterceptor));
+    }
+
     this.component(AuthenticationComponent);
     this.component(JWTAuthenticationComponent);
     this.controller(PingController);
-    this.controller(UserController);
-    this.controller(UserProgressController);
-    this.controller(UserLinkController);
-    this.controller(UserInstructionController);
-    this.controller(InstructionStepController);
-    this.repository(UserRepository);
-    this.repository(InstructionRepository);
-    this.repository(StepRepository);
-    this.repository(UserLinkRepository);
-    this.repository(ProgressRepository);
-    this.dataSource(DbDataSource);
 
-    this.bind('services.jwt.service').toClass(JWTService);
-    this.bind('authentication.jwt.expiresIn').to('32d');
-    this.bind('authentication.jwt.secret').to(process.env.JWT_SECRET);
-    this.bind('services.hasher').toClass(BcryptHasher);
-    this.bind('services.hasher.rounds').to(10);
-    this.bind('services.user.service').toClass(MyUserService);
-    this.bind('services.email').toClass(EmailService);
-    this.bind('services.imgur').toClass(ImgurService);
-    this.bind('services.vault').toClass(VaultService);
+    this.service(PermissionService);
+    this.add(createBindingFromClass(AuthorizationInterceptor));
+
+    this.repository(UserRepository);
+    this.repository(FileRepository);
+    this.repository(UserFileRepository);
+    this.repository(UserSettingRepository);
+    this.repository(UserLocationRepository);
+    this.repository(UserNotificationSettingRepository);
+    this.repository(UserSecurityRepository);
+    this.repository(RoleRepository);
+    this.repository(PermissionRepository);
+    this.repository(DeviceRepository);
+    this.repository(LoginHistoryRepository);
+    this.repository(TwoFactorAuthLogRepository);
+    this.repository(SystemLogRepository);
+    this.repository(TwoFactorAuthMethodRepository);
+    this.repository(PasswordHistoryRepository);
+    this.repository(OauthAccountRepository);
+    this.repository(TwoFactorAuthBackupCodeRepository);
+    this.repository(UserRoleRepository);
+    this.repository(RolePermissionRepository);
+    this.repository(SessionRepository);
+    this.repository(FollowerRepository);
+    this.repository(BadgeRepository);
+    this.repository(UserBadgeRepository);
+    this.repository(NotificationRepository);
+    this.repository(NewsRepository);
+    this.repository(NewsDeliveryRepository);
+    this.repository(EducationModeRepository);
+    this.repository(ToolRepository);
+    this.repository(EducationStepRepository);
+    this.repository(DictionaryRepository);
+    this.repository(ManualRepository);
+    this.repository(ManualStepRepository);
+    this.repository(ManualProgressRepository);
+    this.repository(ManualPurchaseRepository);
+    this.repository(UserManualInteractionRepository);
+    this.repository(CommentRepository);
+
+    this.dataSource(PostgresqlDataSource);
+    this.dataSource(KafkaDataSource);
+    this.dataSource(RedisDataSource);
+    this.dataSource(KmsDataSource);
+
+    this.service(TenantService);
+    this.service(NotificationService);
+    this.service(InAppNotificationService);
+    this.service(PushNotificationService);
+    this.service(EmailService);
 
     this.projectRoot = __dirname;
-    // Customize @loopback/boot Booter Conventions here
     this.bootOptions = {
       controllers: {
-        // Customize ControllerBooter Conventions here
         dirs: ['controllers'],
         extensions: ['.controller.js'],
         nested: true,
       },
+      models: {
+        dirs: ['models'],
+        extensions: ['.model.js'],
+        nested: true,
+      },
     };
+    startHardDeleteJob(this);
+  }
+
+  configureMiddleware() {
+    this.bind('middleware.maintenance').toProvider(MaintenanceMiddlewareProvider);
+    this.bind('middleware.rateLimit').toProvider(RateLimitMiddlewareProvider);
+    this.bind('middleware.ipFilter').toProvider(IpFilterMiddlewareProvider);
+    this.bind('middleware.correlationId').toProvider(CorrelationIdMiddlewareProvider);
+    this.bind('middleware.inputSanitizer').toProvider(InputSanitizerMiddlewareProvider);
+    this.bind('middleware.cookieParser').toProvider(CookieParserMiddlewareProvider);
+    this.bind('middleware.csrf').toProvider(CsrfMiddlewareProvider);
+    this.bind('middleware.tenant').toProvider(TenantResolverMiddlewareProvider);
+    this.bind('middleware.hmac').toProvider(HmacMiddlewareProvider);
+    this.bind('middleware.apiVersioning').toProvider(ApiVersioningMiddlewareProvider);
+    this.bind('middleware.featureFlags').toProvider(FeatureFlagMiddlewareProvider);
+    this.bind('middleware.geoip').toProvider(GeoipMiddlewareProvider);
+    this.bind('middleware.auditTrail').toProvider(AuditTrailMiddlewareProvider);
+    this.bind('middleware.session').toProvider(SessionMiddlewareProvider);
+    this.bind('middleware.device').toProvider(DeviceMiddlewareProvider);
+    this.bind('middleware.sessionGeoipUpdater').toProvider(SessionGeoipUpdaterMiddlewareProvider);
+    this.bind('middleware.staticApiKey').toProvider(StaticApiKeyMiddlewareProvider);
+
+    this.bind(IpFilterBindings.IP_LIST).to(process.env.DENIED_IPS?.split(',').map(s => s.trim()) || []);
+    this.bind(IpFilterBindings.OPTIONS).to({
+      mode: 'deny',
+      log: true,
+      logLevel: 'deny',
+    });
+
+    this.bind(CorrelationIdBindings.HEADER_NAME).to('X-Request-ID');
+
+    const cookieParserSecret = process.env.COOKIE_PARSER_SECRET || 'your-super-secret-key-please-change-this';
+    if (cookieParserSecret === 'your-super-secret-key-please-change-this' && process.env.NODE_ENV === 'production') {
+      console.warn('WARNING: COOKIE_PARSER_SECRET is not set in production. Please set a strong, unique secret!');
+    }
+    this.bind('cookieParser.secret').to(cookieParserSecret);
+    const cookieParserOptions = {
+      decode: (val: string) => {
+        try {
+          return decodeURIComponent(val);
+        } catch (e) {
+          return val;
+        }
+      },
+    };
+    this.bind(COOKIE_PARSER_OPTIONS).to(cookieParserOptions);
+
+    const csrfOptions: csurf.CookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    };
+    this.bind('csrf.options').to({cookie: csrfOptions});
+
+    const supportedFromEnv = (process.env.API_SUPPORTED_VERSIONS || 'v1,v2')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const supported = ['', ...supportedFromEnv];
+
+    const versionHeaderFromEnv = process.env.API_VERSION_HEADER || 'x-api-version';
+
+    this.bind('versioning.options').to({
+      supportedVersions: supported.map(s => s.toLowerCase()),
+      versionHeader: versionHeaderFromEnv,
+    });
+
+    this.bind('feature-flags.options').to({
+      supportedFlags: ['new-product-page', 'beta-analytics'],
+    });
+
   }
 }

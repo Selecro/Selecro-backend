@@ -1,254 +1,184 @@
-import {Entity, hasMany, model, property} from '@loopback/repository';
-import {UserLink} from '.';
-import {Instruction} from './instruction.model';
-import {Progress} from './progress.model';
+import {Entity, model, property} from '@loopback/repository';
 
-export enum Language {
-  CZ = 'CZ',
-  EN = 'EN',
+export enum AccountStatus {
+  Active = 'active',
+  Suspended = 'suspended',
+  Deleted = 'deleted',
+  PendingVerification = 'pending_verification'
 }
 
 @model({
-  name: 'user',
+  settings: {
+    idInjection: false,
+    postgresql: {schema: 'public', table: 'user'},
+    indexes: {
+      idx_user_uuid: {
+        keys: {uuid: 1},
+        options: {unique: true}
+      },
+      idx_user_username: {
+        keys: {username: 1},
+        options: {unique: true}
+      },
+      idx_user_email: {
+        keys: {email: 1},
+        options: {unique: true}
+      }
+    }
+  }
 })
 export class User extends Entity {
   @property({
-    type: 'string',
+    type: 'number',
     id: true,
-    defaultFn: 'uuidv4',
-    postgresql: {
-      columnName: 'id',
-      dataLength: null,
-      dataPrecision: 10,
-      dataScale: 0,
-      nullable: 'NO',
-    },
+    generated: true,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: true},
   })
-  id: string;
+  id: number;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'email',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 36,
+    generated: false,
+    index: {unique: true},
+    postgresql: {columnName: 'uuid', dataType: 'character varying', dataLength: 36, nullable: 'NO', generated: false},
   })
-  email: string;
+  uuid: string;
+
+  @property({
+    type: 'string',
+    jsonSchema: {nullable: true},
+    length: 100,
+    generated: false,
+    postgresql: {columnName: 'first_name', dataType: 'character varying', dataLength: 100, nullable: 'YES', generated: false},
+  })
+  first_name?: string;
+
+  @property({
+    type: 'string',
+    jsonSchema: {nullable: true},
+    length: 100,
+    generated: false,
+    postgresql: {columnName: 'last_name', dataType: 'character varying', dataLength: 100, nullable: 'YES', generated: false},
+  })
+  last_name?: string;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'username',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 50,
+    generated: false,
+    index: {unique: true},
+    postgresql: {columnName: 'username', dataType: 'character varying', dataLength: 50, nullable: 'NO', generated: false},
   })
   username: string;
 
   @property({
     type: 'string',
     required: true,
-    postgresql: {
-      columnName: 'password_hash',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'NO',
-    },
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    index: {unique: true},
+    postgresql: {columnName: 'email', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  passwordHash: string;
-
-  @property({
-    type: 'string',
-    required: true,
-    postgresql: {
-      columnName: 'wrapped_dek',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'NO',
-    },
-  })
-  wrappedDEK: string;
-
-  @property({
-    type: 'string',
-    required: true,
-    postgresql: {
-      columnName: 'initialization_vector',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'NO',
-    },
-  })
-  initializationVector: string;
-
-  @property({
-    type: 'string',
-    required: true,
-    postgresql: {
-      columnName: 'kek_salt',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'NO',
-    },
-  })
-  kekSalt: string;
-
-  @property({
-    type: 'string',
-    required: true,
-    postgresql: {
-      columnName: 'language',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'NO',
-    },
-  })
-  language: Language;
+  email: string;
 
   @property({
     type: 'boolean',
     required: true,
-    postgresql: {
-      columnName: 'darkmode',
-      dataType: 'boolean',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'NO',
-      default: false,
-    },
+    jsonSchema: {nullable: false},
+    generated: false,
     default: false,
+    postgresql: {columnName: 'email_verified', dataType: 'boolean', nullable: 'NO', generated: false},
   })
-  darkmode: boolean;
+  email_verified: boolean;
 
   @property({
-    type: 'boolean',
-    required: true,
-    postgresql: {
-      columnName: 'email_verified',
-      dataType: 'boolean',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'NO',
-      default: false,
-    },
-    default: false,
+    type: 'date',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'date_of_birth', dataType: 'date', nullable: 'YES', generated: false},
   })
-  emailVerified: boolean;
+  date_of_birth?: string;
+
+  @property({
+    type: 'string',
+    required: true,
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(AccountStatus)
+    },
+    length: 255,
+    generated: false,
+    default: AccountStatus.PendingVerification,
+    postgresql: {columnName: 'account_status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+  })
+  account_status: AccountStatus;
+
+  @property({
+    type: 'date',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'last_login_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
+  })
+  last_login_at?: string;
+
+  @property({
+    type: 'date',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'last_active_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
+  })
+  last_active_at?: string;
 
   @property({
     type: 'date',
     required: true,
-    postgresql: {
-      columnName: 'date',
-      dataType: 'timestamp with time zone',
-      nullable: 'NO',
-    },
-    default: () => new Date(),
-    valueGenerator: () => 'NOW()',
+    jsonSchema: {nullable: false},
+    generated: false,
+    default: new Date(),
+    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
   })
-  date: Date;
+  created_at: string;
+
+  @property({
+    type: 'date',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    default: new Date(),
+    postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
+  })
+  updated_at: string;
 
   @property({
     type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'nick',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'YES',
-    },
+    jsonSchema: {nullable: true},
+    length: 20,
+    generated: false,
+    postgresql: {columnName: 'phone_number', dataType: 'character varying', dataLength: 20, nullable: 'YES', generated: false},
   })
-  nick?: string | null;
+  phone_number?: string;
 
   @property({
-    type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'bio',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'YES',
-    },
+    type: 'boolean',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    default: false,
+    postgresql: {columnName: 'is_oauth_user', dataType: 'boolean', nullable: 'NO', generated: false},
   })
-  bio?: string | null;
+  is_oauth_user: boolean;
 
-  @property({
-    type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'link',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'YES',
-    },
-  })
-  link?: string | null;
+  // Define well-known properties here
 
-  @property({
-    type: 'string',
-    required: false,
-    postgresql: {
-      columnName: 'delete_hash',
-      dataType: 'text',
-      dataLength: null,
-      dataPrecision: null,
-      dataScale: null,
-      nullable: 'YES',
-    },
-  })
-  deleteHash?: string | null;
-
-  @property.array(String, {
-    required: false,
-    postgresql: {
-      columnName: 'favorites',
-      array: true,
-    },
-    default: () => [],
-  })
-  favorites?: string[];
-
-  @hasMany(() => User, {
-    through: {
-      model: () => UserLink,
-      keyFrom: 'followerId',
-      keyTo: 'followeeId',
-    },
-  })
-  users?: User[];
-
-  @hasMany(() => Instruction, {keyTo: 'userId'})
-  instructions?: Instruction[];
-
-  @hasMany(() => Progress, {keyTo: 'userId'})
-  progresses?: Progress[];
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<User>) {
     super(data);
