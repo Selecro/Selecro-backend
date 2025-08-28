@@ -1,16 +1,21 @@
 # Check out https://hub.docker.com/_/node to select a new base image
 
-# CORRECTED BASE IMAGE: Using 'node:22-bullseye-slim' which is a valid tag on Docker Hub.
-# This will pull the latest Node.js 22.x version built on Debian Bullseye (slim).
-FROM node:22-bullseye-slim
+# UPDATED BASE IMAGE: Using 'node:22-bookworm-slim' which is built on Debian Bookworm (slim)
+# and contains more recent security fixes to address reported vulnerabilities.
+FROM node:22-bookworm-slim
 
-# Set to a non-root built-in user `node`
-USER node
+# Update system packages to address known vulnerabilities (run as root)
+RUN apt-get update && \
+  apt-get upgrade -y && \
+  rm -rf /var/lib/apt/lists/*
 
-# Create app directory (with user `node`)
-RUN mkdir -p /home/node/app
+# Create app directory and set ownership to non-root `node` user
+RUN mkdir -p /home/node/app && chown node:node /home/node/app
 
 WORKDIR /home/node/app
+
+# Switch to the non-root built-in user `node` for installing dependencies and running the app
+USER node
 
 # Install app dependencies
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
