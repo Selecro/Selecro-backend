@@ -1,0 +1,168 @@
+name: Deploy LoopBack 4 to K3s via Tailscale
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+  workflow_dispatch:
+
+env:
+  IMAGE_REGISTRY: selecro
+
+jobs:
+  ci:
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+  build-and-push:
+    permissions:
+      contents: read
+      pull-requests: write
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set deployment variables
+        id: vars
+        run: |
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          case "$BRANCH" in
+            dev)
+              BACKEND_NAME="backend-dev"
+              ;;
+            main)
+              BACKEND_NAME="backend-main"
+              ;;
+            *)
+              echo "Invalid branch for deployment" && exit 1
+              ;;
+          esac
+          IMAGE_TAG="${{ github.ref_name }}-${{ github.sha }}"
+          IMAGE_NAME="${{ env.IMAGE_REGISTRY }}/${BACKEND_NAME}:${IMAGE_TAG}"
+          echo "BACKEND_NAME=$BACKEND_NAME" >> "$GITHUB_OUTPUT"
+          echo "IMAGE_NAME=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          case "$BRANCH" in
+            dev)
+              BACKEND_NAME="backend-dev"
+              ;;
+            main)
+              BACKEND_NAME="backend-main"
+              ;;
+            *)
+              echo "Invalid branch for deployment" && exit 1
+              ;;
+          esac
+          IMAGE_TAG="${{ github.ref_name }}-${{ github.sha }}"
+          IMAGE_NAME="${{ env.IMAGE_REGISTRY }}/${BACKEND_NAME}:${IMAGE_TAG}"
+          echo "BACKEND_NAME=$BACKEND_NAME" >> "$GITHUB_OUTPUT"
+          echo "IMAGE_NAME=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t "${{ steps.vars.outputs.IMAGE_NAME }}" .
+          docker push "${{ steps.vars.outputs.IMAGE_NAME }}"
+
+  deploy:
+    permissions:
+      contents: read
+      pull-requests: write
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install and authenticate Tailscale
+        run: |
+          curl -fsSL https://tailscale.com/install.sh | sh
+          sudo tailscale up --auth-key=${{ secrets.TAILSCALE_AUTH_KEY }}
+          sudo tailscale status
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@0c5e050edfed71b2b50731ab044d42489d51c129
+        with:
+          version: 'latest'
+
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.K3S_KUBECONFIG }}" | base64 -d > kubeconfig.yaml
+          export KUBECONFIG=$(pwd)/kubeconfig.yaml
+          kubectl config current-context # Verify the context
+
+      - name: Check Cluster Connection
+        run: kubectl cluster-info
+
+      - name: Apply Kubernetes Manifests
+          echo "${{ secrets.K3S_KUBECONFIG }}" | base64 -d > kubeconfig.yaml
+          export KUBECONFIG=$(pwd)/kubeconfig.yaml
+          kubectl config current-context # Verify the context
+
+      - name: Check Cluster Connection
+        run: kubectl cluster-info
+
+      - name: Apply Kubernetes Manifests
+        run: |
+          envsubst < k8s/deployment.yaml | kubectl apply -f -
+          envsubst < k8s/service.yaml | kubectl apply -f -
+        env:
+          BACKEND_NAME: ${{ needs.build-and-push.outputs.BACKEND_NAME }}
+          IMAGE_NAME: ${{ needs.build-and-push.outputs.IMAGE_NAME }}
+          SHORT_SHA: ${{ needs.build-and-push.outputs.SHORT_SHA }}
+
+      - name: Wait for Deployment to be Ready
+        run: kubectl rollout status deployment/${{ needs.build-and-push.outputs.BACKEND_NAME }} --timeout=120s
+
+      - name: Clean up kubeconfig
+        if: always()
+        run: rm -f kubeconfig.yaml
+          envsubst < k8s/deployment.yaml | kubectl apply -f -
+          envsubst < k8s/service.yaml | kubectl apply -f -
+        env:
+          BACKEND_NAME: ${{ needs.build-and-push.outputs.BACKEND_NAME }}
+          IMAGE_NAME: ${{ needs.build-and-push.outputs.IMAGE_NAME }}
+          SHORT_SHA: ${{ needs.build-and-push.outputs.SHORT_SHA }}
+
+      - name: Wait for Deployment to be Ready
+        run: kubectl rollout status deployment/${{ needs.build-and-push.outputs.BACKEND_NAME }} --timeout=120s
+
+      - name: Clean up kubeconfig
+        if: always()
+        run: rm -f kubeconfig.yaml
