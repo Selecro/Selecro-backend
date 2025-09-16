@@ -83,11 +83,10 @@ import {
 import {MySequence} from './sequence';
 import {
   EmailService,
-  InAppNotificationService,
   NotificationService,
   PermissionService,
-  PushNotificationService,
-  TenantService
+  TenantService,
+  UserNotificationService
 } from './services';
 
 dotenv.config();
@@ -177,8 +176,7 @@ export class SelecroBackendApplication extends BootMixin(
 
     this.service(TenantService);
     this.service(NotificationService);
-    this.service(InAppNotificationService);
-    this.service(PushNotificationService);
+    this.service(UserNotificationService);
     this.service(EmailService);
 
     this.projectRoot = __dirname;

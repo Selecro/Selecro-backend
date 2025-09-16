@@ -69,7 +69,7 @@ export function startHardDeleteJob(app: Application) {
       for (const repo of repositories) {
         await repo.deleteAll({
           deleted: true,
-          deletedAt: {lt: hardDeleteThreshold},
+          //deletedAt: {lt: hardDeleteThreshold},
         });
       }
 

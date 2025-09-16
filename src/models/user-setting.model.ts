@@ -1,4 +1,5 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
+import {Session} from '.';
 
 export enum UserLanguagePreference {
   EN = 'en',
@@ -9,7 +10,8 @@ export enum UserDisplayStatus {
   Online = 'online',
   Away = 'away',
   DoNotDisturb = 'do_not_disturb',
-  Invisible = 'invisible'
+  Invisible = 'invisible',
+  NotSet = 'not_set'
 }
 
 @model({
@@ -28,6 +30,12 @@ export enum UserDisplayStatus {
         entity: 'File',
         entityKey: 'id',
         foreignKey: 'profile_picture_file_id'
+      },
+      user_settings_session_id_fkeyRel: {
+        name: 'user_settings_session_id_fkeyRel',
+        entity: 'Session',
+        entityKey: 'id',
+        foreignKey: 'session_id'
       }
     },
     indexes: {
@@ -40,6 +48,9 @@ export enum UserDisplayStatus {
       },
       idx_user_setting_profile_picture_file_id: {
         keys: {profile_picture_file_id: 1}
+      },
+      idx_user_setting_session_id: {
+        keys: {session_id: 1}
       }
     }
   }
@@ -88,14 +99,15 @@ export class UserSetting extends Entity {
   @property({
     type: 'string',
     jsonSchema: {
-      nullable: true,
+      nullable: false,
       enum: Object.values(UserDisplayStatus)
     },
     length: 255,
     generated: false,
-    postgresql: {columnName: 'user_display_status', dataType: 'character varying', dataLength: 255, nullable: 'YES', generated: false},
+    default: UserDisplayStatus.NotSet,
+    postgresql: {columnName: 'user_display_status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  user_display_status?: UserDisplayStatus;
+  user_display_status: UserDisplayStatus;
 
   @property({
     type: 'date',
@@ -121,6 +133,9 @@ export class UserSetting extends Entity {
     postgresql: {columnName: 'profile_picture_file_id', dataType: 'bigint', dataScale: 0, nullable: 'YES', generated: false},
   })
   profile_picture_file_id?: number;
+
+  @belongsTo(() => Session)
+  session_id?: number;
 
   // Define well-known properties here
 

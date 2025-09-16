@@ -1,4 +1,5 @@
-import {Entity, model, property} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
+import {Session} from '.';
 
 @model({
   settings: {
@@ -10,6 +11,12 @@ import {Entity, model, property} from '@loopback/repository';
         entity: 'User',
         entityKey: 'id',
         foreignKey: 'user_id'
+      },
+      user_location_session_id_fkeyRel: {
+        name: 'user_location_session_id_fkeyRel',
+        entity: 'Session',
+        entityKey: 'id',
+        foreignKey: 'session_id'
       }
     },
     indexes: {
@@ -22,6 +29,9 @@ import {Entity, model, property} from '@loopback/repository';
       },
       idx_user_location_city: {
         keys: {city: 1}
+      },
+      idx_user_location_session_id: {
+        keys: {session_id: 1}
       }
     }
   }
@@ -90,6 +100,9 @@ export class UserLocation extends Entity {
     postgresql: {columnName: 'longitude', dataType: 'numeric', dataPrecision: 11, dataScale: 8, nullable: 'YES', generated: false},
   })
   longitude?: number;
+
+  @belongsTo(() => Session)
+  session_id?: number;
 
   // Define well-known properties here
 

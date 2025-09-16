@@ -66,7 +66,6 @@ export class DeviceMiddlewareProvider implements Provider<Middleware> {
 
       const deviceToken = this.request.headers['x-device-token'] as string;
 
-
       const deviceFingerprint = createHash('sha256')
         .update(`${userAgent}-${clientIp}`)
         .digest('hex');
