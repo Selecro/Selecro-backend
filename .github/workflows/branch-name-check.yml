@@ -1,0 +1,28 @@
+name: Branch Name Check
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+
+jobs:
+  check-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        run: |
+          echo "PR head: $GITHUB_HEAD_REF"
+          echo "PR base: $GITHUB_BASE_REF"
+
+          if [[ "$GITHUB_HEAD_REF" == "dev" && "$GITHUB_BASE_REF" == "main" ]]; then
+            echo "✅ Dev to main PR — skipping branch name check."
+            exit 0
+          fi
+
+          if [[ ! "$GITHUB_HEAD_REF" =~ ^(feature|fix|dependabot)/[a-z0-9._-]+$ ]]; then
+            echo "❌ Invalid branch name. Use 'feature/*', 'fix/*', or 'dependabot/*'."
+            exit 1
+          fi
+
+          echo "✅ Branch name is valid"
