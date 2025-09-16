@@ -13,7 +13,7 @@ jobs:
       - name: Check branch name
         run: |
           echo "PR branch: $GITHUB_HEAD_REF"
-          if [[ ! "$GITHUB_HEAD_REF" =~ ^(feature|fix)/[a-z0-9._-]+$ ]]; then
+          if [[ ! "$GITHUB_HEAD_REF" =~ ^(feature|fix|dependabot)/[a-z0-9._-]+$ ]]; then
             echo "❌ Invalid branch name. Use 'feature/*' or 'fix/*'."
             exit 1
           fi
