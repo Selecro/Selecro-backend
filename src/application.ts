@@ -17,7 +17,7 @@ import * as dotenv from 'dotenv';
 import helmet from 'helmet';
 import path from 'path';
 import {PingController} from './controllers';
-import {KafkaDataSource, KmsDataSource, PostgresqlDataSource, RedisDataSource} from './datasources';
+import {KafkaDataSource, KmsDataSource, PostgresqlDataSource, RedisCacheDataSource, RedisContentDataSource, RedisLeaderboardDataSource, RedisQueueDataSource, RedisSecurityDataSource, RedisSessionDataSource} from './datasources';
 import {AuthorizationInterceptor, EncryptionInterceptor} from './interceptors';
 import {startHardDeleteJob} from './jobs';
 import {COOKIE_PARSER_OPTIONS, CorrelationIdBindings, FirebaseBindings, IpFilterBindings} from './keys';
@@ -170,7 +170,12 @@ export class SelecroBackendApplication extends BootMixin(
 
     this.dataSource(PostgresqlDataSource);
     this.dataSource(KafkaDataSource);
-    this.dataSource(RedisDataSource);
+    this.dataSource(RedisSessionDataSource);
+    this.dataSource(RedisContentDataSource);
+    this.dataSource(RedisCacheDataSource);
+    this.dataSource(RedisQueueDataSource);
+    this.dataSource(RedisLeaderboardDataSource);
+    this.dataSource(RedisSecurityDataSource);
     this.dataSource(KmsDataSource);
 
     this.service(TenantService);

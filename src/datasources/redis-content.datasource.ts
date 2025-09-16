@@ -1,10 +1,8 @@
 import {inject, lifeCycleObserver, LifeCycleObserver} from '@loopback/core';
 import {juggler} from '@loopback/repository';
-import * as dotenv from 'dotenv';
-dotenv.config();
 
 const config = {
-  name: 'redis',
+  name: 'RedisContent',
   connector: 'kv-redis',
   url: process.env.REDIS_URL || undefined,
   host: process.env.REDIS_HOST || 'localhost',
@@ -12,7 +10,7 @@ const config = {
     ? Number(process.env.REDIS_PORT_INTERNAL)
     : 6379,
   password: process.env.REDIS_PASSWORD || undefined,
-  db: process.env.REDIS_DB ? Number(process.env.REDIS_DB) : 0,
+  db: process.env.REDIS_CONTENT_DB ? Number(process.env.REDIS_CONTENT_DB) : 0,
 };
 
 // Observe application's life cycle to disconnect the datasource when
@@ -20,13 +18,13 @@ const config = {
 // gracefully. The `stop()` method is inherited from `juggler.DataSource`.
 // Learn more at https://loopback.io/doc/en/lb4/Life-cycle.html
 @lifeCycleObserver('datasource')
-export class RedisDataSource extends juggler.DataSource
+export class RedisContentDataSource extends juggler.DataSource
   implements LifeCycleObserver {
-  static dataSourceName = 'redis';
+  static dataSourceName = 'RedisContent';
   static readonly defaultConfig = config;
 
   constructor(
-    @inject('datasources.config.redis', {optional: true})
+    @inject('datasources.config.RedisContent', {optional: true})
     dsConfig: object = config,
   ) {
     super(dsConfig);
