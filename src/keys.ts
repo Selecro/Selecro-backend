@@ -10,8 +10,7 @@ import {RemoteConfigParameters} from './providers';
 import {
   EmailService,
   FirebaseAdminService,
-  NotificationService,
-  UserNotificationService
+  NotificationService
 } from './services';
 import {FirebaseOauthStrategy} from './strategies';
 
@@ -83,7 +82,6 @@ export namespace RemoteConfigBindings {
 
 export namespace NotificationBindings {
   export const NOTIFICATION_SERVICE = BindingKey.create<NotificationService>('services.NotificationService');
-  export const USER_NOTIFICATION_SERVICE = BindingKey.create<UserNotificationService>('services.UserNotificationService');
   export const EMAIL_SERVICE = BindingKey.create<EmailService>('services.EmailService');
 }
 

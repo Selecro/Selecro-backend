@@ -85,8 +85,7 @@ import {
   EmailService,
   NotificationService,
   PermissionService,
-  TenantService,
-  UserNotificationService
+  TenantService
 } from './services';
 
 dotenv.config();
@@ -176,7 +175,7 @@ export class SelecroBackendApplication extends BootMixin(
 
     this.service(TenantService);
     this.service(NotificationService);
-    this.service(UserNotificationService);
+    this.service(NotificationService);
     this.service(EmailService);
 
     this.projectRoot = __dirname;

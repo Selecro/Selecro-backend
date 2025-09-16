@@ -220,19 +220,19 @@ INSERT INTO public.education_step (id, education_mode_id, description_cz, descri
 (4, 2, 'Kruhové háčkování', 'Crocheting in the round', '[https://video.example.com/step4](https://video.example.com/step4)', 'some tool', 1, '2025-06-06 09:00:00', '2025-06-06 09:00:00'),
 (5, 2, 'Změna barvy', 'Changing color', '[https://video.example.com/step5](https://video.example.com/step5)', 'some tool', 2, '2025-06-06 09:01:00', '2025-06-06 09:01:00');
 
-INSERT INTO public.manual (id, uuid, creator_user_id, image_file_id, title_cz, title_en, manual_difficulty, price, crochet_abbreviation, crochet_tool, manual_type, manual_status, created_at, updated_at) VALUES
-(1, 'manual-1-uuid', 4, 1, 'První šála', 'First scarf', 'beginner', 0.00, 'hladce', 'jehlice 5mm', 'how_to', 'public', '2025-06-15 11:00:00', '2025-06-15 11:00:00'),
-(2, 'manual-2-uuid', 4, 1, 'Vlněná čepice', 'Wool hat', 'intermediate', 99.00, 'kruhové pletení', 'háčky 4mm', 'how_to', 'premium', '2025-06-15 11:01:00', '2025-06-15 11:01:00'),
-(3, 'manual-3-uuid', 4, 1, 'Oprava svetru', 'Sweater repair', 'beginner', 0.00, NULL, NULL, 'repair', 'public', '2025-06-15 11:02:00', '2025-06-15 11:02:00'),
-(4, 'manual-4-uuid', 4, 1, 'Pokročilé pletení', 'Advanced knitting', 'advanced', 199.90, NULL, NULL, 'how_to', 'premium', '2025-06-15 11:03:00', '2025-06-15 11:03:00'),
-(5, 'manual-5-uuid', 4, 1, 'Háčkovaná deka', 'Crochet blanket', 'intermediate', 0.00, 'řetízek, sloupek', 'háčky 6mm', 'how_to', 'public', '2025-06-15 11:04:00', '2025-06-15 11:04:00');
+INSERT INTO public.manual (id, uuid, creator_user_id, image_file_id, title, manual_difficulty, price, crochet_abbreviation, crochet_tool, manual_type, manual_status, created_at, updated_at) VALUES
+(1, 'manual-1-uuid', 4, 1, 'První šála', 'beginner', 0.00, 'hladce', 'jehlice 5mm', 'how_to', 'public', '2025-06-15 11:00:00', '2025-06-15 11:00:00'),
+(2, 'manual-2-uuid', 4, 1, 'Vlněná čepice', 'intermediate', 99.00, 'kruhové pletení', 'háčky 4mm', 'how_to', 'premium', '2025-06-15 11:01:00', '2025-06-15 11:01:00'),
+(3, 'manual-3-uuid', 4, 1, 'Oprava svetru', 'beginner', 0.00, NULL, NULL, 'repair', 'public', '2025-06-15 11:02:00', '2025-06-15 11:02:00'),
+(4, 'manual-4-uuid', 4, 1, 'Pokročilé pletení', 'advanced', 199.90, NULL, NULL, 'how_to', 'premium', '2025-06-15 11:03:00', '2025-06-15 11:03:00'),
+(5, 'manual-5-uuid', 4, 1, 'Háčkovaná deka', 'intermediate', 0.00, 'řetízek, sloupek', 'háčky 6mm', 'how_to', 'public', '2025-06-15 11:04:00', '2025-06-15 11:04:00');
 
-INSERT INTO public.manual_step (id, manual_id, image_file_id, title_cz, title_en, description_cz, description_en, step_order, created_at, updated_at) VALUES
-(1, 1, 1, 'Nahazování ok', 'Casting on stitches', 'První krok k pletení šály.', 'The first step to knitting a scarf.', 1, '2025-06-16 09:00:00', '2025-06-16 09:00:00'),
-(2, 1, 1, 'Pletení hladce', 'Knitting knit stitches', 'Opakujeme pro celou šálu.', 'Repeat for the entire scarf.', 2, '2025-06-16 09:01:00', '2025-06-16 09:01:00'),
-(3, 1, 1, 'Ukončení', 'Binding off', 'Poslední krok k dokončení projektu.', 'The last step to finish the project.', 3, '2025-06-16 09:02:00', '2025-06-16 09:02:00'),
-(4, 2, 1, 'Začátek čepice', 'Starting the hat', 'Pletení v kruhu.', 'Knitting in the round.', 1, '2025-06-17 10:00:00', '2025-06-17 10:00:00'),
-(5, 2, 1, 'Zmenšování', 'Decreasing', 'Postupné zmenšování obvodu čepice.', 'Gradually decreasing the circumference of the hat.', 2, '2025-06-17 10:01:00', '2025-06-17 10:01:00');
+INSERT INTO public.manual_step (id, manual_id, image_file_id, title, description, step_order, created_at, updated_at) VALUES
+(1, 1, 1, 'Nahazování ok', 'První krok k pletení šály.', 1, '2025-06-16 09:00:00', '2025-06-16 09:00:00'),
+(2, 1, 1, 'Pletení hladce', 'Opakujeme pro celou šálu.', 2, '2025-06-16 09:01:00', '2025-06-16 09:01:00'),
+(3, 1, 1, 'Ukončení', 'Poslední krok k dokončení projektu.', 3, '2025-06-16 09:02:00', '2025-06-16 09:02:00'),
+(4, 2, 1, 'Začátek čepice', 'Pletení v kruhu.', 1, '2025-06-17 10:00:00', '2025-06-17 10:00:00'),
+(5, 2, 1, 'Zmenšování', 'Postupné zmenšování obvodu čepice.', 2, '2025-06-17 10:01:00', '2025-06-17 10:01:00');
 
 INSERT INTO public.manual_progress (id, user_id, manual_id, current_step_id, total_time_seconds, started_at, last_updated_at, is_finished) VALUES
 (1, 1, 1, 2, 3600, '2025-06-20 08:00:00', '2025-06-21 09:00:00', FALSE),

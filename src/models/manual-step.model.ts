@@ -63,35 +63,17 @@ export class ManualStep extends Entity {
     jsonSchema: {nullable: false},
     length: 255,
     generated: false,
-    postgresql: {columnName: 'title_cz', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'title', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
   })
-  title_cz: string;
-
-  @property({
-    type: 'string',
-    required: true,
-    jsonSchema: {nullable: false},
-    length: 255,
-    generated: false,
-    postgresql: {columnName: 'title_en', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
-  })
-  title_en: string;
+  title: string;
 
   @property({
     type: 'string',
     jsonSchema: {nullable: true},
     generated: false,
-    postgresql: {columnName: 'description_cz', dataType: 'text', nullable: 'YES', generated: false},
+    postgresql: {columnName: 'description', dataType: 'text', nullable: 'YES', generated: false},
   })
-  description_cz?: string;
-
-  @property({
-    type: 'string',
-    jsonSchema: {nullable: true},
-    generated: false,
-    postgresql: {columnName: 'description_en', dataType: 'text', nullable: 'YES', generated: false},
-  })
-  description_en?: string;
+  description?: string;
 
   @property({
     type: 'number',
