@@ -2,7 +2,7 @@
 
 # UPDATED BASE IMAGE: Using 'node:22-bookworm-slim' which is built on Debian Bookworm (slim)
 # and contains more recent security fixes to address reported vulnerabilities.
-FROM node:22-bookworm-slim
+FROM node:22.17.1-alpine
 
 # Update system packages to address known vulnerabilities (run as root)
 RUN apt-get update && \
