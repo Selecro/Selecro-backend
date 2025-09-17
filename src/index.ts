@@ -125,7 +125,8 @@ export async function main(options: ApplicationConfig = {}) {
                    ALTER TABLE public.manual ADD CONSTRAINT chk_manual_type
                      CHECK (manual_type IN ('assembly', 'repair', 'how_to', 'guide', 'other'));
                    ALTER TABLE public.manual ADD CONSTRAINT chk_manual_status
-                     CHECK (manual_status IN ('public', 'private', 'premium', 'draft', 'archived'));`,
+                     CHECK (manual_status IN ('public', 'private', 'premium', 'draft', 'archived'));
+                   ALTER TABLE public.manual ADD CONSTRAINT chk_manual_language`,
           ManualPurchase: `ALTER TABLE public.manual_purchase ADD CONSTRAINT chk_purchase_currency
                              CHECK (currency IN ('czk', 'eur', 'usd'));
                            ALTER TABLE public.manual_purchase ADD CONSTRAINT chk_payment_status

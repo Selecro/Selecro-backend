@@ -23,6 +23,11 @@ export enum ManualStatus {
   Archived = 'archived'
 }
 
+export enum ManualLanguage {
+  CZ = 'cz',
+  EN = 'en'
+}
+
 @model({
   settings: {
     idInjection: false,
@@ -60,6 +65,9 @@ export enum ManualStatus {
       },
       idx_manual_deleted_by: {
         keys: {deleted_by: 1}
+      },
+      idx_manual_manual_language: {
+        keys: {manual_language: 1}
       }
     }
   }
@@ -124,6 +132,20 @@ export class Manual extends Entity {
     postgresql: {columnName: 'price', dataType: 'numeric', dataPrecision: 10, dataScale: 2, nullable: 'NO', generated: false},
   })
   price: number;
+
+  @property({
+    type: 'string',
+    required: true,
+    jsonSchema: {
+      nullable: false,
+      enum: Object.values(ManualLanguage),
+    },
+    length: 255,
+    generated: false,
+    default: ManualLanguage.CZ,
+    postgresql: {columnName: 'manual_language', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+  })
+  manual_language: ManualLanguage;
 
   @property({
     type: 'string',

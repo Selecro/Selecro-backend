@@ -220,12 +220,12 @@ INSERT INTO public.education_step (id, education_mode_id, description_cz, descri
 (4, 2, 'Kruhové háčkování', 'Crocheting in the round', '[https://video.example.com/step4](https://video.example.com/step4)', 'some tool', 1, '2025-06-06 09:00:00', '2025-06-06 09:00:00'),
 (5, 2, 'Změna barvy', 'Changing color', '[https://video.example.com/step5](https://video.example.com/step5)', 'some tool', 2, '2025-06-06 09:01:00', '2025-06-06 09:01:00');
 
-INSERT INTO public.manual (id, uuid, creator_user_id, image_file_id, title, manual_difficulty, price, crochet_abbreviation, crochet_tool, manual_type, manual_status, created_at, updated_at) VALUES
-(1, 'manual-1-uuid', 4, 1, 'První šála', 'beginner', 0.00, 'hladce', 'jehlice 5mm', 'how_to', 'public', '2025-06-15 11:00:00', '2025-06-15 11:00:00'),
-(2, 'manual-2-uuid', 4, 1, 'Vlněná čepice', 'intermediate', 99.00, 'kruhové pletení', 'háčky 4mm', 'how_to', 'premium', '2025-06-15 11:01:00', '2025-06-15 11:01:00'),
-(3, 'manual-3-uuid', 4, 1, 'Oprava svetru', 'beginner', 0.00, NULL, NULL, 'repair', 'public', '2025-06-15 11:02:00', '2025-06-15 11:02:00'),
-(4, 'manual-4-uuid', 4, 1, 'Pokročilé pletení', 'advanced', 199.90, NULL, NULL, 'how_to', 'premium', '2025-06-15 11:03:00', '2025-06-15 11:03:00'),
-(5, 'manual-5-uuid', 4, 1, 'Háčkovaná deka', 'intermediate', 0.00, 'řetízek, sloupek', 'háčky 6mm', 'how_to', 'public', '2025-06-15 11:04:00', '2025-06-15 11:04:00');
+INSERT INTO public.manual (id, uuid, creator_user_id, image_file_id, title, manual_difficulty, price, manual_language, crochet_abbreviation, crochet_tool, manual_type, manual_status, created_at, updated_at) VALUES
+(1, 'manual-1-uuid', 4, 1, 'První šála', 'beginner', 0.00, 'cz', 'hladce', 'jehlice 5mm', 'how_to', 'public', '2025-06-15 11:00:00', '2025-06-15 11:00:00'),
+(2, 'manual-2-uuid', 4, 1, 'Vlněná čepice', 'intermediate', 99.00, 'cz', 'kruhové pletení', 'háčky 4mm', 'how_to', 'premium', '2025-06-15 11:01:00', '2025-06-15 11:01:00'),
+(3, 'manual-3-uuid', 4, 1, 'Oprava svetru', 'beginner', 0.00, 'cz', NULL, NULL, 'repair', 'public', '2025-06-15 11:02:00', '2025-06-15 11:02:00'),
+(4, 'manual-4-uuid', 4, 1, 'Pokročilé pletení', 'advanced', 199.90, 'cz', NULL, NULL, 'how_to', 'premium', '2025-06-15 11:03:00', '2025-06-15 11:03:00'),
+(5, 'manual-5-uuid', 4, 1, 'Háčkovaná deka', 'intermediate', 0.00, 'cz', 'řetízek, sloupek', 'háčky 6mm', 'how_to', 'public', '2025-06-15 11:04:00', '2025-06-15 11:04:00');
 
 INSERT INTO public.manual_step (id, manual_id, image_file_id, title, description, step_order, created_at, updated_at) VALUES
 (1, 1, 1, 'Nahazování ok', 'První krok k pletení šály.', 1, '2025-06-16 09:00:00', '2025-06-16 09:00:00'),
