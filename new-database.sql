@@ -14,18 +14,18 @@ CREATE TABLE users (
 );
 
 CREATE TABLE user_profiles (
-    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     first_name VARCHAR(100),
     last_name VARCHAR(100),
     bio TEXT,
-    profile_picture_url VARCHAR(255),
+    profile_picture_file_id BIGINT REFERENCES files(id) ON DELETE SET NULL,
     website_url VARCHAR(255),
     location VARCHAR(100),
     date_of_birth DATE,
     is_private BOOLEAN NOT NULL DEFAULT FALSE,
     follower_count INTEGER NOT NULL DEFAULT 0,
     following_count INTEGER NOT NULL DEFAULT 0,
-    post_count INTEGER NOT NULL DEFAULT 0
+    post_count INTEGER NOT NULL DEFAULT 0,
     status VARCHAR(20) NOT NULL DEFAULT 'offline',
     last_active_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT valid_status CHECK (status IN ('online', 'away', 'busy', 'offline'))
@@ -63,16 +63,15 @@ CREATE TABLE user_notification_preferences (
 );
 
 CREATE TABLE user_auth (
-    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     recovery_email VARCHAR(255) UNIQUE,
     phone_number VARCHAR(20) UNIQUE,
-    two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     last_password_change TIMESTAMPTZ,
     CONSTRAINT check_recovery_email_format CHECK (recovery_email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$')
 );
 
 CREATE TABLE user_metadata (
-    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     sign_up_ip INET NOT NULL,
     last_login_ip INET,
     user_agent_info VARCHAR(255),
@@ -81,11 +80,15 @@ CREATE TABLE user_metadata (
     custom_data JSONB NOT NULL DEFAULT '{}'::jsonb
 );
 
-CREATE TABLE user_history (
+CREATE TABLE user_activity_log (
     id BIGSERIAL PRIMARY KEY,
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
     event_type VARCHAR(50) NOT NULL,
-    event_data JSONB NOT NULL,
+    event_description TEXT,
+    ip_address INET,
+    user_agent TEXT,
+    device_info JSONB,
+    location_info JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -133,14 +136,6 @@ CREATE TABLE user_2fa_backup_codes (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE user_failed_logins (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
-    ip_address INET NOT NULL,
-    user_agent VARCHAR(255),
-    attempt_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
 CREATE TABLE user_login_history (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
@@ -162,14 +157,116 @@ CREATE TABLE user_2fa_login_log (
     fail_reason VARCHAR(50)
 );
 
-CREATE TABLE user_activity_log (
+CREATE TABLE followers (
+    follower_user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    followed_user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(10) NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (follower_user_id, followed_user_id),
+    CONSTRAINT valid_status CHECK (status IN ('pending', 'approved'))
+);
+
+CREATE TABLE user_reports (
+    id BIGSERIAL PRIMARY KEY,
+    reporter_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    reported_user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    reason TEXT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    moderator_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    moderated_at TIMESTAMPTZ,
+    report_details JSONB,
+    attached_file_id BIGINT REFERENCES files(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT valid_report_status CHECK (status IN ('pending', 'approved', 'rejected'))
+);
+
+CREATE TABLE files (
+    id BIGSERIAL PRIMARY KEY,
+    file_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    uploader_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    file_category VARCHAR(255) CHECK (file_category IN ('profile_picture', 'user_document', 'system_document', 'other', 'contract')) NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    file_size_bytes BIGINT NOT NULL,
+    file_checksum VARCHAR(64),
+    storage_url VARCHAR(512) UNIQUE NOT NULL,
+    storage_service VARCHAR(100) NOT NULL,
+    storage_identifier VARCHAR(255) UNIQUE NOT NULL,
+    is_public BOOLEAN NOT NULL DEFAULT TRUE,
+    is_system_generated BOOLEAN NOT NULL DEFAULT FALSE,
+    is_admin_uploaded BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE user_file_access (
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    file_id BIGINT REFERENCES files(id) ON DELETE CASCADE,
+    access_granted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_id, file_id)
+);
+
+CREATE TABLE roles (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE permissions (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL,
+    description TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE role_permissions (
+    role_id INTEGER REFERENCES roles(id) ON DELETE CASCADE,
+    permission_id INTEGER REFERENCES permissions(id) ON DELETE CASCADE,
+    PRIMARY KEY (role_id, permission_id)
+);
+
+CREATE TABLE user_roles (
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    role_id INTEGER REFERENCES roles(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, role_id)
+);
+
+CREATE TABLE public.device (
+    id BIGSERIAL PRIMARY KEY,
+    device_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    device_name VARCHAR(255) NOT NULL,
+    last_used_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    is_trusted BOOLEAN DEFAULT FALSE NOT NULL,
+    biometric_enabled BOOLEAN DEFAULT FALSE NOT NULL,
+    device_language_preference VARCHAR(255) CHECK (device_language_preference IN ('en', 'cs')) DEFAULT 'en' NOT NULL,
+    device_os VARCHAR(100),
+    device_version VARCHAR(100),
+    device_fingerprint TEXT,
+    device_token TEXT,
+    last_known_ip INET,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE public.session (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
-    event_type VARCHAR(50) NOT NULL,
-    event_description TEXT,
-    ip_address INET,
+    device_id BIGINT REFERENCES device(id) ON DELETE CASCADE,
+    session_token TEXT UNIQUE NOT NULL,
+    login_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_active TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
     user_agent TEXT,
-    device_info JSONB,
-    location_info JSONB,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    ip_address INET,
+    country VARCHAR(100),
+    region VARCHAR(100),
+    city VARCHAR(100),
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
+    cookie_consent BOOLEAN DEFAULT FALSE NOT NULL,
+    system_version VARCHAR(100),
+    public_key TEXT
 );
