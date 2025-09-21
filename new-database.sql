@@ -70,6 +70,13 @@ CREATE TABLE user_auth (
     CONSTRAINT check_recovery_email_format CHECK (recovery_email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$')
 );
 
+CREATE TABLE user_points (
+    user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    balance BIGINT NOT NULL DEFAULT 0,
+    last_updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT non_negative_balance CHECK (balance >= 0)
+);
+
 CREATE TABLE user_metadata (
     user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     sign_up_ip INET NOT NULL,
@@ -78,6 +85,25 @@ CREATE TABLE user_metadata (
     referral_source VARCHAR(100),
     is_bot BOOLEAN NOT NULL DEFAULT FALSE,
     custom_data JSONB NOT NULL DEFAULT '{}'::jsonb
+);
+
+CREATE TABLE points_transactions (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL,
+    subtype VARCHAR(50) NOT NULL,
+    amount BIGINT NOT NULL,
+    balance_after_transaction BIGINT NOT NULL,
+    is_revenue BOOLEAN NOT NULL,
+    transaction_metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE password_history (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE user_activity_log (
@@ -232,7 +258,7 @@ CREATE TABLE user_roles (
     PRIMARY KEY (user_id, role_id)
 );
 
-CREATE TABLE public.device (
+CREATE TABLE device (
     id BIGSERIAL PRIMARY KEY,
     device_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
@@ -250,7 +276,7 @@ CREATE TABLE public.device (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE public.session (
+CREATE TABLE session (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
     device_id BIGINT REFERENCES device(id) ON DELETE CASCADE,
@@ -269,4 +295,120 @@ CREATE TABLE public.session (
     cookie_consent BOOLEAN DEFAULT FALSE NOT NULL,
     system_version VARCHAR(100),
     public_key TEXT
+);
+
+CREATE TABLE news (
+    id BIGSERIAL PRIMARY KEY,
+    news_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    title VARCHAR(255) NOT NULL,
+    body TEXT NOT NULL,
+    file_id BIGINT REFERENCES files(id) ON DELETE SET NULL,
+    is_published BOOLEAN NOT NULL DEFAULT FALSE,
+    published_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    author_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT check_news_publish_date CHECK (is_published IS FALSE OR (is_published IS TRUE AND published_at IS NOT NULL))
+);
+
+CREATE TABLE notifications (
+    id BIGSERIAL PRIMARY KEY,
+    audience_type VARCHAR(50) NOT NULL DEFAULT 'user',
+    user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    title VARCHAR(255) NOT NULL,
+    notification_message TEXT NOT NULL,
+    notification_type VARCHAR(255) CHECK (notification_type IN ('info', 'warning', 'error', 'success', 'promotion', 'activity', 'system')) NOT NULL,
+    image_file_id BIGINT REFERENCES files(id) ON DELETE SET NULL,
+    action_url VARCHAR(2048),
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    read_at TIMESTAMPTZ
+);
+
+CREATE TABLE forums (
+    id BIGSERIAL PRIMARY KEY,
+    forum_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    name VARCHAR(255) UNIQUE NOT NULL,
+    description TEXT,
+    author_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE threads (
+    id BIGSERIAL PRIMARY KEY,
+    thread_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    forum_id BIGINT REFERENCES forums(id) ON DELETE CASCADE,
+    author_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    title VARCHAR(255) NOT NULL,
+    body TEXT NOT NULL,
+    is_locked BOOLEAN NOT NULL DEFAULT FALSE,
+    is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE forum_entities (
+    id BIGSERIAL PRIMARY KEY,
+    entity_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    parent_id BIGINT REFERENCES forum_entities(id) ON DELETE CASCADE,
+    author_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    title VARCHAR(255),
+    body TEXT,
+    entity_type VARCHAR(10) NOT NULL CHECK (entity_type IN ('forum', 'thread')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE support_tickets (
+    id BIGSERIAL PRIMARY KEY,
+    ticket_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'closed', 'awaiting_reply')),
+    priority VARCHAR(20) NOT NULL DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'critical')),
+    assigned_to_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    resolution_details TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    closed_at TIMESTAMPTZ
+);
+
+CREATE TABLE content_items (
+    id BIGSERIAL PRIMARY KEY,
+    item_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    parent_item_id BIGINT REFERENCES content_items(id) ON DELETE CASCADE,
+    author_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    item_type VARCHAR(20) NOT NULL CHECK (item_type IN ('comment', 'ticket_message')),
+    thread_id BIGINT REFERENCES threads(id) ON DELETE CASCADE,
+    support_ticket_id BIGINT REFERENCES support_tickets(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE item_reactions (
+    id BIGSERIAL PRIMARY KEY,
+    item_id BIGINT REFERENCES content_items(id) ON DELETE CASCADE,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    reaction_type VARCHAR(20) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (item_id, user_id, reaction_type)
+);
+
+CREATE TABLE item_files (
+    item_id BIGINT REFERENCES content_items(id) ON DELETE CASCADE,
+    file_id BIGINT REFERENCES files(id) ON DELETE CASCADE,
+    PRIMARY KEY (item_id, file_id)
+);
+
+CREATE TABLE ticket_status_history (
+    id BIGSERIAL PRIMARY KEY,
+    ticket_id BIGINT REFERENCES support_tickets(id) ON DELETE CASCADE,
+    old_status VARCHAR(20) NOT NULL,
+    new_status VARCHAR(20) NOT NULL,
+    changed_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    change_reason TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
