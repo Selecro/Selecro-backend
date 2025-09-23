@@ -584,3 +584,136 @@ CREATE TABLE user_manual_interaction (
     session_id BIGINT REFERENCES session(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE product (
+    id BIGSERIAL PRIMARY KEY,
+    product_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    title_cz VARCHAR(255) NOT NULL,
+    title_en VARCHAR(255),
+    description_cz TEXT,
+    description_en TEXT,
+    info_cz TEXT,
+    info_en TEXT,
+    price NUMERIC(10, 2) NOT NULL,
+    limited BOOLEAN DEFAULT FALSE,
+    color VARCHAR(100),
+    size VARCHAR(100),
+    dimensions VARCHAR(100),
+    material VARCHAR(100),
+    weight NUMERIC(10, 2),
+    type_id BIGINT REFERENCES type(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE inventory (
+    id BIGSERIAL PRIMARY KEY,
+    product_id BIGINT REFERENCES product(id) ON DELETE CASCADE,
+    charge_type VARCHAR(50) NOT NULL,
+    quantity_change INTEGER NOT NULL,
+    reason VARCHAR(255),
+    changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE product_themes (
+    product_id BIGINT REFERENCES product(id) ON DELETE CASCADE,
+    theme_id BIGINT REFERENCES themes(id) ON DELETE CASCADE,
+    PRIMARY KEY (product_id, theme_id)
+);
+
+CREATE TABLE product_categories (
+    product_id BIGINT REFERENCES product(id) ON DELETE CASCADE,
+    category_id BIGINT REFERENCES categories(id) ON DELETE CASCADE,
+    PRIMARY KEY (product_id, category_id)
+);
+
+CREATE TABLE review (
+    id BIGSERIAL PRIMARY KEY,
+    review_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    guest_email VARCHAR(255),
+    user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    rating INTEGER CHECK (rating >= 1 AND rating <= 5) NOT NULL,
+    comment TEXT,
+    published_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    product_id BIGINT REFERENCES product(id) ON DELETE CASCADE,
+    CONSTRAINT one_author CHECK ((guest_email IS NOT NULL AND user_id IS NULL) OR (guest_email IS NULL AND user_id IS NOT NULL))
+);
+
+CREATE TABLE cart (
+    id BIGSERIAL PRIMARY KEY,
+    cart_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE cart_item (
+    id BIGSERIAL PRIMARY KEY,
+    cart_id BIGINT REFERENCES cart(id) ON DELETE CASCADE,
+    product_id BIGINT REFERENCES product(id) ON DELETE CASCADE,
+    quantity INTEGER NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (cart_id, product_id)
+);
+
+CREATE TABLE orders (
+    id BIGSERIAL PRIMARY KEY,
+    order_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    guest_email VARCHAR(255),
+    user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    cart_id BIGINT REFERENCES cart(id) ON DELETE SET NULL,
+    total_price NUMERIC(10, 2) NOT NULL,
+    order_status VARCHAR(50) NOT NULL CHECK (order_status IN ('pending', 'processing', 'shipped', 'delivered', 'canceled')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    order_number VARCHAR(255) UNIQUE NOT NULL
+);
+
+CREATE TABLE order_item (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE,
+    product_id BIGINT REFERENCES product(id) ON DELETE SET NULL,
+    quantity INTEGER NOT NULL,
+    unit_price NUMERIC(10, 2) NOT NULL,
+    total_price NUMERIC(10, 2) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE payment (
+    id BIGSERIAL PRIMARY KEY,
+    payment_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    payment_method VARCHAR(100) NOT NULL,
+    payment_status VARCHAR(50) NOT NULL CHECK (payment_status IN ('pending', 'completed', 'failed', 'refunded')),
+    amount_paid NUMERIC(10, 2) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    transaction_id VARCHAR(255) UNIQUE,
+    order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE
+);
+
+CREATE TABLE discount_code (
+    id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    discount_type VARCHAR(50) NOT NULL,
+    discount_value NUMERIC(10, 2) NOT NULL,
+    min_order_value NUMERIC(10, 2),
+    max_uses INTEGER,
+    used_count INTEGER DEFAULT 0,
+    valid_from TIMESTAMPTZ NOT NULL,
+    valid_until TIMESTAMPTZ,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE order_discount (
+    id BIGSERIAL PRIMARY KEY,
+    discount_applied NUMERIC(10, 2) NOT NULL,
+    discount_id BIGINT REFERENCES discount_code(id) ON DELETE CASCADE,
+    order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE
+);
+
+CREATE TABLE refund (
+    id BIGSERIAL PRIMARY KEY,
+    reason TEXT,
+    refund_status VARCHAR(50) NOT NULL CHECK (refund_status IN ('pending', 'completed', 'failed')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE
+);
