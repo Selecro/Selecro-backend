@@ -397,7 +397,7 @@ CREATE TABLE education_mode (
     image_file_id BIGINT REFERENCES files(id) ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    tool_id BIGINT REFERENCES tool(id) ON DELETE SET NULL,
+    tool VARCHAR(255) NOT NULL,
     status VARCHAR(255) CHECK (status IN ('draft', 'published', 'archived')) DEFAULT 'draft' NOT NULL,
     points INT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -409,7 +409,7 @@ CREATE TABLE education_step (
     education_mode_id BIGINT REFERENCES education_mode(id) ON DELETE CASCADE,
     description TEXT,
     video_file_id BIGINT REFERENCES files(id) ON DELETE SET NULL,
-    tool_id BIGINT REFERENCES tool(id) ON DELETE SET NULL,
+    tool VARCHAR(255) NOT NULL,
     step_order INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -431,7 +431,7 @@ CREATE TABLE manual (
     dimension VARCHAR(255),
     points INT,
     time_consuming INTERVAL,
-    manual_form VARCHAR(255),
+    manual_form VARCHAR(255) CHECK (manual_form IN ('draw', 'write')),
     manual_type VARCHAR(20) CHECK (manual_type IN ('assembly', 'repair', 'how_to', 'guide', 'other')),
     status VARCHAR(20) CHECK (status IN ('public', 'premium', 'draft', 'archived')) DEFAULT 'draft' NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -449,6 +449,50 @@ CREATE TABLE manual_step (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (manual_id, step_order)
+);
+
+CREATE TABLE status_history (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    user_report_id BIGINT REFERENCES user_reports(id) ON DELETE CASCADE,
+    manual_id BIGINT REFERENCES manual(id) ON DELETE CASCADE,
+    news_id BIGINT REFERENCES news(id) ON DELETE CASCADE,
+    support_ticket_id BIGINT REFERENCES support_tickets(id) ON DELETE CASCADE,
+    tool_id BIGINT REFERENCES tool(id) ON DELETE CASCADE,
+    dictionary_id BIGINT REFERENCES dictionary(id) ON DELETE CASCADE,
+    education_mode_id BIGINT REFERENCES education_mode(id) ON DELETE CASCADE,
+    old_status VARCHAR(20) NOT NULL,
+    new_status VARCHAR(20) NOT NULL,
+    changed_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    change_reason TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT one_entity_only CHECK (
+        (CASE WHEN user_id IS NOT NULL THEN 1 ELSE 0 END +
+         CASE WHEN user_report_id IS NOT NULL THEN 1 ELSE 0 END +
+         CASE WHEN manual_id IS NOT NULL THEN 1 ELSE 0 END +
+         CASE WHEN news_id IS NOT NULL THEN 1 ELSE 0 END +
+         CASE WHEN support_ticket_id IS NOT NULL THEN 1 ELSE 0 END +
+         CASE WHEN tool_id IS NOT NULL THEN 1 ELSE 0 END +
+         CASE WHEN dictionary_id IS NOT NULL THEN 1 ELSE 0 END +
+         CASE WHEN education_mode_id IS NOT NULL THEN 1 ELSE 0 END) = 1
+    )
+);
+
+CREATE TABLE ratings (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    manual_id BIGINT REFERENCES manual(id) ON DELETE CASCADE,
+    education_mode_id BIGINT REFERENCES education_mode(id) ON DELETE CASCADE,
+    product_id BIGINT REFERENCES product(id) ON DELETE CASCADE,
+    rating_value SMALLINT NOT NULL CHECK (rating_value >= 1 AND rating_value <= 5),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT one_entity_only CHECK (
+        (CASE WHEN manual_id IS NOT NULL THEN 1 ELSE 0 END +
+         CASE WHEN education_mode_id IS NOT NULL THEN 1 ELSE 0 END +
+         CASE WHEN product_id IS NOT NULL THEN 1 ELSE 0 END) = 1
+    ),
+    CONSTRAINT unique_rating UNIQUE (user_id, manual_id, education_mode_id, product_id)
 );
 
 CREATE TABLE entity_files (
@@ -480,43 +524,8 @@ CREATE TABLE entity_files (
          CASE WHEN education_mode_id IS NOT NULL THEN 1 ELSE 0 END +
          CASE WHEN education_mode_step_id IS NOT NULL THEN 1 ELSE 0 END +
          CASE WHEN product_id IS NOT NULL THEN 1 ELSE 0 END) = 1
-    )
-);
-
-CREATE TABLE status_history (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
-    user_report_id BIGINT REFERENCES user_reports(id) ON DELETE CASCADE,
-    manual_id BIGINT REFERENCES manual(id) ON DELETE CASCADE,
-    news_id BIGINT REFERENCES news(id) ON DELETE CASCADE,
-    support_ticket_id BIGINT REFERENCES support_tickets(id) ON DELETE CASCADE,
-    tool_id BIGINT REFERENCES tool(id) ON DELETE CASCADE,
-    dictionary_id BIGINT REFERENCES dictionary(id) ON DELETE CASCADE,
-    education_mode_id BIGINT REFERENCES education_mode(id) ON DELETE CASCADE,
-    entity_type VARCHAR(20) NOT NULL CHECK (entity_type IN ('user', 'user_report', 'manual', 'news', 'ticket', 'tool', 'dictionary', 'education_mode')),
-    old_status VARCHAR(20) NOT NULL,
-    new_status VARCHAR(20) NOT NULL,
-    changed_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    change_reason TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE ratings (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
-    manual_id BIGINT REFERENCES manual(id) ON DELETE CASCADE,
-    education_mode_id BIGINT REFERENCES education_mode(id) ON DELETE CASCADE,
-    product_id BIGINT REFERENCES product(id) ON DELETE CASCADE,
-    rated_entity_type VARCHAR(50) NOT NULL CHECK (rated_entity_type IN ('manual', 'education_mode', 'product')),
-    rating_value SMALLINT NOT NULL CHECK (rating_value >= 1 AND rating_value <= 5),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT unique_rating UNIQUE (user_id, manual_id, education_mode_id, product_id),
-    CONSTRAINT one_entity_only CHECK (
-        (CASE WHEN manual_id IS NOT NULL THEN 1 ELSE 0 END +
-         CASE WHEN education_mode_id IS NOT NULL THEN 1 ELSE 0 END +
-         CASE WHEN product_id IS NOT NULL THEN 1 ELSE 0 END) = 1
-    )
+    ),
+    CONSTRAINT unique_file_per_entity UNIQUE (file_id, thread_id, support_ticket_id, news_id, user_report_id, tool_id, dictionary_id, manual_id, manual_step_id, education_mode_id, education_mode_step_id, product_id)
 );
 
 CREATE TABLE comments (
@@ -550,39 +559,6 @@ CREATE TABLE reactions (
     CONSTRAINT unique_comment_reaction UNIQUE (user_id, comment_id, reaction_type)
 );
 
-
-
-
-
-
-
-
-
-
-
-
-CREATE TABLE themes (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) UNIQUE NOT NULL
-);
-
-CREATE TABLE manual_themes (
-    manual_id BIGINT REFERENCES manual(id) ON DELETE CASCADE,
-    theme_id INTEGER REFERENCES themes(id) ON DELETE CASCADE,
-    PRIMARY KEY (manual_id, theme_id)
-);
-
-CREATE TABLE categories (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) UNIQUE NOT NULL
-);
-
-CREATE TABLE manual_categories (
-    manual_id BIGINT REFERENCES manual(id) ON DELETE CASCADE,
-    category_id INTEGER REFERENCES categories(id) ON DELETE CASCADE,
-    PRIMARY KEY (manual_id, category_id)
-);
-
 CREATE TABLE progress_tracking (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
@@ -590,10 +566,10 @@ CREATE TABLE progress_tracking (
     education_mode_id BIGINT REFERENCES education_mode(id) ON DELETE CASCADE,
     current_step_order INT DEFAULT 0 NOT NULL,
     total_time_seconds INT DEFAULT 0 NOT NULL,
+    counter SMALLINT DEFAULT 0 NOT NULL CHECK (counter >= 0 AND counter <= 100),
+    is_finished BOOLEAN DEFAULT FALSE NOT NULL,
     started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     last_updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    is_finished BOOLEAN DEFAULT FALSE NOT NULL,
-    session_id BIGINT REFERENCES session(id) ON DELETE SET NULL,
     CONSTRAINT one_entity_only CHECK (
         (CASE WHEN manual_id IS NOT NULL THEN 1 ELSE 0 END +
          CASE WHEN education_mode_id IS NOT NULL THEN 1 ELSE 0 END) = 1
@@ -601,50 +577,47 @@ CREATE TABLE progress_tracking (
     CONSTRAINT unique_progress_per_entity UNIQUE (user_id, manual_id, education_mode_id)
 );
 
-CREATE TABLE manual_purchase (
-    id BIGSERIAL PRIMARY KEY,
-    purchase_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
-    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
-    manual_id BIGINT REFERENCES manual(id) ON DELETE CASCADE,
-    purchase_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    price_paid DECIMAL(10, 2) NOT NULL,
-    currency VARCHAR(255) CHECK (currency IN ('czk', 'eur', 'usd')) DEFAULT 'czk' NOT NULL,
-    transaction_id VARCHAR(255) UNIQUE,
-    payment_status VARCHAR(255) CHECK (payment_status IN ('pending', 'completed', 'failed', 'refunded')) DEFAULT 'pending' NOT NULL,
-    session_id BIGINT REFERENCES session(id) ON DELETE SET NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (user_id, manual_id)
-);
-
 CREATE TABLE user_manual_interaction (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
     manual_id BIGINT REFERENCES manual(id) ON DELETE CASCADE,
     interaction_type VARCHAR(255) CHECK (interaction_type IN ('view', 'like', 'share', 'save')) NOT NULL,
-    session_id BIGINT REFERENCES session(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE themes (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) UNIQUE NOT NULL
+);
 
+CREATE TABLE categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) UNIQUE NOT NULL
+);
 
+CREATE TABLE manual_product_themes (
+    id BIGSERIAL PRIMARY KEY,
+    manual_id BIGINT REFERENCES manual(id) ON DELETE CASCADE,
+    product_id BIGINT REFERENCES product(id) ON DELETE CASCADE,
+    theme_id BIGINT REFERENCES themes(id) ON DELETE CASCADE,
+    CONSTRAINT one_entity_only CHECK (
+        (CASE WHEN manual_id IS NOT NULL THEN 1 ELSE 0 END +
+         CASE WHEN product_id IS NOT NULL THEN 1 ELSE 0 END) = 1
+    ),
+    CONSTRAINT unique_theme_link UNIQUE (manual_id, product_id, theme_id)
+);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+CREATE TABLE manual_product_categories (
+    id BIGSERIAL PRIMARY KEY,
+    manual_id BIGINT REFERENCES manual(id) ON DELETE CASCADE,
+    product_id BIGINT REFERENCES product(id) ON DELETE CASCADE,
+    category_id BIGINT REFERENCES categories(id) ON DELETE CASCADE,
+    CONSTRAINT one_entity_only CHECK (
+        (CASE WHEN manual_id IS NOT NULL THEN 1 ELSE 0 END +
+         CASE WHEN product_id IS NOT NULL THEN 1 ELSE 0 END) = 1
+    ),
+    CONSTRAINT unique_category_link UNIQUE (manual_id, product_id, category_id)
+);
 
 CREATE TABLE product (
     id BIGSERIAL PRIMARY KEY,
@@ -671,18 +644,6 @@ CREATE TABLE inventory (
     quantity_change INTEGER NOT NULL,
     reason VARCHAR(255),
     changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE product_themes (
-    product_id BIGINT REFERENCES product(id) ON DELETE CASCADE,
-    theme_id BIGINT REFERENCES themes(id) ON DELETE CASCADE,
-    PRIMARY KEY (product_id, theme_id)
-);
-
-CREATE TABLE product_categories (
-    product_id BIGINT REFERENCES product(id) ON DELETE CASCADE,
-    category_id BIGINT REFERENCES categories(id) ON DELETE CASCADE,
-    PRIMARY KEY (product_id, category_id)
 );
 
 CREATE TABLE cart (
