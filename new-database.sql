@@ -89,7 +89,7 @@ CREATE TABLE user_metadata (
 CREATE TABLE points_transactions (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
-    session_id BIGINT REFERENCES sessions(id) ON DELETE SET NULL,
+    session_id BIGINT REFERENCES session(id) ON DELETE SET NULL,
     type VARCHAR(50) NOT NULL,
     subtype VARCHAR(50) NOT NULL,
     amount BIGINT NOT NULL,
@@ -99,7 +99,7 @@ CREATE TABLE points_transactions (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMPTZ,
     deleted_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE password_history (
@@ -112,7 +112,7 @@ CREATE TABLE password_history (
 CREATE TABLE user_activity_log (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
-    session_id BIGINT REFERENCES sessions(id) ON DELETE SET NULL,
+    session_id BIGINT REFERENCES session(id) ON DELETE SET NULL,
     event_type VARCHAR(50) NOT NULL,
     event_description TEXT,
     ip_address INET,
@@ -177,7 +177,7 @@ CREATE TABLE user_2fa_backup_codes (
 CREATE TABLE user_login_history (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
-    session_id BIGINT REFERENCES sessions(id) ON DELETE SET NULL,
+    session_id BIGINT REFERENCES session(id) ON DELETE SET NULL,
     login_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     ip_address INET NOT NULL,
     user_agent TEXT,
@@ -186,13 +186,13 @@ CREATE TABLE user_login_history (
     country VARCHAR(100),
     deleted_at TIMESTAMPTZ,
     deleted_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE user_2fa_login_log (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
-    session_id BIGINT REFERENCES sessions(id) ON DELETE SET NULL,
+    session_id BIGINT REFERENCES session(id) ON DELETE SET NULL,
     attempted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     is_successful BOOLEAN NOT NULL,
     method_used VARCHAR(20) NOT NULL,
@@ -200,7 +200,7 @@ CREATE TABLE user_2fa_login_log (
     fail_reason VARCHAR(50),
     deleted_at TIMESTAMPTZ,
     deleted_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE followers (
@@ -216,7 +216,7 @@ CREATE TABLE followers (
 CREATE TABLE user_reports (
     id BIGSERIAL PRIMARY KEY,
     reporter_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    session_id BIGINT REFERENCES sessions(id) ON DELETE SET NULL,
+    session_id BIGINT REFERENCES session(id) ON DELETE SET NULL,
     reported_user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
     reason TEXT NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
@@ -235,7 +235,7 @@ CREATE TABLE files (
     id BIGSERIAL PRIMARY KEY,
     file_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     uploader_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    uploader_session_id BIGINT REFERENCES sessions(id) ON DELETE SET NULL,
+    uploader_session_id BIGINT REFERENCES session(id) ON DELETE SET NULL,
     file_category VARCHAR(255) CHECK (file_category IN ('profile_picture', 'user_document', 'system_document', 'other', 'contract')) NOT NULL,
     mime_type VARCHAR(100) NOT NULL,
     file_size_bytes BIGINT NOT NULL,
@@ -308,7 +308,8 @@ CREATE TABLE languages (
 
 CREATE TABLE news (
     id BIGSERIAL PRIMARY KEY,
-    news_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    translation_group_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    language_id INTEGER REFERENCES languages(id) ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
     body TEXT NOT NULL,
     file_id BIGINT REFERENCES files(id) ON DELETE SET NULL,
@@ -324,6 +325,8 @@ CREATE TABLE news (
 
 CREATE TABLE notifications (
     id BIGSERIAL PRIMARY KEY,
+    translation_group_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    language_id INTEGER REFERENCES languages(id) ON DELETE SET NULL,
     audience_type VARCHAR(50) NOT NULL DEFAULT 'user',
     user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
     fcm_token VARCHAR(255),
@@ -376,7 +379,7 @@ CREATE TABLE forums (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMPTZ,
     deleted_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE threads (
@@ -392,14 +395,14 @@ CREATE TABLE threads (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMPTZ,
     deleted_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE support_tickets (
     id BIGSERIAL PRIMARY KEY,
     ticket_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    session_id BIGINT REFERENCES sessions(id) ON DELETE SET NULL,
+    session_id BIGINT REFERENCES session(id) ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'closed', 'awaiting_reply')),
@@ -417,7 +420,8 @@ CREATE TABLE support_tickets (
 
 CREATE TABLE tool (
     id BIGSERIAL PRIMARY KEY,
-    tool_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    translation_group_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    language_id INTEGER REFERENCES languages(id) ON DELETE SET NULL,
     creator_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
@@ -426,12 +430,13 @@ CREATE TABLE tool (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMPTZ,
     deleted_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE dictionary (
     id BIGSERIAL PRIMARY KEY,
-    dictionary_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    translation_group_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    language_id INTEGER REFERENCES languages(id) ON DELETE SET NULL,
     creator_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
@@ -444,12 +449,13 @@ CREATE TABLE dictionary (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMPTZ,
     deleted_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE education_mode (
     id BIGSERIAL PRIMARY KEY,
-    education_mode_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    translation_group_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    language_id INTEGER REFERENCES languages(id) ON DELETE SET NULL,
     creator_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
@@ -460,12 +466,14 @@ CREATE TABLE education_mode (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMPTZ,
     deleted_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE education_step (
     id BIGSERIAL PRIMARY KEY,
-    education_mode_id BIGINT REFERENCES education_mode(id) ON DELETE CASCADE,
+    translation_group_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    language_id INTEGER REFERENCES languages(id) ON DELETE SET NULL,
+    education_mode_id BIGINT REFERENCES education_mode(id) ON DELETE SET NULL,
     description TEXT,
     video_url VARCHAR(2048),
     image_file_id BIGINT REFERENCES files(id) ON DELETE SET NULL,
@@ -479,7 +487,8 @@ CREATE TABLE education_step (
 
 CREATE TABLE manual (
     id BIGSERIAL PRIMARY KEY,
-    manual_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    translation_group_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    language_id INTEGER REFERENCES languages(id) ON DELETE SET NULL,
     creator_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
     manual_difficulty VARCHAR(20) CHECK (manual_difficulty IN ('easy', 'normal', 'hard')) NOT NULL,
@@ -498,11 +507,13 @@ CREATE TABLE manual (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMPTZ,
     deleted_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE manual_step (
     id BIGSERIAL PRIMARY KEY,
+    translation_group_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    language_id INTEGER REFERENCES languages(id) ON DELETE SET NULL,
     manual_id BIGINT REFERENCES manual(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     description TEXT,
@@ -576,12 +587,12 @@ CREATE TABLE entity_files (
     deleted_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT one_entity_only CHECK (
-         CASE WHEN user_report_id IS NOT NULL THEN 1 ELSE 0 END +
+         (CASE WHEN user_report_id IS NOT NULL THEN 1 ELSE 0 END +
          CASE WHEN tool_id IS NOT NULL THEN 1 ELSE 0 END +
          CASE WHEN product_id IS NOT NULL THEN 1 ELSE 0 END +
          CASE WHEN comment_id IS NOT NULL THEN 1 ELSE 0 END) = 1
     ),
-    CONSTRAINT unique_file_per_entity UNIQUE (file_id, thread_id, support_ticket_id, news_id, user_report_id, tool_id, dictionary_id, manual_id, manual_step_id, education_mode_id, education_mode_step_id, product_id)
+    CONSTRAINT unique_file_per_entity UNIQUE (user_report_id, tool_id, product_id, comment_id)
 );
 
 CREATE TABLE comments (
@@ -650,11 +661,15 @@ CREATE TABLE user_manual_interaction (
 
 CREATE TABLE themes (
     id SERIAL PRIMARY KEY,
+    translation_group_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    language_id INTEGER REFERENCES languages(id) ON DELETE SET NULL,
     name VARCHAR(255) UNIQUE NOT NULL
 );
 
 CREATE TABLE categories (
     id SERIAL PRIMARY KEY,
+    translation_group_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    language_id INTEGER REFERENCES languages(id) ON DELETE SET NULL,
     name VARCHAR(255) UNIQUE NOT NULL
 );
 
@@ -684,7 +699,8 @@ CREATE TABLE manual_product_categories (
 
 CREATE TABLE product (
     id BIGSERIAL PRIMARY KEY,
-    product_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    translation_group_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    language_id INTEGER REFERENCES languages(id) ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     info TEXT,
@@ -700,11 +716,13 @@ CREATE TABLE product (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMPTZ,
     deleted_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE product_types (
     id SERIAL PRIMARY KEY,
+    translation_group_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    language_id INTEGER REFERENCES languages(id) ON DELETE SET NULL,
     name VARCHAR(100) UNIQUE NOT NULL,
     description TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
