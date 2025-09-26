@@ -3,7 +3,7 @@ CREATE TABLE users (
     user_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     username VARCHAR(30) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -298,6 +298,26 @@ CREATE TABLE session (
     cookie_consent BOOLEAN DEFAULT FALSE NOT NULL,
     system_version VARCHAR(100),
     public_key TEXT
+);
+
+CREATE TABLE user_webauthn_credentials (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  credential_id BYTEA NOT NULL,
+  credential_id_b64 TEXT GENERATED ALWAYS AS (encode(credential_id, 'base64')) STORED,
+  public_key BYTEA NOT NULL,
+  sign_count BIGINT NOT NULL DEFAULT 0,
+  transports TEXT[],
+  attestation_type VARCHAR(50),
+  aaguid UUID,
+  rp_id TEXT,
+  credential_name VARCHAR(255),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_used_at TIMESTAMPTZ,
+  is_revoked BOOLEAN NOT NULL DEFAULT FALSE,
+  attestation_statement JSONB,
+  authenticator_meta JSONB,
+  UNIQUE (user_id, credential_id),
 );
 
 CREATE TABLE languages (
