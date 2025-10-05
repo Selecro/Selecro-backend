@@ -83,7 +83,7 @@
     "loopback-connector-rest": "^5.0.9",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
-    "nodemailer": "^7.0.5",
+    "nodemailer": "^7.0.6",
     "path": "^0.12.7",
     "path-to-regexp": "^8.2.0",
     "pdfkit": "^0.17.2",
