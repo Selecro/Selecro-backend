@@ -20,8 +20,10 @@ jobs:
             exit 0
           fi
 
-          if [[ ! "$GITHUB_HEAD_REF" =~ ^(feature|fix|dependabot)/[a-z0-9._-]+$ ]]; then
-            echo "❌ Invalid branch name. Use 'feature/*', 'fix/*', or 'dependabot/*'."
+          if [[ ! "$GITHUB_HEAD_REF" =~ ^(feature|fix)/[a-z0-9._-]+$ \
+             && ! "$GITHUB_HEAD_REF" =~ ^dependabot/.+$ \
+             && ! "$GITHUB_HEAD_REF" =~ ^snyk-upgrade-[a-z0-9]+$ ]]; then
+            echo "❌ Invalid branch name. Use 'feature/*', 'fix/*', 'dependabot/*', or 'snyk-upgrade-*'."
             exit 1
           fi
 
