@@ -11,7 +11,7 @@ export class CorsMiddlewareProvider implements Provider<Middleware> {
   constructor(
     @inject(CORS_OPTIONS, {optional: true})
     private options: CorsOptions = {
-      origin: true,
+      origin: false,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
