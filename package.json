@@ -105,7 +105,7 @@
     "@types/geoip-lite": "^1.4.4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
-    "@types/node": "^24.6.2",
+    "@types/node": "^24.7.2",
     "@types/nodemailer": "^7.0.2",
     "@types/pdfkit": "^0.17.3",
     "eslint": "^8.57.1",
