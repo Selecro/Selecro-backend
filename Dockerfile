@@ -2,12 +2,12 @@
 
 # UPDATED BASE IMAGE: Using 'node:22-bookworm-slim' which is built on Debian Bookworm (slim)
 # and contains more recent security fixes to address reported vulnerabilities.
-FROM node:22.17.1-alpine
+FROM node:22.20.0-alpine
 
-# Update system packages to address known vulnerabilities (run as root)
-RUN apt-get update && \
-  apt-get upgrade -y && \
-  rm -rf /var/lib/apt/lists/*
+# Update and upgrade Alpine packages
+RUN apk update && \
+    apk upgrade && \
+    rm -rf /var/cache/apk/*
 
 # Create app directory and set ownership to non-root `node` user
 RUN mkdir -p /home/node/app && chown node:node /home/node/app
