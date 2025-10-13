@@ -1,61 +1,15 @@
-import {belongsTo, Entity, model, property} from '@loopback/repository';
-import {File, User} from '.';
+import {Entity, model, property} from '@loopback/repository';
 
-export enum NewsStatus {
-  Active = 'active',
-  Draft = 'draft',
-  Archived = 'archived'
-}
-
-@model({
-  settings: {
-    idInjection: false,
-    postgresql: {schema: 'public', table: 'news'},
-    foreignKeys: {
-      news_creator_user_id_fkeyRel: {
-        name: 'news_creator_user_id_fkeyRel',
-        entity: 'User',
-        entityKey: 'id',
-        foreignKey: 'creator_user_id'
-      },
-      news_image_file_id_fkeyRel: {
-        name: 'news_image_file_id_fkeyRel',
-        entity: 'File',
-        entityKey: 'id',
-        foreignKey: 'image_file_id'
-      },
-      news_deleted_by_fkeyRel: {
-        name: 'news_deleted_by_fkeyRel',
-        entity: 'User',
-        entityKey: 'id',
-        foreignKey: 'deleted_by'
-      }
-    },
-    indexes: {
-      idx_news_creator_user_id: {
-        keys: {creator_user_id: 1}
-      },
-      idx_news_image_file_id: {
-        keys: {image_file_id: 1}
-      },
-      idx_news_news_status: {
-        keys: {news_status: 1}
-      },
-      idx_news_published_at: {
-        keys: {published_at: 1}
-      },
-      idx_news_deleted_by: {
-        keys: {deleted_by: 1}
-      }
-    }
-  }
-})
+@model({settings: {idInjection: false, postgresql: {schema: 'public', table: 'news'}}})
 export class News extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: true},
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'NO', generated: false},
   })
   id: number;
 
@@ -63,18 +17,19 @@ export class News extends Entity {
     type: 'string',
     required: true,
     jsonSchema: {nullable: false},
-    length: 36,
     generated: false,
-    index: {unique: true},
-    postgresql: {columnName: 'uuid', dataType: 'character varying', dataLength: 36, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'translation_group_id', dataType: 'uuid', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  uuid: string;
+  translationGroupId: string;
 
-  @belongsTo(() => User)
-  creator_user_id: number;
-
-  @belongsTo(() => File)
-  image_file_id?: number;
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'language_id', dataType: 'integer', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  languageId?: number;
 
   @property({
     type: 'string',
@@ -82,100 +37,98 @@ export class News extends Entity {
     jsonSchema: {nullable: false},
     length: 255,
     generated: false,
-    postgresql: {columnName: 'title_cz', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'title', dataType: 'character varying', dataLength: 255, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  title_cz: string;
-
-  @property({
-    type: 'string',
-    required: true,
-    jsonSchema: {nullable: false},
-    length: 255,
-    generated: false,
-    postgresql: {columnName: 'title_en', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
-  })
-  title_en: string;
+  title: string;
 
   @property({
     type: 'string',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    postgresql: {columnName: 'content_cz', dataType: 'text', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'body', dataType: 'text', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  content_cz: string;
+  body: string;
+
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'file_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  fileId?: number;
 
   @property({
     type: 'string',
     required: true,
     jsonSchema: {nullable: false},
+    length: 20,
     generated: false,
-    postgresql: {columnName: 'content_en', dataType: 'text', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'status', dataType: 'character varying', dataLength: 20, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  content_en: string;
+  status: string;
 
   @property({
     type: 'date',
     jsonSchema: {nullable: true},
     generated: false,
-    postgresql: {columnName: 'published_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
+    postgresql: {columnName: 'published_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
   })
-  published_at?: string;
-
-  @property({
-    type: 'string',
-    required: true,
-    jsonSchema: {
-      nullable: false,
-      enum: Object.values(NewsStatus)
-    },
-    length: 255,
-    generated: false,
-    default: NewsStatus.Draft,
-    postgresql: {columnName: 'news_status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
-  })
-  news_status: NewsStatus;
+  publishedAt?: string;
 
   @property({
     type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    default: new Date(),
-    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'created_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  created_at: string;
+  createdAt: string;
 
   @property({
     type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    default: new Date(),
-    postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'updated_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  updated_at: string;
+  updatedAt: string;
+
+  @property({
+    type: 'date',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'deleted_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
+  })
+  deletedAt?: string;
+
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'deleted_by_user_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  deletedByUserId?: number;
 
   @property({
     type: 'boolean',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    default: false,
-    postgresql: {columnName: 'deleted', dataType: 'boolean', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'is_deleted', dataType: 'boolean', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  deleted: boolean;
+  isDeleted: boolean;
 
   @property({
-    type: 'date',
+    type: 'number',
     jsonSchema: {nullable: true},
+    scale: 0,
     generated: false,
-    postgresql: {columnName: 'deleted_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
+    postgresql: {columnName: 'author_user_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
   })
-  deleted_at?: string;
-
-  @belongsTo(() => User)
-  deleted_by?: number;
+  authorUserId?: number;
 
   // Define well-known properties here
 

@@ -30,41 +30,69 @@ export async function migrate(args: string[]) {
 
   const modelsInOrder = [
     'User',
+    'Language',
     'Device',
     'Session',
     'File',
-    'UserFile',
+    'UserProfile',
     'UserSetting',
-    'UserLocation',
-    'UserNotificationSetting',
-    'UserSecurity',
+    'UserConsent',
+    'UserNotificationPreference',
+    "UserAuth",
+    'UserPoint',
+    'UserMetadata',
+    'PointTransaction',
+    'PasswordHistory',
+    'UserActivityLog',
+    'OauthProvider',
+    'UserOauthAccount',
+    'User_2faMethod',
+    'User_2faBackupCode',
+    'UserLoginHistory',
+    'User_2faLoginLog',
+    'Follower',
+    'UserReport',
+    'UserFileAccess',
+    'UserWebauthnCredential',
+    'News',
+    'Notification',
     'Role',
     'Permission',
-    'UserRole',
     'RolePermission',
-    'LoginHistory',
-    'TwoFactorAuthLog',
-    'SystemLog',
-    'TwoFactorAuthMethod',
-    'PasswordHistory',
-    'OauthAccount',
-    'TwoFactorAuthBackupCode',
-    'Follower',
-    'Badge',
-    'UserBadge',
-    'Notification',
-    'News',
-    'NewsDelivery',
+    'UserRole',
+    'Forum',
+    'Thread',
+    'SupportTicket',
     'Tool',
     'Dictionary',
     'EducationMode',
     'EducationStep',
     'Manual',
     'ManualStep',
-    'ManualProgress',
-    'ManualPurchase',
-    'UserManualInteraction',
+    'ProductType',
+    'Product',
     'Comment',
+    'StatusHistory',
+    'Rating',
+    'EntityFile',
+    'Reaction',
+    'ProgressTracking',
+    'UserManualInteraction',
+    'Theme',
+    'Category',
+    'ManualProductTheme',
+    'ManualProductCategory',
+    'Inventory',
+    'Cart',
+    'CartItem',
+    'SavedCart',
+    'Wishlist',
+    'Order',
+    'OrderItem',
+    'Payment',
+    'DiscountCode',
+    'OrderDiscount',
+    'Refund',
   ];
 
   console.log('Migrating all models...');
@@ -75,65 +103,115 @@ export async function migrate(args: string[]) {
   console.log('All models migrated successfully.');
 
   const checkConstraints: {[key: string]: string} = {
-    User: `ALTER TABLE public.user ADD CONSTRAINT chk_user_account_status
-               CHECK (account_status IN ('active', 'suspended', 'deleted', 'pending_verification'));`,
-    File: `ALTER TABLE public.file ADD CONSTRAINT chk_file_type
-               CHECK (file_type IN ('image', 'video', 'document', 'other'));
-             ALTER TABLE public.file ADD CONSTRAINT chk_file_category
-               CHECK (file_category IN ('profile_picture', 'user_uploaded_document', 'system_generated_document', 'invoice', 'report', 'contract', 'other_category'));`,
-    UserSetting: `ALTER TABLE public.user_setting ADD CONSTRAINT chk_user_setting_language
-                                 CHECK (user_language_preference IN ('en', 'cz'));
-                                 ALTER TABLE public.user_setting ADD CONSTRAINT chk_user_setting_display_status
-                                 CHECK (user_display_status IN ('online', 'away', 'do_not_disturb', 'invisible'));`,
-    Role: `ALTER TABLE public.role ADD CONSTRAINT chk_role_name
-               CHECK (role_name IN ('admin', 'user', 'marketer', 'educator', 'customer'));`,
-    Permission: `ALTER TABLE public.permission ADD CONSTRAINT chk_permission_resource
-                                 CHECK (resource_type IN ('user', 'user_setting', 'user_location', 'user_notification_setting', 'user_security', 'file', 'user_file', 'role', 'permission', 'device', 'login_history', 'two_factor_auth_log', 'system_log', 'two_factor_auth_method', 'password_history', 'oauth_account', 'two_factor_auth_backup_code', 'user_role', 'role_permission', 'session', 'follower', 'badge', 'user_badge', 'notification', 'news', 'news_delivery', 'education_mode', 'tool', 'education_step', 'dictionary', 'manual', 'manual_step', 'manual_progress', 'manual_purchase', 'user_manual_interaction', 'comment'));
-                                 ALTER TABLE public.permission ADD CONSTRAINT chk_permission_action
-                                 CHECK (action_type IN ('read', 'write', 'delete', 'update'));`,
-    LoginHistory: `ALTER TABLE public.login_history ADD CONSTRAINT chk_login_status
-                                 CHECK (login_status IN ('success', 'failure', 'pending_2fa'));`,
-    TwoFactorAuthLog: `ALTER TABLE public.two_factor_auth_log ADD CONSTRAINT chk_2fa_log_method
-                                   CHECK (two_factor_auth_log_method_type IN ('email', 'TOTP', 'biometric', 'U2F', 'backup_code'));`,
-    SystemLog: `ALTER TABLE public.system_log ADD CONSTRAINT chk_system_log_type
-                                 CHECK (system_log_type IN ('authentication', 'data_access', 'error', 'system_event'));
-                                 ALTER TABLE public.system_log ADD CONSTRAINT chk_system_action
-                                 CHECK (system_action IN ('create', 'read', 'update', 'delete', 'login', 'logout', 'error'));
-                                 ALTER TABLE public.system_log ADD CONSTRAINT chk_system_severity
-                                 CHECK (system_severity IN ('info', 'warning', 'error', 'debug', 'critical'));`,
-    TwoFactorAuthMethod: `ALTER TABLE public.two_factor_auth_method ADD CONSTRAINT chk_2fa_method_type
-                                     CHECK (two_factor_auth_method_type IN ('email', 'TOTP', 'biometric', 'U2F'));`,
-    OauthAccount: `ALTER TABLE public.oauth_account ADD CONSTRAINT chk_oauth_provider
-                                 CHECK (oauth_provider IN ('google', 'apple', 'github', 'facebook', 'microsoft', 'linkedin'));`,
-    Notification: `ALTER TABLE public.notification ADD CONSTRAINT chk_notification_type
-                                 CHECK (notification_type IN ('info', 'warning', 'error', 'success', 'promotion', 'activity'));`,
-    News: `ALTER TABLE public.news ADD CONSTRAINT chk_news_status
-               CHECK (news_status IN ('active', 'draft', 'archived'));`,
-    NewsDelivery: `ALTER TABLE public.news_delivery ADD CONSTRAINT chk_news_delivery_language
-                                 CHECK (news_delivery_language IN ('cz', 'en'));`,
-    EducationMode: `ALTER TABLE public.education_mode ADD CONSTRAINT chk_education_mode_status
-                                   CHECK (education_mode_status IN ('active', 'draft', 'archived'));`,
-    Tool: `ALTER TABLE public.tool ADD CONSTRAINT chk_tool_status
-               CHECK (tool_status IN ('active', 'draft', 'archived'));`,
-    Dictionary: `ALTER TABLE public.dictionary ADD CONSTRAINT chk_dictionary_status
-                                 CHECK (dictionary_status IN ('active', 'draft', 'archived'));`,
-    Manual: `ALTER TABLE public.manual ADD CONSTRAINT chk_manual_difficulty
-               CHECK (manual_difficulty IN ('beginner', 'intermediate', 'advanced'));
-             ALTER TABLE public.manual ADD CONSTRAINT chk_manual_type
-               CHECK (manual_type IN ('assembly', 'repair', 'how_to', 'guide', 'other'));
-             ALTER TABLE public.manual ADD CONSTRAINT chk_manual_status
-               CHECK (manual_status IN ('public', 'private', 'premium', 'draft', 'archived'));
-             ALTER TABLE public.manual ADD CONSTRAINT chk_manual_language`,
-    ManualPurchase: `ALTER TABLE public.manual_purchase ADD CONSTRAINT chk_purchase_currency
-                                     CHECK (currency IN ('czk', 'eur', 'usd'));
-                                     ALTER TABLE public.manual_purchase ADD CONSTRAINT chk_payment_status
-                                     CHECK (payment_status IN ('pending', 'completed', 'failed', 'refunded'));`,
-    UserManualInteraction: `ALTER TABLE public.user_manual_interaction ADD CONSTRAINT chk_interaction_type
-                                       CHECK (user_manual_interaction_type IN ('view', 'like', 'share', 'save'));`,
-    Comment: `ALTER TABLE public.comment ADD CONSTRAINT chk_comment_on_type
-               CHECK (comment_on_type IN ('manual', 'education_mode'));
-             ALTER TABLE public.comment ADD CONSTRAINT chk_comment_rating
-               CHECK (rating >= 1 AND rating <= 5);`,
+    User: `
+      ALTER TABLE public.user ADD CONSTRAINT check_username_length
+      CHECK (LENGTH(username) >= 3 AND LENGTH(username) <= 30);
+      ALTER TABLE public.user ADD CONSTRAINT check_email_format
+      CHECK (email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$');
+      -- NOTE: 'account_status' check is already in the original SQL as a column default/logic,
+      -- but for completeness, adding an explicit one if it was missed in the initial CREATE.
+      ALTER TABLE public.user ADD CONSTRAINT chk_user_account_status
+      CHECK (account_status IN ('active', 'suspended', 'deleted', 'pending_verification'));
+    `,
+    UserProfile: `
+      ALTER TABLE public.user_profile ADD CONSTRAINT valid_status
+      CHECK (status IN ('online', 'away', 'busy', 'offline'));
+    `,
+    UserAuth: `
+      ALTER TABLE public.user_auth ADD CONSTRAINT check_recovery_email_format
+      CHECK (recovery_email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$');
+    `,
+    UserPoint: `
+      ALTER TABLE public.user_point ADD CONSTRAINT non_negative_balance
+      CHECK (balance >= 0);
+    `,
+    File: `
+      ALTER TABLE public.file ADD CONSTRAINT check_file_category
+      CHECK (file_category IN ('profile_picture', 'user_document', 'system_document', 'other', 'contract'));
+    `,
+    User_2faMethod: `
+      ALTER TABLE public.user_2fa_method ADD CONSTRAINT valid_2fa_method
+      CHECK (method IN ('authenticator', 'sms', 'email', 'security_key'));
+    `,
+    Follower: `
+      ALTER TABLE public.follower ADD CONSTRAINT valid_status
+      CHECK (status IN ('pending', 'approved'));
+    `,
+    UserReport: `
+      ALTER TABLE public.user_report ADD CONSTRAINT check_status
+      CHECK (status IN ('pending', 'approved', 'rejected'));
+    `,
+    News: `
+      ALTER TABLE public.news ADD CONSTRAINT check_status
+      CHECK (status IN ('draft', 'published', 'scheduled', 'archived'));
+    `,
+    Notification: `
+      ALTER TABLE public.notification ADD CONSTRAINT check_notification_type
+      CHECK (notification_type IN ('info', 'warning', 'error', 'success', 'promotion', 'activity', 'system'));
+    `,
+    SupportTicket: `
+      ALTER TABLE public.support_ticket ADD CONSTRAINT check_status
+      CHECK (status IN ('open', 'in_progress', 'closed', 'awaiting_reply'));
+      ALTER TABLE public.support_ticket ADD CONSTRAINT check_priority
+      CHECK (priority IN ('low', 'medium', 'high', 'critical'));
+    `,
+    Tool: `
+      ALTER TABLE public.tool ADD CONSTRAINT check_status
+      CHECK (status IN ('draft', 'published', 'archived'));
+    `,
+    Dictionary: `
+      ALTER TABLE public.dictionary ADD CONSTRAINT check_status
+      CHECK (status IN ('draft', 'published', 'archived'));
+    `,
+    EducationMode: `
+      ALTER TABLE public.education_mode ADD CONSTRAINT check_status
+      CHECK (status IN ('draft', 'published', 'archived'));
+    `,
+    Manual: `
+  	  ALTER TABLE public.manual ADD CONSTRAINT check_manual_difficulty
+  	  CHECK (manual_difficulty IN ('easy', 'normal', 'hard'));
+  	  ALTER TABLE public.manual ADD CONSTRAINT check_manual_form
+  	  CHECK (manual_form IN ('draw', 'write'));
+  	  ALTER TABLE public.manual ADD CONSTRAINT check_manual_type
+  	  CHECK (manual_type IN ('assembly', 'repair', 'how_to', 'guide', 'other'));
+  	  ALTER TABLE public.manual ADD CONSTRAINT check_status
+  	  CHECK (status IN ('public', 'premium', 'draft', 'archived'));
+  	`,
+    Comment: `
+  	  ALTER TABLE public.comment ADD CONSTRAINT check_status
+  	  CHECK (status IN ('draft', 'published', 'moderated', 'archived'));
+  	`,
+    Rating: `
+  	  ALTER TABLE public.rating ADD CONSTRAINT check_rating_value
+  	  CHECK (rating_value >= 1 AND rating_value <= 5);
+  	`,
+    Reaction: `
+  	  -- No explicit CHECK constraint in SQL, just a column. Adding a generic one
+  	  -- to represent possible reaction types.
+  	  ALTER TABLE public.reaction ADD CONSTRAINT chk_reaction_type
+  	  CHECK (reaction_type IN ('like', 'love', 'haha', 'wow', 'sad', 'angry'));
+  	`,
+    UserManualInteraction: `
+  	  ALTER TABLE public.user_manual_interaction ADD CONSTRAINT check_interaction_type
+  	  CHECK (interaction_type IN ('view', 'like', 'share', 'save'));
+  	`,
+    Order: `
+  	  ALTER TABLE public.order ADD CONSTRAINT check_order_status
+  	  CHECK (order_status IN ('pending', 'processing', 'shipped', 'delivered', 'canceled'));
+  	`,
+    Payment: `
+  	  ALTER TABLE public.payment ADD CONSTRAINT check_payment_status
+  	  CHECK (payment_status IN ('pending', 'completed', 'failed', 'refunded'));
+  	`,
+    Refund: `
+  	  ALTER TABLE public.refund ADD CONSTRAINT check_refund_status
+  	  CHECK (refund_status IN ('pending', 'completed', 'failed'));
+  	`,
+    DiscountCode: `
+  	  -- No explicit CHECK constraint in SQL for discount_type, adding a common set
+  	  ALTER TABLE public.discount_code ADD CONSTRAINT chk_discount_type
+  	  CHECK (discount_type IN ('percentage', 'fixed_amount'));
+  	`,
   };
 
   for (const model of modelsInOrder) {
@@ -141,10 +219,14 @@ export async function migrate(args: string[]) {
     if (constraintSql) {
       console.log(`Adding CHECK constraints for model: ${model}`);
       try {
-        await dataSource.execute(constraintSql);
+        await dataSource.execute(`BEGIN; ${constraintSql} COMMIT;`);
         console.log(`✅ CHECK constraints for ${model} added successfully.`);
       } catch (err) {
-        console.error(`Error adding CHECK constraints for ${model}:`, err);
+        if (err.message.includes('already exists')) {
+          console.warn(`⚠️ CHECK constraint for ${model} already exists. Skipping.`);
+        } else {
+          console.error(`Error adding CHECK constraints for ${model}:`, err);
+        }
       }
     }
   }
@@ -169,10 +251,22 @@ export async function migrate(args: string[]) {
     );
 
     const nonAutoIncrementTables = [
+      'user_profile',
       'user_setting',
-      'user_location',
-      'user_notification_setting',
-      'user_security',
+      'user_consent',
+      'user_notification_preference',
+      'user_auth',
+      'user_point',
+      'user_metadata',
+      'user_oauth_account',
+      'user_file_access',
+      'user_role',
+      'role_permission',
+      'follower',
+      'manual_product_theme',
+      'manual_product_category',
+      'wishlist',
+      'cart_item',
     ];
 
     for (const model of underscoreModels) {

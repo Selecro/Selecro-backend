@@ -1,157 +1,116 @@
 import {Entity, model, property} from '@loopback/repository';
 
-export enum AccountStatus {
-  Active = 'active',
-  Suspended = 'suspended',
-  Deleted = 'deleted',
-  PendingVerification = 'pending_verification'
-}
-
-@model({
-  name: 'user',
-  settings: {
-    description: 'User',
-    forceId: true,
-    strict: true,
-    hiddenProperties: [],//
-    indexes: {},//
-    scope: {},
-    base: 'Entity',
-    idInjection: true,
-    plural: 'users',
-    strictObjectIDCoercion: false,
-    foreignKeys: {},//
-    hidden: [],//
-    visible: [],//
-    relations: {},
-    mixins: {},
-    postgresql: {
-      schema: 'public',
-      table: 'user',
-    },
-  },
-})
+@model({settings: {idInjection: false, postgresql: {schema: 'public', table: 'user'}}})
 export class User extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {columnName: 'id', dataType: 'bigint', nullable: 'NO', generated: true},
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'NO', generated: false},
   })
   id: number;
 
   @property({
     type: 'string',
     required: true,
-    length: 36,
-    postgresql: {columnName: 'uuid', dataType: 'character varying', dataLength: 36, nullable: 'NO'},
-    index: {unique: true},
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'user_uuid', dataType: 'uuid', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  uuid: string;
-
-  @property({
-    type: 'string',
-    length: 100,
-    postgresql: {columnName: 'first_name', dataType: 'character varying', dataLength: 100, nullable: 'YES'},
-  })
-  first_name?: string;
-
-  @property({
-    type: 'string',
-    length: 100,
-    postgresql: {columnName: 'last_name', dataType: 'character varying', dataLength: 100, nullable: 'YES'},
-  })
-  last_name?: string;
+  userUuid: string;
 
   @property({
     type: 'string',
     required: true,
-    length: 50,
-    postgresql: {columnName: 'username', dataType: 'character varying', dataLength: 50, nullable: 'NO'},
+    jsonSchema: {nullable: false},
+    length: 30,
+    generated: false,
     index: {unique: true},
+    postgresql: {columnName: 'username', dataType: 'character varying', dataLength: 30, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
   username: string;
 
   @property({
     type: 'string',
     required: true,
+    jsonSchema: {nullable: false},
     length: 255,
-    postgresql: {columnName: 'email', dataType: 'character varying', dataLength: 255, nullable: 'NO'},
+    generated: false,
     index: {unique: true},
+    postgresql: {columnName: 'email', dataType: 'character varying', dataLength: 255, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
   email: string;
 
   @property({
+    type: 'string',
+    jsonSchema: {nullable: true},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'password_hash', dataType: 'character varying', dataLength: 255, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
+  })
+  passwordHash?: string;
+
+  @property({
     type: 'boolean',
     required: true,
-    default: false,
-    postgresql: {columnName: 'email_verified', dataType: 'boolean', nullable: 'NO'},
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'is_active', dataType: 'boolean', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  email_verified: boolean;
+  isActive: boolean;
 
   @property({
     type: 'date',
-    postgresql: {columnName: 'date_of_birth', dataType: 'date', nullable: 'YES'},
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'created_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  date_of_birth?: string;
+  createdAt: string;
+
+  @property({
+    type: 'date',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'updated_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  updatedAt: string;
+
+  @property({
+    type: 'date',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'last_login', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
+  })
+  lastLogin?: string;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {enum: Object.values(AccountStatus)},
-    default: AccountStatus.PendingVerification,
-    postgresql: {columnName: 'account_status', dataType: 'character varying', dataLength: 255, nullable: 'NO'},
-  })
-  account_status: AccountStatus;
-
-  @property({
-    type: 'date',
-    postgresql: {columnName: 'last_login_at', dataType: 'timestamp without time zone', nullable: 'YES'},
-  })
-  last_login_at?: string;
-
-  @property({
-    type: 'date',
-    postgresql: {columnName: 'last_active_at', dataType: 'timestamp without time zone', nullable: 'YES'},
-  })
-  last_active_at?: string;
-
-  @property({
-    type: 'date',
-    required: true,
-    default: new Date(),
-    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO'},
-  })
-  created_at: string;
-
-  @property({
-    type: 'date',
-    required: true,
-    default: new Date(),
-    postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO'},
-  })
-  updated_at: string;
-
-  @property({
-    type: 'string',
+    jsonSchema: {nullable: false},
     length: 20,
-    postgresql: {columnName: 'phone_number', dataType: 'character varying', dataLength: 20, nullable: 'YES'},
+    generated: false,
+    postgresql: {columnName: 'account_status', dataType: 'character varying', dataLength: 20, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  phone_number?: string;
+  accountStatus: string;
 
-  @property({
-    type: 'boolean',
-    required: true,
-    default: false,
-    postgresql: {columnName: 'is_oauth_user', dataType: 'boolean', nullable: 'NO'},
-  })
-  is_oauth_user: boolean;
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<User>) {
     super(data);
   }
 }
 
-export interface UserRelations { }
+export interface UserRelations {
+  // describe navigational properties here
+}
 
 export type UserWithRelations = User & UserRelations;

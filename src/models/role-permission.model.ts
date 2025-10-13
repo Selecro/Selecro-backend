@@ -1,46 +1,30 @@
-import {belongsTo, Entity, model, property} from '@loopback/repository';
-import {Permission, Role} from '.';
+import {Entity, model, property} from '@loopback/repository';
 
 @model({
-  settings: {
-    idInjection: false,
-    postgresql: {schema: 'public', table: 'role_permission'},
-    foreignKeys: {
-      role_permission_permission_id_fkeyRel: {
-        name: 'role_permission_permission_id_fkeyRel',
-        entity: 'Permission',
-        entityKey: 'id',
-        foreignKey: 'permission_id'
-      },
-      role_permission_role_id_fkeyRel: {
-        name: 'role_permission_role_id_fkeyRel',
-        entity: 'Role',
-        entityKey: 'id',
-        foreignKey: 'role_id'
-      }
-    },
-    indexes: {
-      uq_role_permission_role_permission: {
-        keys: {role_id: 1, permission_id: 1},
-        options: {unique: true}
-      }
-    }
-  }
+  settings: {idInjection: false, postgresql: {schema: 'public', table: 'role_permission'}}
 })
 export class RolePermission extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: true},
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'role_id', dataType: 'integer', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'NO', generated: false},
   })
-  id: number;
+  roleId: number;
 
-  @belongsTo(() => Role)
-  role_id: number;
-
-  @belongsTo(() => Permission)
-  permission_id: number;
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 2,
+    postgresql: {columnName: 'permission_id', dataType: 'integer', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'NO', generated: false},
+  })
+  permissionId: number;
 
   // Define well-known properties here
 

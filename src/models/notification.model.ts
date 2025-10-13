@@ -1,72 +1,65 @@
-import {belongsTo, Entity, model, property} from '@loopback/repository';
-import {User} from '.';
-
-export enum NotificationType {
-  Info = 'info',
-  Warning = 'warning',
-  Error = 'error',
-  Success = 'success',
-  Promotion = 'promotion',
-  Activity = 'activity'
-}
+import {Entity, model, property} from '@loopback/repository';
 
 @model({
-  settings: {
-    idInjection: false,
-    postgresql: {schema: 'public', table: 'notification'},
-    foreignKeys: {
-      notification_creator_user_id_fkeyRel: {
-        name: 'notification_creator_user_id_fkeyRel',
-        entity: 'User',
-        entityKey: 'id',
-        foreignKey: 'creator_user_id'
-      },
-      notification_user_id_fkeyRel: {
-        name: 'notification_user_id_fkeyRel',
-        entity: 'User',
-        entityKey: 'id',
-        foreignKey: 'user_id'
-      },
-      notification_deleted_by_fkeyRel: {
-        name: 'notification_deleted_by_fkeyRel',
-        entity: 'User',
-        entityKey: 'id',
-        foreignKey: 'deleted_by'
-      }
-    },
-    indexes: {
-      idx_notification_user_id: {
-        keys: {user_id: 1}
-      },
-      idx_notification_creator_user_id: {
-        keys: {creator_user_id: 1}
-      },
-      idx_notification_notification_type: {
-        keys: {notification_type: 1}
-      },
-      idx_notification_read_at: {
-        keys: {read_at: 1}
-      },
-      idx_notification_deleted_by: {
-        keys: {deleted_by: 1}
-      }
-    }
-  }
+  settings: {idInjection: false, postgresql: {schema: 'public', table: 'notification'}}
 })
 export class Notification extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: true},
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'NO', generated: false},
   })
   id: number;
 
-  @belongsTo(() => User)
-  user_id: number;
+  @property({
+    type: 'string',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'translation_group_id', dataType: 'uuid', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  translationGroupId: string;
 
-  @belongsTo(() => User)
-  creator_user_id: number;
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'language_id', dataType: 'integer', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  languageId?: number;
+
+  @property({
+    type: 'string',
+    required: true,
+    jsonSchema: {nullable: false},
+    length: 50,
+    generated: false,
+    postgresql: {columnName: 'audience_type', dataType: 'character varying', dataLength: 50, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  audienceType: string;
+
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'user_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  userId?: number;
+
+  @property({
+    type: 'string',
+    jsonSchema: {nullable: true},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'fcm_token', dataType: 'character varying', dataLength: 255, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
+  })
+  fcmToken?: string;
 
   @property({
     type: 'string',
@@ -74,7 +67,7 @@ export class Notification extends Entity {
     jsonSchema: {nullable: false},
     length: 255,
     generated: false,
-    postgresql: {columnName: 'title', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'title', dataType: 'character varying', dataLength: 255, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
   title: string;
 
@@ -83,87 +76,71 @@ export class Notification extends Entity {
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    postgresql: {columnName: 'notification_message', dataType: 'text', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'notification_message', dataType: 'text', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  notification_message: string;
+  notificationMessage: string;
 
   @property({
     type: 'string',
-    required: true,
-    jsonSchema: {
-      nullable: false,
-      enum: Object.values(NotificationType)
-    },
-    length: 255,
-    generated: false,
-    postgresql: {columnName: 'notification_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
-  })
-  notification_type: NotificationType;
-
-  @property({
-    type: 'string',
-    jsonSchema: {nullable: true},
-    length: 2048,
-    generated: false,
-    postgresql: {columnName: 'image_url', dataType: 'character varying', dataLength: 2048, nullable: 'YES', generated: false},
-  })
-  image_url?: string;
-
-  @property({
-    type: 'string',
-    jsonSchema: {nullable: true},
-    length: 2048,
-    generated: false,
-    postgresql: {columnName: 'action_url', dataType: 'character varying', dataLength: 2048, nullable: 'YES', generated: false},
-  })
-  action_url?: string;
-
-  @property({
-    type: 'string',
-    jsonSchema: {nullable: true},
-    generated: false,
-    postgresql: {columnName: 'extra_data', dataType: 'json', nullable: 'YES', generated: false},
-  })
-  extra_data?: string;
-
-  @property({
-    type: 'date',
-    jsonSchema: {nullable: true},
-    generated: false,
-    postgresql: {columnName: 'read_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
-  })
-  read_at?: string;
-
-  @property({
-    type: 'date',
     required: true,
     jsonSchema: {nullable: false},
+    length: 255,
     generated: false,
-    default: new Date(),
-    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'notification_type', dataType: 'character varying', dataLength: 255, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  created_at: string;
+  notificationType: string;
+
+  @property({
+    type: 'string',
+    jsonSchema: {nullable: true},
+    length: 2048,
+    generated: false,
+    postgresql: {columnName: 'image_url', dataType: 'character varying', dataLength: 2048, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
+  })
+  imageUrl?: string;
+
+  @property({
+    type: 'string',
+    jsonSchema: {nullable: true},
+    length: 2048,
+    generated: false,
+    postgresql: {columnName: 'action_url', dataType: 'character varying', dataLength: 2048, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
+  })
+  actionUrl?: string;
+
+  @property({
+    type: 'string',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'data_payload', dataType: 'jsonb', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
+  })
+  dataPayload?: string;
 
   @property({
     type: 'boolean',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    default: false,
-    postgresql: {columnName: 'deleted', dataType: 'boolean', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'is_read', dataType: 'boolean', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  deleted: boolean;
+  isRead: boolean;
+
+  @property({
+    type: 'date',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'created_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  createdAt: string;
 
   @property({
     type: 'date',
     jsonSchema: {nullable: true},
     generated: false,
-    postgresql: {columnName: 'deleted_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
+    postgresql: {columnName: 'read_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
   })
-  deleted_at?: string;
-
-  @belongsTo(() => User)
-  deleted_by?: number;
+  readAt?: string;
 
   // Define well-known properties here
 

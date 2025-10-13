@@ -1,171 +1,185 @@
-import {belongsTo, Entity, model, property} from '@loopback/repository';
-import {Device, User} from '.';
+import {Entity, model, property} from '@loopback/repository';
 
 @model({
-  settings: {
-    idInjection: false,
-    postgresql: {schema: 'public', table: 'session'},
-    foreignKeys: {
-      session_device_id_fkeyRel: {
-        name: 'session_device_id_fkeyRel',
-        entity: 'Device',
-        entityKey: 'id',
-        foreignKey: 'device_id',
-      },
-      session_user_id_fkeyRel: {
-        name: 'session_user_id_fkeyRel',
-        entity: 'User',
-        entityKey: 'id',
-        foreignKey: 'user_id',
-      },
-    },
-    indexes: {
-      idx_session_token_unique: {
-        keys: {session_token: 1},
-        options: {unique: true},
-      },
-      idx_session_user_id: {
-        keys: {user_id: 1},
-      },
-      idx_session_device_id: {
-        keys: {device_id: 1},
-      },
-      idx_session_is_active: {
-        keys: {is_active: 1},
-      },
-    },
-  },
+  settings: {idInjection: false, postgresql: {schema: 'public', table: 'session'}}
 })
 export class Session extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {columnName: 'id', dataType: 'bigint', nullable: 'NO', generated: true},
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'NO', generated: false},
   })
   id: number;
 
-  @belongsTo(() => User)
-  user_id?: number;
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'user_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  userId?: number;
 
-  @belongsTo(() => Device, {name: 'device'}, {required: true})
-  device_id: number;
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'device_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  deviceId?: number;
 
   @property({
     type: 'string',
     required: true,
-    length: 255,
-    postgresql: {columnName: 'session_token', dataType: 'character varying', dataLength: 255, nullable: 'NO'},
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'session_token', dataType: 'text', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  session_token: string;
+  sessionToken: string;
 
   @property({
     type: 'date',
     required: true,
-    default: new Date(),
-    postgresql: {columnName: 'login_time', dataType: 'timestamp without time zone', nullable: 'NO'},
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'login_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  login_time: string;
+  loginAt: string;
 
   @property({
     type: 'date',
     required: true,
-    default: new Date(),
-    postgresql: {columnName: 'last_active', dataType: 'timestamp without time zone', nullable: 'NO'},
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'last_active', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  last_active: string;
+  lastActive: string;
 
   @property({
     type: 'date',
     required: true,
-    postgresql: {columnName: 'expires_at', dataType: 'timestamp without time zone', nullable: 'NO'},
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'expires_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  expires_at: string;
+  expiresAt: string;
 
   @property({
     type: 'boolean',
     required: true,
-    default: true,
-    postgresql: {columnName: 'is_active', dataType: 'boolean', nullable: 'NO'},
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'is_active', dataType: 'boolean', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  is_active: boolean;
+  isActive: boolean;
 
   @property({
     type: 'string',
-    postgresql: {columnName: 'user_agent', dataType: 'text', nullable: 'YES'},
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'user_agent', dataType: 'text', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
   })
-  user_agent?: string;
+  userAgent?: string;
 
   @property({
     type: 'string',
-    length: 45,
-    postgresql: {columnName: 'ip_address', dataType: 'character varying', dataLength: 45, nullable: 'YES'},
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'ip_address', dataType: 'inet', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
   })
-  ip_address?: string;
+  ipAddress?: string;
 
   @property({
     type: 'string',
+    jsonSchema: {nullable: true},
     length: 100,
-    postgresql: {columnName: 'country', dataType: 'character varying', dataLength: 100, nullable: 'YES'},
+    generated: false,
+    postgresql: {columnName: 'country', dataType: 'character varying', dataLength: 100, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
   })
   country?: string;
 
   @property({
     type: 'string',
+    jsonSchema: {nullable: true},
     length: 100,
-    postgresql: {columnName: 'region', dataType: 'character varying', dataLength: 100, nullable: 'YES'},
+    generated: false,
+    postgresql: {columnName: 'region', dataType: 'character varying', dataLength: 100, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
   })
   region?: string;
 
   @property({
     type: 'string',
+    jsonSchema: {nullable: true},
     length: 100,
-    postgresql: {columnName: 'city', dataType: 'character varying', dataLength: 100, nullable: 'YES'},
+    generated: false,
+    postgresql: {columnName: 'city', dataType: 'character varying', dataLength: 100, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
   })
   city?: string;
 
   @property({
     type: 'number',
+    jsonSchema: {nullable: true},
     precision: 10,
     scale: 8,
-    postgresql: {columnName: 'latitude', dataType: 'numeric', dataPrecision: 10, dataScale: 8, nullable: 'YES'},
+    generated: false,
+    postgresql: {columnName: 'latitude', dataType: 'numeric', dataLength: null, dataPrecision: 10, dataScale: 8, nullable: 'YES', generated: false},
   })
   latitude?: number;
 
   @property({
     type: 'number',
+    jsonSchema: {nullable: true},
     precision: 11,
     scale: 8,
-    postgresql: {columnName: 'longitude', dataType: 'numeric', dataPrecision: 11, dataScale: 8, nullable: 'YES'},
+    generated: false,
+    postgresql: {columnName: 'longitude', dataType: 'numeric', dataLength: null, dataPrecision: 11, dataScale: 8, nullable: 'YES', generated: false},
   })
   longitude?: number;
 
   @property({
     type: 'boolean',
     required: true,
-    default: false,
-    postgresql: {columnName: 'cookie_consent', dataType: 'boolean', nullable: 'NO'},
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'cookie_consent', dataType: 'boolean', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  cookie_consent: boolean;
+  cookieConsent: boolean;
 
   @property({
     type: 'string',
+    jsonSchema: {nullable: true},
     length: 100,
-    postgresql: {columnName: 'system_version', dataType: 'character varying', dataLength: 100, nullable: 'YES'},
+    generated: false,
+    postgresql: {columnName: 'system_version', dataType: 'character varying', dataLength: 100, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
   })
-  system_version?: string;
+  systemVersion?: string;
 
   @property({
     type: 'string',
-    postgresql: {columnName: 'public_key', dataType: 'text', nullable: 'YES'},
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'public_key', dataType: 'text', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
   })
-  public_key?: string;
+  publicKey?: string;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<Session>) {
     super(data);
   }
 }
 
-export interface SessionRelations { }
+export interface SessionRelations {
+  // describe navigational properties here
+}
 
 export type SessionWithRelations = Session & SessionRelations;

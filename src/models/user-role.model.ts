@@ -1,52 +1,48 @@
-import {belongsTo, Entity, model, property} from '@loopback/repository';
-import {Role, User} from '.';
+import {Entity, model, property} from '@loopback/repository';
 
 @model({
-  settings: {
-    idInjection: false,
-    postgresql: {schema: 'public', table: 'user_role'},
-    foreignKeys: {
-      user_role_role_id_fkeyRel: {
-        name: 'user_role_role_id_fkeyRel',
-        entity: 'Role',
-        entityKey: 'id',
-        foreignKey: 'role_id'
-      },
-      user_role_user_id_fkeyRel: {
-        name: 'user_role_user_id_fkeyRel',
-        entity: 'User',
-        entityKey: 'id',
-        foreignKey: 'user_id'
-      }
-    },
-    indexes: {
-      idx_user_role_user_id: {
-        keys: {user_id: 1}
-      },
-      idx_user_role_role_id: {
-        keys: {role_id: 1}
-      },
-      uq_user_role_user_id_role_id: {
-        keys: {user_id: 1, role_id: 1},
-        options: {unique: true}
-      }
-    }
-  }
+  settings: {idInjection: false, postgresql: {schema: 'public', table: 'user_role'}}
 })
 export class UserRole extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: true},
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'user_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'NO', generated: false},
   })
-  id: number;
+  userId: number;
 
-  @belongsTo(() => User)
-  user_id: number;
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 2,
+    postgresql: {columnName: 'role_id', dataType: 'integer', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'NO', generated: false},
+  })
+  roleId: number;
 
-  @belongsTo(() => Role)
-  role_id: number;
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'changed_by_user_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  changedByUserId?: number;
+
+  @property({
+    type: 'date',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'created_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  createdAt: string;
 
   // Define well-known properties here
 

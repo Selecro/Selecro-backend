@@ -1,39 +1,28 @@
-import {belongsTo, Entity, model, property} from '@loopback/repository';
-import {User} from '.';
+import {Entity, model, property} from '@loopback/repository';
 
 @model({
-  settings: {
-    idInjection: false,
-    postgresql: {schema: 'public', table: 'password_history'},
-    foreignKeys: {
-      password_history_user_id_fkeyRel: {
-        name: 'password_history_user_id_fkeyRel',
-        entity: 'User',
-        entityKey: 'id',
-        foreignKey: 'user_id'
-      }
-    },
-    indexes: {
-      idx_password_history_user_id: {
-        keys: {user_id: 1}
-      },
-      idx_password_history_changed_at: {
-        keys: {changed_at: -1}
-      }
-    }
-  }
+  settings: {idInjection: false, postgresql: {schema: 'public', table: 'password_history'}}
 })
 export class PasswordHistory extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: true},
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'NO', generated: false},
   })
   id: number;
 
-  @belongsTo(() => User)
-  user_id: number;
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'user_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  userId?: number;
 
   @property({
     type: 'string',
@@ -41,19 +30,18 @@ export class PasswordHistory extends Entity {
     jsonSchema: {nullable: false},
     length: 255,
     generated: false,
-    postgresql: {columnName: 'password_hash', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'password_hash', dataType: 'character varying', dataLength: 255, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  password_hash: string;
+  passwordHash: string;
 
   @property({
     type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    default: new Date(),
-    postgresql: {columnName: 'changed_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'created_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  changed_at: string;
+  createdAt: string;
 
   // Define well-known properties here
 

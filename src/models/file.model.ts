@@ -1,188 +1,198 @@
-import {belongsTo, Entity, model, property} from '@loopback/repository';
-import {Session, User} from '.';
+import {Entity, model, property} from '@loopback/repository';
 
-export enum FileType {
-  Image = 'image',
-  Video = 'video',
-  Document = 'document',
-  Other = 'other',
-}
-
-export enum FileCategory {
-  ProfilePicture = 'profile_picture',
-  UserUploadedDocument = 'user_uploaded_document',
-  SystemGeneratedDocument = 'system_generated_document',
-  Invoice = 'invoice',
-  Report = 'report',
-  Contract = 'contract',
-  OtherCategory = 'other_category',
-}
-
-@model({
-  settings: {
-    idInjection: false,
-    postgresql: {schema: 'public', table: 'file'},
-    foreignKeys: {
-      file_creator_user_id_fkeyRel: {
-        name: 'file_creator_user_id_fkeyRel',
-        entity: 'User',
-        entityKey: 'id',
-        foreignKey: 'creator_user_id',
-      },
-      file_deleted_by_fkeyRel: {
-        name: 'file_deleted_by_fkeyRel',
-        entity: 'User',
-        entityKey: 'id',
-        foreignKey: 'deleted_by',
-      },
-      file_session_id_fkeyRel: {
-        name: 'file_session_id_fkeyRel',
-        entity: 'Session',
-        entityKey: 'id',
-        foreignKey: 'session_id',
-      },
-    },
-    indexes: {
-      idx_file_uuid: {
-        keys: {uuid: 1},
-        options: {unique: true},
-      },
-      idx_file_creator_user_id: {
-        keys: {creator_user_id: 1},
-      },
-      idx_file_category: {
-        keys: {file_category: 1},
-      },
-      idx_file_deleted: {
-        keys: {deleted: 1},
-      },
-      idx_file_session_id: {
-        keys: {session_id: 1},
-      },
-    },
-  },
-})
+@model({settings: {idInjection: false, postgresql: {schema: 'public', table: 'file'}}})
 export class File extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {columnName: 'id', dataType: 'bigint', nullable: 'NO', generated: true},
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'NO', generated: false},
   })
   id: number;
 
   @property({
     type: 'string',
     required: true,
-    length: 36,
-    postgresql: {columnName: 'uuid', dataType: 'character varying', dataLength: 36, nullable: 'NO'},
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'file_uuid', dataType: 'uuid', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  uuid: string;
-
-  @property({
-    type: 'string',
-    required: true,
-    length: 255,
-    postgresql: {columnName: 'file_name', dataType: 'character varying', dataLength: 255, nullable: 'NO'},
-  })
-  file_name: string;
-
-  @property({
-    type: 'string',
-    required: true,
-    jsonSchema: {enum: Object.values(FileType)},
-    postgresql: {columnName: 'file_type', dataType: 'character varying', dataLength: 255, nullable: 'NO'},
-  })
-  file_type: FileType;
-
-  @property({
-    type: 'string',
-    required: true,
-    jsonSchema: {enum: Object.values(FileCategory)},
-    postgresql: {columnName: 'file_category', dataType: 'character varying', dataLength: 255, nullable: 'NO'},
-  })
-  file_category: FileCategory;
+  fileUuid: string;
 
   @property({
     type: 'number',
-    postgresql: {columnName: 'file_size_bytes', dataType: 'bigint', nullable: 'YES'},
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'uploader_user_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
   })
-  file_size_bytes?: number;
+  uploaderUserId?: number;
 
   @property({
-    type: 'string',
-    length: 100,
-    postgresql: {columnName: 'mime_type', dataType: 'character varying', dataLength: 100, nullable: 'YES'},
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'uploader_session_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
   })
-  mime_type?: string;
-
-  @property({
-    type: 'string',
-    length: 64,
-    postgresql: {columnName: 'file_checksum', dataType: 'character varying', dataLength: 64, nullable: 'YES'},
-  })
-  file_checksum?: string;
+  uploaderSessionId?: number;
 
   @property({
     type: 'string',
     required: true,
-    length: 512,
-    postgresql: {columnName: 'storage_url', dataType: 'character varying', dataLength: 512, nullable: 'NO'},
-  })
-  storage_url: string;
-
-  @property({
-    type: 'string',
-    length: 100,
-    postgresql: {columnName: 'storage_service', dataType: 'character varying', dataLength: 100, nullable: 'YES'},
-  })
-  storage_service?: string;
-
-  @property({
-    type: 'string',
+    jsonSchema: {nullable: false},
     length: 255,
-    postgresql: {columnName: 'storage_identifier', dataType: 'character varying', dataLength: 255, nullable: 'YES'},
+    generated: false,
+    postgresql: {columnName: 'file_category', dataType: 'character varying', dataLength: 255, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  storage_identifier?: string;
+  fileCategory: string;
 
   @property({
-    type: 'date',
+    type: 'string',
     required: true,
-    default: new Date(),
-    postgresql: {columnName: 'uploaded_at', dataType: 'timestamp without time zone', nullable: 'NO'},
+    jsonSchema: {nullable: false},
+    length: 100,
+    generated: false,
+    postgresql: {columnName: 'mime_type', dataType: 'character varying', dataLength: 100, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  uploaded_at: string;
+  mimeType: string;
 
-  @belongsTo(() => User, {name: 'creatorUser'}, {required: true})
-  creator_user_id: number;
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'file_size_bytes', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'NO', generated: false},
+  })
+  fileSizeBytes: number;
 
-  @belongsTo(() => Session)
-  session_id?: number;
+  @property({
+    type: 'string',
+    jsonSchema: {nullable: true},
+    length: 64,
+    generated: false,
+    postgresql: {columnName: 'file_checksum', dataType: 'character varying', dataLength: 64, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
+  })
+  fileChecksum?: string;
+
+  @property({
+    type: 'string',
+    required: true,
+    jsonSchema: {nullable: false},
+    length: 512,
+    generated: false,
+    postgresql: {columnName: 'storage_url', dataType: 'character varying', dataLength: 512, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  storageUrl: string;
+
+  @property({
+    type: 'string',
+    required: true,
+    jsonSchema: {nullable: false},
+    length: 100,
+    generated: false,
+    postgresql: {columnName: 'storage_service', dataType: 'character varying', dataLength: 100, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  storageService: string;
+
+  @property({
+    type: 'string',
+    required: true,
+    jsonSchema: {nullable: false},
+    length: 255,
+    generated: false,
+    postgresql: {columnName: 'storage_identifier', dataType: 'character varying', dataLength: 255, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  storageIdentifier: string;
 
   @property({
     type: 'boolean',
     required: true,
-    default: false,
-    postgresql: {columnName: 'deleted', dataType: 'boolean', nullable: 'NO'},
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'is_public', dataType: 'boolean', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  deleted: boolean;
+  isPublic: boolean;
+
+  @property({
+    type: 'boolean',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'is_system_generated', dataType: 'boolean', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  isSystemGenerated: boolean;
+
+  @property({
+    type: 'boolean',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'is_admin_uploaded', dataType: 'boolean', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  isAdminUploaded: boolean;
+
+  @property({
+    type: 'date',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'created_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  createdAt: string;
+
+  @property({
+    type: 'date',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'updated_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  updatedAt: string;
 
   @property({
     type: 'date',
     jsonSchema: {nullable: true},
     generated: false,
-    postgresql: {columnName: 'deleted_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
+    postgresql: {columnName: 'deleted_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
   })
-  deleted_at?: string;
+  deletedAt?: string;
 
-  @belongsTo(() => User, {name: 'deletedBy'})
-  deleted_by?: number;
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'deleted_by_user_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  deletedByUserId?: number;
+
+  @property({
+    type: 'boolean',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'is_deleted', dataType: 'boolean', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  isDeleted: boolean;
+
+  // Define well-known properties here
+
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
 
   constructor(data?: Partial<File>) {
     super(data);
   }
 }
 
-export interface FileRelations { }
+export interface FileRelations {
+  // describe navigational properties here
+}
 
 export type FileWithRelations = File & FileRelations;

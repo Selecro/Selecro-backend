@@ -1,58 +1,17 @@
-import {belongsTo, Entity, model, property} from '@loopback/repository';
-import {File, User} from '.';
-
-export enum EducationModeStatus {
-  Active = 'active',
-  Draft = 'draft',
-  Archived = 'archived'
-}
+import {Entity, model, property} from '@loopback/repository';
 
 @model({
-  settings: {
-    idInjection: false,
-    postgresql: {schema: 'public', table: 'education_mode'},
-    foreignKeys: {
-      education_mode_creator_user_id_fkeyRel: {
-        name: 'education_mode_creator_user_id_fkeyRel',
-        entity: 'User',
-        entityKey: 'id',
-        foreignKey: 'creator_user_id'
-      },
-      education_mode_image_file_id_fkeyRel: {
-        name: 'education_mode_image_file_id_fkeyRel',
-        entity: 'File',
-        entityKey: 'id',
-        foreignKey: 'image_file_id'
-      },
-      education_mode_deleted_by_fkeyRel: {
-        name: 'education_mode_deleted_by_fkeyRel',
-        entity: 'User',
-        entityKey: 'id',
-        foreignKey: 'deleted_by'
-      }
-    },
-    indexes: {
-      idx_education_mode_creator_user_id: {
-        keys: {creator_user_id: 1}
-      },
-      idx_education_mode_image_file_id: {
-        keys: {image_file_id: 1}
-      },
-      idx_education_mode_creator_education_mode_status: {
-        keys: {creator_user_id: 1, education_mode_status: 1}
-      },
-      idx_education_mode_deleted_by: {
-        keys: {deleted_by: 1}
-      }
-    }
-  }
+  settings: {idInjection: false, postgresql: {schema: 'public', table: 'education_mode'}}
 })
 export class EducationMode extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: true},
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'NO', generated: false},
   })
   id: number;
 
@@ -60,18 +19,28 @@ export class EducationMode extends Entity {
     type: 'string',
     required: true,
     jsonSchema: {nullable: false},
-    length: 36,
     generated: false,
-    index: {unique: true},
-    postgresql: {columnName: 'uuid', dataType: 'character varying', dataLength: 36, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'translation_group_id', dataType: 'uuid', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  uuid: string;
+  translationGroupId: string;
 
-  @belongsTo(() => User)
-  creator_user_id?: number;
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'language_id', dataType: 'integer', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  languageId?: number;
 
-  @belongsTo(() => File)
-  image_file_id?: number;
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'creator_user_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  creatorUserId?: number;
 
   @property({
     type: 'string',
@@ -79,9 +48,17 @@ export class EducationMode extends Entity {
     jsonSchema: {nullable: false},
     length: 255,
     generated: false,
-    postgresql: {columnName: 'title_cz', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'title', dataType: 'character varying', dataLength: 255, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  title_cz: string;
+  title: string;
+
+  @property({
+    type: 'string',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'description', dataType: 'text', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
+  })
+  description?: string;
 
   @property({
     type: 'string',
@@ -89,89 +66,72 @@ export class EducationMode extends Entity {
     jsonSchema: {nullable: false},
     length: 255,
     generated: false,
-    postgresql: {columnName: 'title_en', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'tool', dataType: 'character varying', dataLength: 255, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  title_en: string;
-
-  @property({
-    type: 'string',
-    jsonSchema: {nullable: true},
-    generated: false,
-    postgresql: {columnName: 'description_cz', dataType: 'text', nullable: 'YES', generated: false},
-  })
-  description_cz?: string;
-
-  @property({
-    type: 'string',
-    jsonSchema: {nullable: true},
-    generated: false,
-    postgresql: {columnName: 'description_en', dataType: 'text', nullable: 'YES', generated: false},
-  })
-  description_en?: string;
+  tool: string;
 
   @property({
     type: 'string',
     required: true,
-    jsonSchema: {
-      nullable: false,
-      enum: Object.values(EducationModeStatus)
-    },
+    jsonSchema: {nullable: false},
     length: 255,
     generated: false,
-    default: EducationModeStatus.Draft,
-    postgresql: {columnName: 'education_mode_status', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'status', dataType: 'character varying', dataLength: 255, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  education_mode_status: EducationModeStatus;
+  status: string;
 
   @property({
-    type: 'string',
+    type: 'number',
     jsonSchema: {nullable: true},
-    length: 255,
+    scale: 0,
     generated: false,
-    postgresql: {columnName: 'tool', dataType: 'character varying', dataLength: 255, nullable: 'YES', generated: false},
+    postgresql: {columnName: 'points', dataType: 'integer', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
   })
-  tool?: string;
+  points?: number;
 
   @property({
     type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    default: new Date(),
-    postgresql: {columnName: 'created_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'created_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  created_at: string;
+  createdAt: string;
 
   @property({
     type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    default: new Date(),
-    postgresql: {columnName: 'updated_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'updated_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  updated_at: string;
+  updatedAt: string;
+
+  @property({
+    type: 'date',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'deleted_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
+  })
+  deletedAt?: string;
+
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'deleted_by_user_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  deletedByUserId?: number;
 
   @property({
     type: 'boolean',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    default: false,
-    postgresql: {columnName: 'deleted', dataType: 'boolean', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'is_deleted', dataType: 'boolean', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  deleted: boolean;
-
-  @property({
-    type: 'date',
-    jsonSchema: {nullable: true},
-    generated: false,
-    postgresql: {columnName: 'deleted_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
-  })
-  deleted_at?: string;
-
-  @belongsTo(() => User)
-  deleted_by?: number;
+  isDeleted: boolean;
 
   // Define well-known properties here
 

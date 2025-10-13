@@ -1,72 +1,58 @@
-import {belongsTo, Entity, model, property} from '@loopback/repository';
-import {User} from '.';
+import {Entity, model, property} from '@loopback/repository';
 
 @model({
-  settings: {
-    idInjection: false,
-    postgresql: {schema: 'public', table: 'follower'},
-    foreignKeys: {
-      follower_followed_id_fkeyRel: {
-        name: 'follower_followed_id_fkeyRel',
-        entity: 'User',
-        entityKey: 'id',
-        foreignKey: 'followed_id'
-      },
-      follower_follower_id_fkeyRel: {
-        name: 'follower_follower_id_fkeyRel',
-        entity: 'User',
-        entityKey: 'id',
-        foreignKey: 'follower_id'
-      }
-    },
-    indexes: {
-      idx_follower_follower_id: {
-        keys: {follower_id: 1}
-      },
-      idx_follower_followed_id: {
-        keys: {followed_id: 1}
-      },
-      uq_follower_pair: {
-        keys: {follower_id: 1, followed_id: 1},
-        options: {unique: true}
-      }
-    }
-  }
+  settings: {idInjection: false, postgresql: {schema: 'public', table: 'follower'}}
 })
 export class Follower extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: true},
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'follower_user_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'NO', generated: false},
   })
-  id: number;
+  followerUserId: number;
 
-  @belongsTo(() => User)
-  follower_id: number;
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 2,
+    postgresql: {columnName: 'followed_user_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'NO', generated: false},
+  })
+  followedUserId: number;
 
-  @belongsTo(() => User)
-  followed_id: number;
+  @property({
+    type: 'string',
+    required: true,
+    jsonSchema: {nullable: false},
+    length: 10,
+    generated: false,
+    postgresql: {columnName: 'status', dataType: 'character varying', dataLength: 10, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  status: string;
 
   @property({
     type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    default: new Date(),
-    postgresql: {columnName: 'followed_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'created_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  followed_at: string;
+  createdAt: string;
 
   @property({
-    type: 'boolean',
+    type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    default: true,
-    postgresql: {columnName: 'is_active', dataType: 'boolean', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'updated_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  is_active: boolean;
+  updatedAt: string;
 
   // Define well-known properties here
 

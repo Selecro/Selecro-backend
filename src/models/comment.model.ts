@@ -1,75 +1,17 @@
-import {belongsTo, Entity, model, property} from '@loopback/repository';
-import {EducationMode, Manual, User} from '.';
-
-export enum CommentOnType {
-  Manual = 'manual',
-  EducationMode = 'education_mode'
-}
+import {Entity, model, property} from '@loopback/repository';
 
 @model({
-  settings: {
-    idInjection: false,
-    postgresql: {schema: 'public', table: 'comment'},
-    foreignKeys: {
-      comment_education_mode_id_fkeyRel: {
-        name: 'comment_education_mode_id_fkeyRel',
-        entity: 'EducationMode',
-        entityKey: 'id',
-        foreignKey: 'education_mode_id'
-      },
-      comment_manual_id_fkeyRel: {
-        name: 'comment_manual_id_fkeyRel',
-        entity: 'Manual',
-        entityKey: 'id',
-        foreignKey: 'manual_id'
-      },
-      comment_parent_comment_id_fkeyRel: {
-        name: 'comment_parent_comment_id_fkeyRel',
-        entity: 'Comment',
-        entityKey: 'id',
-        foreignKey: 'parent_comment_id'
-      },
-      comment_user_id_fkeyRel: {
-        name: 'comment_user_id_fkeyRel',
-        entity: 'User',
-        entityKey: 'id',
-        foreignKey: 'user_id'
-      },
-      comment_deleted_by_fkeyRel: {
-        name: 'comment_deleted_by_fkeyRel',
-        entity: 'User',
-        entityKey: 'id',
-        foreignKey: 'deleted_by'
-      }
-    },
-    indexes: {
-      idx_comment_user_id: {
-        keys: {user_id: 1}
-      },
-      idx_comment_manual_id: {
-        keys: {manual_id: 1}
-      },
-      idx_comment_parent_comment_id: {
-        keys: {parent_comment_id: 1}
-      },
-      idx_comment_education_mode_id: {
-        keys: {education_mode_id: 1}
-      },
-      idx_comment_commented_at: {
-        keys: {commented_at: 1}
-      },
-      idx_comment_deleted_by: {
-        keys: {deleted_by: 1}
-      }
-    }
-  }
+  settings: {idInjection: false, postgresql: {schema: 'public', table: 'comment'}}
 })
 export class Comment extends Entity {
   @property({
     type: 'number',
-    id: true,
-    generated: true,
-    postgresql: {columnName: 'id', dataType: 'bigint', dataScale: 0, nullable: 'NO', generated: true},
+    required: true,
+    jsonSchema: {nullable: false},
+    scale: 0,
+    generated: false,
+    id: 1,
+    postgresql: {columnName: 'id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'NO', generated: false},
   })
   id: number;
 
@@ -77,86 +19,136 @@ export class Comment extends Entity {
     type: 'string',
     required: true,
     jsonSchema: {nullable: false},
-    length: 36,
     generated: false,
-    index: {unique: true},
-    postgresql: {columnName: 'uuid', dataType: 'character varying', dataLength: 36, nullable: 'NO', generated: false},
+    postgresql: {columnName: 'comment_uuid', dataType: 'uuid', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  uuid: string;
-
-  @belongsTo(() => Comment)
-  parent_comment_id?: number;
-
-  @belongsTo(() => User)
-  user_id: number;
-
-  @belongsTo(() => Manual)
-  manual_id?: number;
-
-  @belongsTo(() => EducationMode)
-  education_mode_id?: number;
-
-  @property({
-    type: 'string',
-    required: true,
-    jsonSchema: {nullable: false},
-    generated: false,
-    postgresql: {columnName: 'comment_text', dataType: 'text', nullable: 'NO', generated: false},
-  })
-  comment_text: string;
-
-  @property({
-    type: 'string',
-    required: true,
-    jsonSchema: {
-      nullable: false,
-      enum: Object.values(CommentOnType)
-    },
-    length: 255,
-    generated: false,
-    postgresql: {columnName: 'comment_on_type', dataType: 'character varying', dataLength: 255, nullable: 'NO', generated: false},
-  })
-  comment_on_type: CommentOnType;
+  commentUuid: string;
 
   @property({
     type: 'number',
     jsonSchema: {nullable: true},
     scale: 0,
     generated: false,
-    postgresql: {columnName: 'rating', dataType: 'integer', dataScale: 0, nullable: 'YES', generated: false},
+    postgresql: {columnName: 'thread_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
   })
-  rating?: number;
+  threadId?: number;
+
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'support_ticket_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  supportTicketId?: number;
+
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'manual_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  manualId?: number;
+
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'education_mode_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  educationModeId?: number;
+
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'product_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  productId?: number;
+
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'parent_comment_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  parentCommentId?: number;
+
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'author_user_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  authorUserId?: number;
+
+  @property({
+    type: 'string',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'body', dataType: 'text', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  body: string;
+
+  @property({
+    type: 'string',
+    required: true,
+    jsonSchema: {nullable: false},
+    length: 20,
+    generated: false,
+    postgresql: {columnName: 'status', dataType: 'character varying', dataLength: 20, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  status: string;
 
   @property({
     type: 'date',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    default: new Date(),
-    postgresql: {columnName: 'commented_at', dataType: 'timestamp without time zone', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'created_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  commented_at: string;
+  createdAt: string;
+
+  @property({
+    type: 'date',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'updated_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  updatedAt: string;
+
+  @property({
+    type: 'date',
+    jsonSchema: {nullable: true},
+    generated: false,
+    postgresql: {columnName: 'deleted_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
+  })
+  deletedAt?: string;
+
+  @property({
+    type: 'number',
+    jsonSchema: {nullable: true},
+    scale: 0,
+    generated: false,
+    postgresql: {columnName: 'deleted_by_user_id', dataType: 'bigint', dataLength: null, dataPrecision: null, dataScale: 0, nullable: 'YES', generated: false},
+  })
+  deletedByUserId?: number;
 
   @property({
     type: 'boolean',
     required: true,
     jsonSchema: {nullable: false},
     generated: false,
-    default: false,
-    postgresql: {columnName: 'deleted', dataType: 'boolean', nullable: 'NO', generated: false},
+    postgresql: {columnName: 'is_deleted', dataType: 'boolean', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  deleted: boolean;
-
-  @property({
-    type: 'date',
-    jsonSchema: {nullable: true},
-    generated: false,
-    postgresql: {columnName: 'deleted_at', dataType: 'timestamp without time zone', nullable: 'YES', generated: false},
-  })
-  deleted_at?: string;
-
-  @belongsTo(() => User)
-  deleted_by?: number;
+  isDeleted: boolean;
 
   // Define well-known properties here
 
