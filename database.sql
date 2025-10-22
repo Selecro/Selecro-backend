@@ -108,11 +108,13 @@ CREATE TABLE public.user_setting (
 
 CREATE TABLE public.user_consent (
     user_id BIGINT PRIMARY KEY REFERENCES public.user(id) ON DELETE CASCADE,
-    terms_of_service_accepted_at TIMESTAMPTZ,
-    privacy_policy_accepted_at TIMESTAMPTZ,
+    terms_of_service_accepted_at TIMESTAMPTZ NOT NULL,
+    tos_version VARCHAR(20) NOT NULL,
+    privacy_policy_accepted_at TIMESTAMPTZ NOT NULL,
+    pp_version VARCHAR(20) NOT NULL,
     marketing_consent_given_at TIMESTAMPTZ,
+    marketing_consent_revoked_at TIMESTAMPTZ,
     data_processing_consent_given_at TIMESTAMPTZ,
-    third_party_data_sharing_consent_given_at TIMESTAMPTZ,
     CONSTRAINT check_tos_accepted CHECK (terms_of_service_accepted_at IS NOT NULL),
     CONSTRAINT check_pp_accepted CHECK (privacy_policy_accepted_at IS NOT NULL)
 );

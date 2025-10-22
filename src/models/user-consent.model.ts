@@ -17,19 +17,39 @@ export class UserConsent extends Entity {
 
   @property({
     type: 'date',
-    jsonSchema: {nullable: true},
+    required: true,
+    jsonSchema: {nullable: false},
     generated: false,
-    postgresql: {columnName: 'terms_of_service_accepted_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
+    postgresql: {columnName: 'terms_of_service_accepted_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  termsOfServiceAcceptedAt?: string;
+  termsOfServiceAcceptedAt: string;
+
+  @property({
+    type: 'string',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'tos_version', dataType: 'character varying', dataLength: 20, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  tosVersion: string;
 
   @property({
     type: 'date',
-    jsonSchema: {nullable: true},
+    required: true,
+    jsonSchema: {nullable: false},
     generated: false,
-    postgresql: {columnName: 'privacy_policy_accepted_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
+    postgresql: {columnName: 'privacy_policy_accepted_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
   })
-  privacyPolicyAcceptedAt?: string;
+  privacyPolicyAcceptedAt: string;
+
+  @property({
+    type: 'string',
+    required: true,
+    jsonSchema: {nullable: false},
+    generated: false,
+    postgresql: {columnName: 'pp_version', dataType: 'character varying', dataLength: 20, dataPrecision: null, dataScale: null, nullable: 'NO', generated: false},
+  })
+  ppVersion: string;
 
   @property({
     type: 'date',
@@ -43,17 +63,17 @@ export class UserConsent extends Entity {
     type: 'date',
     jsonSchema: {nullable: true},
     generated: false,
-    postgresql: {columnName: 'data_processing_consent_given_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
+    postgresql: {columnName: 'marketing_consent_revoked_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
   })
-  dataProcessingConsentGivenAt?: string;
+  marketingConsentRevokedAt?: string;
 
   @property({
     type: 'date',
     jsonSchema: {nullable: true},
     generated: false,
-    postgresql: {columnName: 'third_party_data_sharing_consent_given_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
+    postgresql: {columnName: 'data_processing_consent_given_at', dataType: 'timestamp with time zone', dataLength: null, dataPrecision: null, dataScale: null, nullable: 'YES', generated: false},
   })
-  thirdPartyDataSharingConsentGivenAt?: string;
+  dataProcessingConsentGivenAt?: string;
 
   // Define well-known properties here
 
