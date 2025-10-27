@@ -79,7 +79,7 @@
     "lb4": "^1.0.0",
     "loopback-connector-kafkajs": "^2.0.0",
     "loopback-connector-kv-redis": "^4.0.0",
-    "loopback-connector-postgresql": "^8.0.1",
+    "loopback-connector-postgresql": "^8.0.2",
     "loopback-connector-rest": "^5.0.10",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
