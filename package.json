@@ -49,12 +49,12 @@
     "!*/__tests__"
   ],
   "dependencies": {
-    "@loopback/authentication-jwt": "^0.16.6",
+    "@loopback/authentication-jwt": "^0.16.7",
     "@loopback/authorization": "^0.16.6",
     "@loopback/boot": "^8.0.6",
     "@loopback/core": "^7.0.5",
     "@loopback/repository": "^8.0.5",
-    "@loopback/rest": "^15.0.5",
+    "@loopback/rest": "^15.0.6",
     "@loopback/rest-explorer": "^8.0.6",
     "@nestjs/common": "^11.1.8",
     "@nestjs/core": "^11.1.8",
