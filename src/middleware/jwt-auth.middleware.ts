@@ -9,7 +9,7 @@ export const JwtAuthMiddleware: Middleware = async (
   {request, response}: {request: Request; response: Response},
   next: Next,
 ) => {
-  const token = request.cookies?.selecro_jwt;
+  const token = request.cookies?.jwt;
   if (!token) {
     return next();
   }
@@ -31,7 +31,7 @@ export const JwtAuthMiddleware: Middleware = async (
     (request as any).currentUser = user;
   } catch (err) {
     console.error('JWT authentication failed:', err);
-    response.clearCookie('selecro_jwt');
+    response.clearCookie('jwt');
   }
 
   return next();
