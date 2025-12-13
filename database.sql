@@ -3,12 +3,14 @@ CREATE TABLE public.user (
     user_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     username VARCHAR(30) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
+    phone_number VARCHAR(35) UNIQUE,
     password_hash VARCHAR(255),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     last_login TIMESTAMPTZ,
     account_status VARCHAR(20) NOT NULL DEFAULT 'active',
+    client_since TIMESTAMPTZ,
     CONSTRAINT check_username_length CHECK (LENGTH(username) >= 3 AND LENGTH(username) <= 30),
     CONSTRAINT check_email_format CHECK (email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$')
 );
@@ -89,9 +91,13 @@ CREATE TABLE public.user_profile (
     profile_picture_file_id BIGINT REFERENCES public.file(id) ON DELETE SET NULL,
     location VARCHAR(100),
     date_of_birth DATE,
+    birth_number VARCHAR(11) UNIQUE,
     is_private BOOLEAN NOT NULL DEFAULT FALSE,
-    follower_count INTEGER NOT NULL DEFAULT 0,
-    following_count INTEGER NOT NULL DEFAULT 0,
+    policy_number VARCHAR(50),
+    insurance_company_name VARCHAR(255),
+    insurance_company_code VARCHAR(10),
+    company_name VARCHAR(255),
+    company_id VARCHAR(8),
     post_count INTEGER NOT NULL DEFAULT 0,
     status VARCHAR(20) NOT NULL DEFAULT 'offline',
     last_active_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -139,13 +145,6 @@ CREATE TABLE public.user_auth (
     CONSTRAINT check_recovery_email_format CHECK (recovery_email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$')
 );
 
-CREATE TABLE public.user_point (
-    user_id BIGINT PRIMARY KEY REFERENCES public.user(id) ON DELETE CASCADE,
-    balance BIGINT NOT NULL DEFAULT 0,
-    last_updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT non_negative_balance CHECK (balance >= 0)
-);
-
 CREATE TABLE public.user_metadata (
     user_id BIGINT PRIMARY KEY REFERENCES public.user(id) ON DELETE CASCADE,
     sign_up_ip INET NOT NULL,
@@ -154,22 +153,6 @@ CREATE TABLE public.user_metadata (
     referral_source VARCHAR(100),
     is_bot BOOLEAN NOT NULL DEFAULT FALSE,
     custom_data JSONB NOT NULL DEFAULT '{}'::jsonb
-);
-
-CREATE TABLE public.point_transaction (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT REFERENCES public.user(id) ON DELETE CASCADE,
-    session_id BIGINT REFERENCES public.session(id) ON DELETE SET NULL,
-    type VARCHAR(50) NOT NULL,
-    subtype VARCHAR(50) NOT NULL,
-    amount BIGINT NOT NULL,
-    balance_after_transaction BIGINT NOT NULL,
-    is_revenue BOOLEAN NOT NULL,
-    transaction_metadata JSONB,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    deleted_at TIMESTAMPTZ,
-    deleted_by_user_id BIGINT REFERENCES public.user(id) ON DELETE SET NULL,
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE public.password_history (
@@ -271,16 +254,6 @@ CREATE TABLE public.user_2fa_login_log (
     deleted_at TIMESTAMPTZ,
     deleted_by_user_id BIGINT REFERENCES public.user(id) ON DELETE SET NULL,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE
-);
-
-CREATE TABLE public.follower (
-    follower_user_id BIGINT REFERENCES public.user(id) ON DELETE CASCADE,
-    followed_user_id BIGINT REFERENCES public.user(id) ON DELETE CASCADE,
-    status VARCHAR(10) NOT NULL DEFAULT 'pending',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (follower_user_id, followed_user_id),
-    CONSTRAINT valid_status CHECK (status IN ('pending', 'approved'))
 );
 
 CREATE TABLE public.user_report (
@@ -407,7 +380,7 @@ CREATE TABLE public.forum (
 CREATE TABLE public.thread (
     id BIGSERIAL PRIMARY KEY,
     thread_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
-    forum_id BIGINT REFERENCES public.forum(id) ON DELETE CASCADE,
+    forum_id BIGINT REFERENCES forum(id) ON DELETE CASCADE,
     author_user_id BIGINT REFERENCES public.user(id) ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
     body TEXT NOT NULL,
@@ -424,7 +397,7 @@ CREATE TABLE public.support_ticket (
     id BIGSERIAL PRIMARY KEY,
     ticket_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     user_id BIGINT REFERENCES public.user(id) ON DELETE SET NULL,
-    session_id BIGINT REFERENCES public.session(id) ON DELETE SET NULL,
+    session_id BIGINT REFERENCES session(id) ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'closed', 'awaiting_reply')),
@@ -495,7 +468,7 @@ CREATE TABLE public.education_step (
     id BIGSERIAL PRIMARY KEY,
     translation_group_id UUID NOT NULL DEFAULT gen_random_uuid(),
     language_id INTEGER REFERENCES public.language(id) ON DELETE SET NULL,
-    education_mode_id BIGINT REFERENCES public.education_mode(id) ON DELETE SET NULL,
+    education_mode_id BIGINT REFERENCES education_mode(id) ON DELETE SET NULL,
     description TEXT,
     video_url VARCHAR(2048),
     image_file_id BIGINT REFERENCES public.file(id) ON DELETE SET NULL,
@@ -570,7 +543,7 @@ CREATE TABLE public.product (
     dimensions VARCHAR(100),
     material VARCHAR(100),
     weight NUMERIC(10, 2),
-    product_type_id INTEGER REFERENCES public.product_type(id) ON DELETE SET NULL,
+    product_type_id INTEGER REFERENCES product_type(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMPTZ,
@@ -582,9 +555,9 @@ CREATE TABLE public.comment (
     id BIGSERIAL PRIMARY KEY,
     comment_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     thread_id BIGINT REFERENCES public.thread(id) ON DELETE CASCADE,
-    support_ticket_id BIGINT REFERENCES public.support_ticket(id) ON DELETE CASCADE,
+    support_ticket_id BIGINT REFERENCES support_ticket(id) ON DELETE CASCADE,
     manual_id BIGINT REFERENCES public.manual(id) ON DELETE CASCADE,
-    education_mode_id BIGINT REFERENCES public.education_mode(id) ON DELETE CASCADE,
+    education_mode_id BIGINT REFERENCES education_mode(id) ON DELETE CASCADE,
     product_id BIGINT REFERENCES public.product(id) ON DELETE CASCADE,
     parent_comment_id BIGINT REFERENCES public.comment(id) ON DELETE CASCADE,
     author_user_id BIGINT REFERENCES public.user(id) ON DELETE SET NULL,
@@ -610,7 +583,7 @@ CREATE TABLE public.status_history (
     user_report_id BIGINT REFERENCES public.user_report(id) ON DELETE CASCADE,
     manual_id BIGINT REFERENCES public.manual(id) ON DELETE CASCADE,
     news_id BIGINT REFERENCES public.news(id) ON DELETE CASCADE,
-    support_ticket_id BIGINT REFERENCES public.support_ticket(id) ON DELETE CASCADE,
+    support_ticket_id BIGINT REFERENCES support_ticket(id) ON DELETE CASCADE,
     tool_id BIGINT REFERENCES public.tool(id) ON DELETE CASCADE,
     dictionary_id BIGINT REFERENCES public.dictionary(id) ON DELETE CASCADE,
     education_mode_id BIGINT REFERENCES public.education_mode(id) ON DELETE CASCADE,
@@ -637,7 +610,7 @@ CREATE TABLE public.rating (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES public.user(id) ON DELETE CASCADE,
     manual_id BIGINT REFERENCES public.manual(id) ON DELETE CASCADE,
-    education_mode_id BIGINT REFERENCES public.education_mode(id) ON DELETE CASCADE,
+    education_mode_id BIGINT REFERENCES education_mode(id) ON DELETE CASCADE,
     product_id BIGINT REFERENCES public.product(id) ON DELETE CASCADE,
     rating_value SMALLINT NOT NULL CHECK (rating_value >= 1 AND rating_value <= 5),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -691,7 +664,7 @@ CREATE TABLE public.progress_tracking (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES public.user(id) ON DELETE CASCADE,
     manual_id BIGINT REFERENCES public.manual(id) ON DELETE CASCADE,
-    education_mode_id BIGINT REFERENCES public.education_mode(id) ON DELETE CASCADE,
+    education_mode_id BIGINT REFERENCES education_mode(id) ON DELETE CASCADE,
     current_step_order INT DEFAULT 0 NOT NULL,
     total_time_seconds INT DEFAULT 0 NOT NULL,
     counter SMALLINT DEFAULT 0 NOT NULL CHECK (counter >= 0 AND counter <= 100),
@@ -731,7 +704,7 @@ CREATE TABLE public.manual_product_theme (
     id BIGSERIAL PRIMARY KEY,
     manual_id BIGINT REFERENCES public.manual(id) ON DELETE CASCADE,
     product_id BIGINT REFERENCES public.product(id) ON DELETE CASCADE,
-    theme_id BIGINT REFERENCES public.theme(id) ON DELETE CASCADE,
+    theme_id BIGINT REFERENCES theme(id) ON DELETE CASCADE,
     CONSTRAINT one_entity_only CHECK (
         (CASE WHEN manual_id IS NOT NULL THEN 1 ELSE 0 END +
          CASE WHEN product_id IS NOT NULL THEN 1 ELSE 0 END) = 1
@@ -743,7 +716,7 @@ CREATE TABLE public.manual_product_category (
     id BIGSERIAL PRIMARY KEY,
     manual_id BIGINT REFERENCES public.manual(id) ON DELETE CASCADE,
     product_id BIGINT REFERENCES public.product(id) ON DELETE CASCADE,
-    category_id BIGINT REFERENCES public.category(id) ON DELETE CASCADE,
+    category_id BIGINT REFERENCES category(id) ON DELETE CASCADE,
     CONSTRAINT one_entity_only CHECK (
         (CASE WHEN manual_id IS NOT NULL THEN 1 ELSE 0 END +
          CASE WHEN product_id IS NOT NULL THEN 1 ELSE 0 END) = 1
@@ -773,7 +746,7 @@ CREATE TABLE public.cart (
 
 CREATE TABLE public.cart_item (
     id BIGSERIAL PRIMARY KEY,
-    cart_id BIGINT REFERENCES public.cart(id) ON DELETE CASCADE,
+    cart_id BIGINT REFERENCES cart(id) ON DELETE CASCADE,
     product_id BIGINT REFERENCES public.product(id) ON DELETE CASCADE,
     quantity INTEGER NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -806,7 +779,7 @@ CREATE TABLE public.order (
     order_uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     guest_email VARCHAR(255),
     user_id BIGINT REFERENCES public.user(id) ON DELETE SET NULL,
-    cart_id BIGINT REFERENCES public.cart(id) ON DELETE SET NULL,
+    cart_id BIGINT REFERENCES cart(id) ON DELETE SET NULL,
     total_price NUMERIC(10, 2) NOT NULL,
     order_status VARCHAR(50) NOT NULL CHECK (order_status IN ('pending', 'processing', 'shipped', 'delivered', 'canceled')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -851,7 +824,7 @@ CREATE TABLE public.discount_code (
 CREATE TABLE public.order_discount (
     id BIGSERIAL PRIMARY KEY,
     discount_applied NUMERIC(10, 2) NOT NULL,
-    discount_id BIGINT REFERENCES public.discount_code(id) ON DELETE CASCADE,
+    discount_id BIGINT REFERENCES discount_code(id) ON DELETE CASCADE,
     order_id BIGINT REFERENCES public.order(id) ON DELETE CASCADE
 );
 
