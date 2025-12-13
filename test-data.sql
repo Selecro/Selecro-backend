@@ -1,263 +1,311 @@
-INSERT INTO public.user (id, uuid, first_name, last_name, username, email, email_verified, date_of_birth, account_status, last_login_at, last_active_at, created_at, updated_at, phone_number, is_oauth_user) VALUES
-(1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Jan', 'Novák', 'jannovak', 'jan.novak@example.com', TRUE, '1985-05-15', 'active', '2025-07-01 10:00:00', '2025-07-01 10:15:00', '2025-07-01 09:00:00', '2025-07-01 09:00:00', '+420777123456', FALSE),
-(2, 'b1c2d3e4-f5f6-7a8b-9c0d-1e2f3g4h5i6j', 'Petr', 'Svoboda', 'petrsvoboda', 'petr.svoboda@example.com', FALSE, '1990-11-20', 'pending_verification', NULL, NULL, '2025-07-01 09:05:00', '2025-07-01 09:05:00', '+420602987654', FALSE),
-(3, 'c3a4b5c6-d7d8-e9f0-1g2h-3i4j5k6l7m8n', 'Marie', 'Černá', 'marie.c', 'marie.cerna@example.com', TRUE, '1992-03-22', 'active', '2025-06-25 14:30:00', '2025-07-01 11:00:00', '2025-06-25 14:00:00', '2025-06-25 14:00:00', '+420732555888', FALSE),
-(4, 'd4e5f6g7-h8h9-i0j1-2k3l-4m5n6o7p8q9r', 'Jiří', 'Dvořák', 'jiri.d', 'jiri.dvorak@example.com', TRUE, '1988-08-05', 'active', '2025-07-01 09:15:00', '2025-07-01 09:30:00', '2025-07-01 09:10:00', '2025-07-01 09:10:00', '+420721222333', FALSE),
-(5, 'e5f6g7h8-i9i0-j1k2-3l4m-5n6o7p8q9r0s', 'Lenka', 'Nováková', 'lenka.n', 'lenka.novakova@example.com', TRUE, '1995-01-30', 'active', '2025-06-30 18:00:00', '2025-06-30 18:05:00', '2025-06-30 17:55:00', '2025-06-30 17:55:00', '+420603444555', FALSE),
-(6, 'f6g7h8i9-j0j1-k2l3-4m5n-6o7p8q9r0s1t', 'Martin', 'Pospíšil', 'martin.p', 'martin.pospisil@example.com', TRUE, '1989-07-10', 'active', '2025-07-01 12:00:00', '2025-07-01 12:30:00', '2025-07-01 11:55:00', '2025-07-01 11:55:00', '+420777999888', FALSE);
+INSERT INTO public.user (username, email, phone_number, password_hash, account_status, client_since) VALUES
+('johndoe', 'john.doe@example.com', '123-456-7890', 'hashed_pass_1', 'active', '2023-01-15 10:00:00+00'),
+('alice_smith', 'alice.smith@test.org', '987-654-3210', 'hashed_pass_2', 'suspended', '2023-03-20 14:30:00+00'),
+('sysadmin', 'admin@sys.com', '555-123-4567', 'hashed_pass_3', 'active', '2022-11-01 08:00:00+00'),
+('reporterguy', 'report@example.com', '555-999-8888', 'hashed_pass_4', 'active', '2023-05-10 11:15:00+00'),
+('moderator', 'mod@sys.com', '555-777-6666', 'hashed_pass_5', 'active', '2023-02-01 09:00:00+00');
 
-INSERT INTO public.file (id, uuid, file_name, file_type, file_category, file_size_bytes, mime_type, file_checksum, storage_url, storage_service, storage_identifier, uploaded_at, creator_user_id) VALUES
-(1, 'f81d4fae-7dec-11d0-a765-00a0c91e6bf6', 'profile_pic_jan.jpg', 'image', 'profile_picture', 15000, 'image/jpeg', 'abcef12345', 'https://storage.example.com/profiles/jan_profile.jpg', 'S3', 'jan_profile_s3_id', '2025-07-01 09:01:00', 1),
-(2, 'f81d4fae-7dec-11d0-a765-00a0c91e6bf7', 'document_petr.pdf', 'document', 'user_uploaded_document', 250000, 'application/pdf', 'b1c2d3e4f5', 'https://storage.example.com/documents/petr_doc.pdf', 'S3', 'petr_doc_s3_id', '2025-07-01 09:06:00', 2),
-(3, 'f81d4fae-7dec-11d0-a765-00a0c91e6bf8', 'invoice_marie.pdf', 'document', 'invoice', 50000, 'application/pdf', 'c1d2e3f4g5', 'https://storage.example.com/invoices/marie_inv.pdf', 'S3', 'marie_inv_s3_id', '2025-06-25 14:01:00', 3),
-(4, 'f81d4fae-7dec-11d0-a765-00a0c91e6bf9', 'report_jiri.xlsx', 'document', 'report', 120000, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'd1e2f3g4h5', 'https://storage.example.com/reports/jiri_report.xlsx', 'S3', 'jiri_report_s3_id', '2025-07-01 09:11:00', 4),
-(5, 'f81d4fae-7dec-11d0-a765-00a0c91e6bfa', 'video_lenka.mp4', 'video', 'other_category', 5000000, 'video/mp4', 'e1f2g3h4i5', 'https://storage.example.com/videos/lenka_video.mp4', 'S3', 'lenka_video_s3_id', '2025-06-30 17:56:00', 5),
-(6, 'f81d4fae-7dec-11d0-a765-00a0c91e6bfb', 'system_contract.pdf', 'document', 'system_generated_document', 75000, 'application/pdf', 'f1g2h3i4j5', 'https://storage.example.com/system/contract.pdf', 'S3', 'system_contract_s3_id', '2025-07-01 09:02:00', 1);
+INSERT INTO public.language (language_code, language_name) VALUES
+('en_US', 'English (United States)'),
+('es_ES', 'Spanish (Spain)'),
+('fr_FR', 'French (France)');
 
-INSERT INTO public.badge (id, uuid, creator_user_id, image_file_id, badge_name, badge_description, created_at, updated_at) VALUES
-(1, 'badge-1-uuid', 1, 1, 'First Login', 'Awarded for the first login.', '2025-06-01 08:30:00', '2025-06-01 08:30:00'),
-(2, 'badge-2-uuid', 1, 1, 'First Upload', 'Awarded for uploading a file.', '2025-06-01 08:31:00', '2025-06-01 08:31:00'),
-(3, 'badge-3-uuid', 1, 1, 'Community Member', 'Awarded for commenting on a post.', '2025-06-01 08:32:00', '2025-06-01 08:32:00'),
-(4, 'badge-4-uuid', 1, 1, 'Trusted User', 'Awarded for being an active and trusted user.', '2025-06-01 08:33:00', '2025-06-01 08:33:00'),
-(5, 'badge-5-uuid', 1, 1, 'Super Contributor', 'Awarded for contributing a lot of content.', '2025-06-01 08:34:00', '2025-06-01 08:34:00');
+INSERT INTO public.file (uploader_user_id, file_category, mime_type, file_size_bytes, file_checksum, storage_url, storage_service, storage_identifier, is_public, is_system_generated) VALUES
+(1, 'profile_picture', 'image/jpeg', 150000, 'abc123def456', 'https://storage.com/johndoe/profile1.jpg', 'S3', 'johndoe/profile1.jpg', TRUE, FALSE),
+(3, 'system_document', 'application/pdf', 5000000, 'xyz789uvw012', 'https://storage.com/system/policy_v2.pdf', 'GCP', 'system/policy_v2.pdf', TRUE, TRUE),
+(2, 'user_document', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 80000, 'lmn456opq789', 'https://storage.com/alice/doc_proof.docx', 'Azure', 'alice/doc_proof.docx', FALSE, FALSE);
 
-INSERT INTO public.news (id, uuid, creator_user_id, image_file_id, title_cz, title_en, content_cz, content_en, published_at, news_status, created_at, updated_at) VALUES
-(1, 'news-1-uuid', 1, 6, 'Novinky v naší aplikaci', 'News in our app', 'Dnes jsme vydali novou verzi aplikace.', 'We have released a new version of the app today.', '2025-07-01 08:00:00', 'active', '2025-06-25 09:00:00', '2025-06-25 09:00:00'),
-(2, 'news-2-uuid', 1, 6, 'Letní akce', 'Summer promotion', 'Užijte si léto s našimi slevami!', 'Enjoy the summer with our discounts!', '2025-06-30 09:00:00', 'active', '2025-06-25 09:01:00', '2025-06-25 09:01:00'),
-(3, 'news-3-uuid', 3, 6, 'Nový průvodce', 'New guide', 'Připravili jsme pro vás nový průvodce.', 'We have prepared a new guide for you.', '2025-06-25 10:00:00', 'active', '2025-06-25 09:02:00', '2025-06-25 09:02:00'),
-(4, 'news-4-uuid', 3, 6, 'Úspěchy komunity', 'Community achievements', 'Představujeme vám nejlepší projekty.', 'We present you the best projects.', '2025-06-20 11:00:00', 'active', '2025-06-20 10:00:00', '2025-06-20 10:00:00'),
-(5, 'news-5-uuid', 3, 6, 'Technická údržba', 'Technical maintenance', 'Plánovaná údržba systému.', 'Scheduled system maintenance.', NULL, 'draft', '2025-07-01 10:00:00', '2025-07-01 10:00:00');
+INSERT INTO public.device (user_id, device_name, language_id, device_os, device_version) VALUES
+(1, 'John-iPhone-15', 1, 'iOS', '17.3.1'),
+(1, 'John-Macbook-Pro', 1, 'macOS', '14.0'),
+(2, 'Alice-Galaxy-S23', 2, 'Android', '14'),
+(3, 'Admin-Workstation', 1, 'Windows', '11');
 
-INSERT INTO public.tool (id, uuid, creator_user_id, image_file_id, title_cz, title_en, description_cz, description_en, video_url, tool_status, created_at, updated_at) VALUES
-(1, 'tool-1-uuid', 4, 1, 'Pletací jehlice', 'Knitting needles', 'Různé velikosti a materiály jehlic.', 'Different sizes and materials of needles.', 'https://video.example.com/needles', 'active', '2025-06-01 08:50:00', '2025-06-01 08:50:00'),
-(2, 'tool-2-uuid', 4, 1, 'Háčkovací háčky', 'Crochet hooks', 'Sada háčků pro pokročilé.', 'A set of hooks for advanced users.', 'https://video.example.com/hooks', 'active', '2025-06-01 08:51:00', '2025-06-01 08:51:00'),
-(3, 'tool-3-uuid', 4, 1, 'Šicí stroj', 'Sewing machine', 'Základní model pro začátečníky.', 'Basic model for beginners.', 'https://video.example.com/sewing_machine', 'active', '2025-06-01 08:52:00', '2025-06-01 08:52:00'),
-(4, 'tool-4-uuid', 4, 1, 'Sada nití', 'Thread set', 'Barevná sada nití pro všechny projekty.', 'A colorful set of threads for all projects.', 'https://video.example.com/threads', 'active', '2025-06-01 08:53:00', '2025-06-01 08:53:00'),
-(5, 'tool-5-uuid', 4, 1, 'Krejčovské nůžky', 'Tailor''s scissors', 'Kvalitní nůžky pro přesný střih.', 'Quality scissors for precise cutting.', 'https://video.example.com/scissors', 'active', '2025-06-01 08:54:00', '2025-06-01 08:54:00');
+INSERT INTO public.session (user_id, device_id, session_token, expires_at, ip_address, country, user_agent) VALUES
+(1, 1, 'token_john_iphone_12345', NOW() + INTERVAL '1 day', '203.0.113.1', 'USA', 'Mozilla/5.0 (iPhone)'),
+(1, 2, 'token_john_mac_67890', NOW() + INTERVAL '30 minutes', '203.0.113.1', 'USA', 'Mozilla/5.0 (Macintosh)'),
+(2, 3, 'token_alice_android_abcde', NOW() + INTERVAL '2 hours', '198.51.100.25', 'Spain', 'Mozilla/5.0 (Android)');
 
-INSERT INTO public.education_mode (id, uuid, creator_user_id, image_file_id, title_cz, title_en, description_cz, description_en, education_mode_status, tool, created_at, updated_at) VALUES
-(1, 'edu-1-uuid', 4, 1, 'Základy pletení', 'Knitting basics', 'Naučte se základní techniky pletení.', 'Learn basic knitting techniques.', 'active', 'some tool', '2025-06-01 08:40:00', '2025-06-01 08:40:00'),
-(2, 'edu-2-uuid', 4, 1, 'Pokročilé háčkování', 'Advanced crochet', 'Pro ty, kteří již umí základy.', 'For those who already know the basics.', 'active', 'some tool', '2025-06-01 08:41:00', '2025-06-01 08:41:00'),
-(3, 'edu-3-uuid', 4, 1, 'Úvod do šití', 'Introduction to sewing', 'První kroky se šicím strojem.', 'First steps with a sewing machine.', 'draft', 'some tool', '2025-06-01 08:42:00', '2025-06-01 08:42:00'),
-(4, 'edu-4-uuid', 4, 1, 'Oprava oděvů', 'Garment repair', 'Jak opravit a prodloužit životnost oblečení.', 'How to repair and extend the life of clothes.', 'active', 'some tool', '2025-06-01 08:43:00', '2025-06-01 08:43:00'),
-(5, 'edu-5-uuid', 4, 1, 'Design triček', 'T-shirt design', 'Vytvořte si vlastní originální tričko.', 'Create your own original T-shirt.', 'draft', 'some tool', '2025-06-01 08:44:00', '2025-06-01 08:44:00');
+INSERT INTO public.user_profile (user_id, first_name, last_name, bio, profile_picture_file_id, location, date_of_birth, status) VALUES
+(1, 'John', 'Doe', 'Tech enthusiast and music lover.', 1, 'New York, USA', '1990-05-20', 'online'),
+(2, 'Alice', 'Smith', 'Traveler and photographer.', NULL, 'Madrid, Spain', '1995-10-01', 'away'),
+(3, 'System', 'Admin', 'Manages the platform.', NULL, 'Headquarters, CZ', '1980-01-01', 'busy');
 
-INSERT INTO public.dictionary (id, uuid, creator_user_id, image_file_id, animation_file_id, mark_file_id, title_cz, title_en, description_cz, description_en, abbrevation_cz, abbrevation_en, dictionary_status, created_at, updated_at) VALUES
-(1, 'dict-1-uuid', 4, 1, 5, 1, 'Oko', 'Stitch', 'Základní jednotka pletení.', 'The basic unit of knitting.', 'O', 'st', 'active', '2025-06-10 10:00:00', '2025-06-10 10:00:00'),
-(2, 'dict-2-uuid', 4, 1, 5, 1, 'Hladce', 'Knit', 'Základní typ oka v pletení.', 'The basic type of stitch in knitting.', 'HL', 'k', 'active', '2025-06-10 10:01:00', '2025-06-10 10:01:00'),
-(3, 'dict-3-uuid', 4, 1, 5, 1, 'Obrace', 'Purl', 'Opak hladce, tvoří lícovou stranu.', 'The reverse of a knit stitch, creates the right side.', 'OB', 'p', 'active', '2025-06-10 10:02:00', '2025-06-10 10:02:00'),
-(4, 'dict-4-uuid', 4, 1, 5, 1, 'Řetízek', 'Chain', 'Základní prvek v háčkování.', 'The basic element in crochet.', 'ŘO', 'ch', 'active', '2025-06-10 10:03:00', '2025-06-10 10:03:00'),
-(5, 'dict-5-uuid', 4, 1, 5, 1, 'Sloupek', 'Post', 'Výškový sloupek v háčkování.', 'A tall stitch in crochet.', 'SL', 'ps', 'draft', '2025-06-10 10:04:00', '2025-06-10 10:04:00');
+INSERT INTO public.user_setting (user_id, theme, language_id, timezone, email_verified) VALUES
+(1, 'dark', 1, 'America/New_York', TRUE),
+(2, 'light', 2, 'Europe/Madrid', TRUE),
+(3, 'system', 1, 'Europe/Prague', TRUE);
 
-INSERT INTO public.manual (id, uuid, creator_user_id, image_file_id, title_cz, title_en, manual_difficulty, price, crochet_abbreviation, crochet_tool, manual_type, manual_status, created_at, updated_at) VALUES
-(1, 'manual-1-uuid', 4, 1, 'První šála', 'First scarf', 'beginner', 0.00, 'hladce', 'jehlice 5mm', 'how_to', 'public', '2025-06-15 11:00:00', '2025-06-15 11:00:00'),
-(2, 'manual-2-uuid', 4, 1, 'Vlněná čepice', 'Wool hat', 'intermediate', 99.00, 'kruhové pletení', 'háčky 4mm', 'how_to', 'premium', '2025-06-15 11:01:00', '2025-06-15 11:01:00'),
-(3, 'manual-3-uuid', 4, 1, 'Oprava svetru', 'Sweater repair', 'beginner', 0.00, NULL, NULL, 'repair', 'public', '2025-06-15 11:02:00', '2025-06-15 11:02:00'),
-(4, 'manual-4-uuid', 4, 1, 'Pokročilé pletení', 'Advanced knitting', 'advanced', 199.90, NULL, NULL, 'how_to', 'premium', '2025-06-15 11:03:00', '2025-06-15 11:03:00'),
-(5, 'manual-5-uuid', 4, 1, 'Háčkovaná deka', 'Crochet blanket', 'intermediate', 0.00, 'řetízek, sloupek', 'háčky 6mm', 'how_to', 'public', '2025-06-15 11:04:00', '2025-06-15 11:04:00');
+INSERT INTO public.user_consent (user_id, terms_of_service_accepted_at, tos_version, privacy_policy_accepted_at, pp_version, marketing_consent_given_at) VALUES
+(1, '2023-01-15 10:05:00+00', '1.2', '2023-01-15 10:05:00+00', '1.1', '2023-01-15 10:05:00+00'),
+(2, '2023-03-20 14:35:00+00', '1.3', '2023-03-20 14:35:00+00', '1.2', NULL),
+(3, '2022-11-01 08:05:00+00', '1.2', '2022-11-01 08:05:00+00', '1.1', '2022-11-01 08:05:00+00');
 
-INSERT INTO public.permission (id, creator_user_id, resource_type, action_type, permission_description, created_at, updated_at) VALUES
-(1, 1, 'user', 'read', 'Allows reading user profiles.', '2025-06-01 08:10:00', '2025-06-01 08:10:00'),
-(2, 1, 'file', 'write', 'Allows uploading new files.', '2025-06-01 08:11:00', '2025-06-01 08:11:00'),
-(3, 1, 'manual', 'update', 'Allows updating manual content.', '2025-06-01 08:12:00', '2025-06-01 08:12:00'),
-(4, 1, 'news', 'write', 'Allows creating new news articles.', '2025-06-01 08:13:00', '2025-06-01 08:13:00'),
-(5, 1, 'user', 'delete', 'Allows deleting user accounts.', '2025-06-01 08:14:00', '2025-06-01 08:14:00'),
-(6, 1, 'role', 'read', 'Allows reading role information.', '2025-06-01 08:15:00', '2025-06-01 08:15:00');
+INSERT INTO public.user_notification_preference (user_id, email_promotional, push_promotional) VALUES
+(1, TRUE, TRUE),
+(2, FALSE, FALSE),
+(3, TRUE, FALSE);
 
---------------------------------------------------------------------------------
+INSERT INTO public.user_auth (user_id, recovery_email, last_password_change) VALUES
+(1, 'john.recovery@example.com', '2023-10-01 12:00:00+00'),
+(2, NULL, '2023-03-20 14:30:00+00'),
+(3, 'admin.recovery@sys.com', NULL);
 
-INSERT INTO public.role (id, creator_user_id, role_name, role_description, created_at, updated_at) VALUES
-(1, 1, 'admin', 'Administrator with full access.', '2025-06-01 08:00:00', '2025-06-01 08:00:00'),
-(2, 1, 'user', 'Standard user with basic permissions.', '2025-06-01 08:01:00', '2025-06-01 08:01:00'),
-(3, 3, 'marketer', 'User with permissions to manage news and promotions.', '2025-06-01 08:02:00', '2025-06-01 08:02:00'),
-(4, 4, 'educator', 'User who can create educational content and manuals.', '2025-06-01 08:03:00', '2025-06-01 08:03:00'),
-(5, 5, 'customer', 'User with limited access, primarily for purchasing and viewing content.', '2025-06-01 08:04:00', '2025-06-01 08:04:00'),
-(6, 1, 'user', 'Another standard user.', '2025-06-01 08:05:00', '2025-06-01 08:05:00');
+INSERT INTO public.user_metadata (user_id, sign_up_ip, user_agent_info, referral_source, is_bot, custom_data) VALUES
+(1, '192.0.2.1', 'Chrome on Windows 10', 'google_ad', FALSE, '{"level": "premium"}'),
+(2, '192.0.2.10', 'Safari on iOS', 'direct', FALSE, '{}'),
+(3, '192.0.2.50', 'System Agent', 'internal', TRUE, '{"role": "superuser"}');
 
-INSERT INTO public.manual_step (id, manual_id, image_file_id, title_cz, title_en, description_cz, description_en, step_order, created_at, updated_at) VALUES
-(1, 1, 1, 'Nahazování ok', 'Casting on stitches', 'První krok k pletení šály.', 'The first step to knitting a scarf.', 1, '2025-06-16 09:00:00', '2025-06-16 09:00:00'),
-(2, 1, 1, 'Pletení hladce', 'Knitting knit stitches', 'Opakujeme pro celou šálu.', 'Repeat for the entire scarf.', 2, '2025-06-16 09:01:00', '2025-06-16 09:01:00'),
-(3, 1, 1, 'Ukončení', 'Binding off', 'Poslední krok k dokončení projektu.', 'The last step to finish the project.', 3, '2025-06-16 09:02:00', '2025-06-16 09:02:00'),
-(4, 2, 1, 'Začátek čepice', 'Starting the hat', 'Pletení v kruhu.', 'Knitting in the round.', 1, '2025-06-17 10:00:00', '2025-06-17 10:00:00'),
-(5, 2, 1, 'Zmenšování', 'Decreasing', 'Postupné zmenšování obvodu čepice.', 'Gradually decreasing the circumference of the hat.', 2, '2025-06-17 10:01:00', '2025-06-17 10:01:00');
+INSERT INTO public.password_history (user_id, password_hash) VALUES
+(1, 'old_hash_1'),
+(1, 'old_hash_2'),
+(2, 'old_hash_alice');
 
-INSERT INTO public.user_setting (user_id, bio, dark_mode, user_language_preference, user_display_status, terms_privacy_agreement_accepted_at, gdpr_consent_given_at, profile_picture_file_id) VALUES
-(1, 'Hello, I''m Jan!', TRUE, 'en', 'online', '2025-05-01 10:00:00', '2025-05-01 10:05:00', 1),
-(2, 'Hi, I''m Petr.', FALSE, 'cz', 'invisible', NULL, NULL, NULL),
-(3, 'My bio here.', TRUE, 'cz', 'away', '2025-06-01 12:00:00', '2025-06-01 12:05:00', 3),
-(4, 'Creative person.', FALSE, 'en', 'online', '2025-06-15 08:00:00', '2025-06-15 08:05:00', 4),
-(5, 'Loves coding.', TRUE, 'cz', 'do_not_disturb', '2025-05-20 16:00:00', '2025-05-20 16:05:00', 5);
+INSERT INTO public.user_activity_log (user_id, session_id, event_type, event_description, ip_address, user_agent) VALUES
+(1, 1, 'login_success', 'Successful login from iPhone', '203.0.113.1', 'Mozilla/5.0 (iPhone)'),
+(1, 2, 'view_profile', 'Viewed profile settings', '203.0.113.1', 'Mozilla/5.0 (Macintosh)'),
+(2, 3, 'upload_file', 'Uploaded proof document', '198.51.100.25', 'Mozilla/5.0 (Android)');
 
-INSERT INTO public.user_location (user_id, country, city, postal_code, street_address, latitude, longitude) VALUES
-(1, 'Czechia', 'Prague', '11000', 'Old Town Square 1', 50.087811, 14.420460),
-(2, 'Czechia', 'Brno', '60200', 'Freedom Square 2', 49.194788, 16.609590),
-(3, 'Czechia', 'Ostrava', '70200', 'Masaryk Square 3', 49.820923, 18.262529),
-(4, 'Czechia', 'Pilsen', '30100', 'Republic Square 4', 49.747970, 13.377660),
-(5, 'Czechia', 'Liberec', '46001', 'Dr. E. Beneše Square 5', 50.768132, 15.056070);
+INSERT INTO public.oauth_provider (name) VALUES
+('Google'),
+('Facebook'),
+('Apple');
 
-INSERT INTO public.user_notification_setting (user_id, receive_news, receive_private_messages, marketing_consent_given_at) VALUES
-(1, TRUE, TRUE, '2025-05-01 10:00:00'),
-(2, FALSE, TRUE, NULL),
-(3, TRUE, FALSE, '2025-06-01 12:00:00'),
-(4, TRUE, TRUE, '2025-06-15 08:00:00'),
-(5, FALSE, FALSE, '2025-05-20 16:00:00');
+INSERT INTO public.user_oauth_account (user_id, provider_id, provider_user_id, access_token, expires_at) VALUES
+(1, 1, 'google_id_john', 'token_g_john', NOW() + INTERVAL '60 minutes'),
+(2, 2, 'facebook_id_alice', 'token_f_alice', NOW() + INTERVAL '120 minutes'),
+(3, 1, 'google_id_admin', 'token_g_admin', NOW() + INTERVAL '30 minutes');
 
-INSERT INTO public.user_security (user_id, two_factor_enabled, recovery_email, failed_login_attempts, password_last_changed_at, last_login_ip, password_hash) VALUES
-(1, TRUE, 'jan.novak@gmail.com', 0, '2025-06-20 08:00:00', '192.168.1.1', 'hashed_password_jan'),
-(2, FALSE, 'petr.svoboda@seznam.cz', 1, '2025-07-01 10:00:00', '10.0.0.1', 'hashed_password_petr'),
-(3, TRUE, 'marie.cerna@yahoo.com', 0, '2025-06-25 14:00:00', '172.16.0.1', 'hashed_password_marie'),
-(4, FALSE, 'jiri.dvorak@outlook.com', 0, '2025-06-30 11:00:00', '203.0.113.1', 'hashed_password_jiri'),
-(5, TRUE, 'lenka.novakova@mail.com', 0, '2025-05-15 09:00:00', '2001:db8::1', 'hashed_password_lenka');
+INSERT INTO public.user_2fa_method (user_id, method, is_enabled, is_primary, secret) VALUES
+(1, 'authenticator', TRUE, TRUE, 'TOTP_SECRET_JOHN'),
+(1, 'sms', TRUE, FALSE, NULL),
+(2, 'email', TRUE, TRUE, 'ALICE@EMAIL.COM');
 
-INSERT INTO public.device (id, user_id, device_name, last_used_at, is_trusted, biometric_enabled, device_os, device_version, device_fingerprint, device_token, last_known_ip, created_at, updated_at) VALUES
-(1, 1, 'Jan''s iPhone', '2025-07-01 10:15:00', TRUE, TRUE, 'iOS', '18.0', 'fingerprint1', 'token1', '192.168.1.1', '2025-06-28 10:00:00', '2025-06-28 10:00:00'),
-(2, 2, 'Petr''s Android', '2025-06-29 11:00:00', FALSE, FALSE, 'Android', '14', 'fingerprint2', 'token2', '10.0.0.1', '2025-06-28 10:01:00', '2025-06-28 10:01:00'),
-(3, 3, 'Marie''s Laptop', '2025-07-01 11:00:00', TRUE, FALSE, 'Windows', '11', 'fingerprint3', 'token3', '172.16.0.1', '2025-06-28 10:02:00', '2025-06-28 10:02:00'),
-(4, 4, 'Jiri''s Tablet', '2025-07-01 09:30:00', TRUE, TRUE, 'iPadOS', '18.0', 'fingerprint4', 'token4', '203.0.113.1', '2025-06-28 10:03:00', '2025-06-28 10:03:00'),
-(5, 5, 'Lenka''s Desktop', '2025-06-30 18:05:00', FALSE, FALSE, 'Linux', '22.04', 'fingerprint5', 'token5', '2001:db8::1', '2025-06-28 10:04:00', '2025-06-28 10:04:00');
+INSERT INTO public.user_2fa_backup_code (user_id, batch_id, code_hash, is_used) VALUES
+(1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'code_hash_1', FALSE),
+(1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'code_hash_2', TRUE),
+(2, 'b1fcc199-9c0b-4ef8-bb6d-6bb9bd380a11', 'code_hash_3', FALSE);
 
-INSERT INTO public.login_history (id, user_id, login_time, login_status, failure_reason, ip_address, user_agent) VALUES
-(1, 1, '2025-07-01 10:00:00', 'success', NULL, '192.168.1.1', 'Mozilla/5.0 (iPhone)'),
-(2, 2, '2025-07-01 10:01:00', 'failure', 'wrong_password', '10.0.0.1', 'Mozilla/5.0 (Android)'),
-(3, 2, '2025-07-01 10:05:00', 'pending_2fa', NULL, '10.0.0.1', 'Mozilla/5.0 (Android)'),
-(4, 3, '2025-06-25 14:30:00', 'success', NULL, '172.16.0.1', 'Mozilla/5.0 (Windows)'),
-(5, 4, '2025-07-01 09:15:00', 'success', NULL, '203.0.113.1', 'Mozilla/5.0 (iPad)'),
-(6, 5, '2025-06-30 18:00:00', 'success', NULL, '2001:db8::1', 'Mozilla/5.0 (X11)');
+INSERT INTO public.user_login_history (user_id, session_id, ip_address, user_agent, is_successful, country) VALUES
+(1, 1, '203.0.113.1', 'Mozilla/5.0 (iPhone)', TRUE, 'USA'),
+(2, 3, '198.51.100.25', 'Mozilla/5.0 (Android)', TRUE, 'Spain');
 
-INSERT INTO public.two_factor_auth_log (id, user_id, two_factor_auth_log_method_type, success, attempted_at, ip_address) VALUES
-(1, 1, 'email', TRUE, '2025-07-01 10:02:00', '192.168.1.1'),
-(2, 2, 'TOTP', FALSE, '2025-07-01 10:06:00', '10.0.0.1'),
-(3, 3, 'email', TRUE, '2025-06-25 14:31:00', '172.16.0.1'),
-(4, 4, 'email', FALSE, '2025-07-01 09:16:00', '203.0.113.1'),
-(5, 5, 'TOTP', TRUE, '2025-06-30 18:01:00', '2001:db8::1');
+INSERT INTO public.user_2fa_login_log (user_id, session_id, is_successful, method_used, ip_address) VALUES
+(1, 1, TRUE, 'authenticator', '203.0.113.1'),
+(2, 3, TRUE, 'email', '198.51.100.25');
 
-INSERT INTO public.system_log (id, user_id, system_log_type, system_log_time, system_action, resource_id, system_severity, details, metadata) VALUES
-(1, 1, 'authentication', '2025-07-01 10:00:00', 'login', '1', 'info', 'User 1 logged in successfully.', '{"user_agent": "Mozilla/5.0"}'),
-(2, 2, 'error', '2025-07-01 10:01:00', 'login', '2', 'warning', 'User 2 failed login attempt.', '{"ip": "10.0.0.1"}'),
-(3, 3, 'data_access', '2025-06-25 14:35:00', 'read', '5', 'info', 'User 3 read file 5.', '{"file_id": 5}'),
-(4, 4, 'system_event', '2025-07-01 09:30:00', 'update', '4', 'debug', 'User 4 updated a report.', NULL),
-(5, 5, 'authentication', '2025-06-30 18:05:00', 'logout', '5', 'info', 'User 5 logged out.', '{"session_id": "xyz"}');
+INSERT INTO public.user_report (reporter_user_id, session_id, reported_user_id, reason, status, moderator_user_id) VALUES
+(4, NULL, 1, 'Inappropriate profile picture.', 'pending', NULL),
+(1, 1, 2, 'Spamming in comment section.', 'approved', 5),
+(4, NULL, 3, 'Frivolous report.', 'rejected', 5);
 
-INSERT INTO public.two_factor_auth_method (id, user_id, two_factor_auth_method_type, is_primary, two_factor_auth_method_enabled, verified, secret_data, created_at, updated_at) VALUES
-(1, 1, 'email', TRUE, TRUE, TRUE, 'jan.novak@example.com', '2025-06-28 10:10:00', '2025-06-28 10:10:00'),
-(2, 2, 'email', TRUE, TRUE, FALSE, 'petr.svoboda@example.com', '2025-06-28 10:11:00', '2025-06-28 10:11:00'),
-(3, 3, 'TOTP', TRUE, TRUE, TRUE, 'secret_totp_3', '2025-06-28 10:12:00', '2025-06-28 10:12:00'),
-(4, 4, 'email', TRUE, FALSE, FALSE, 'jiri.dvorak@example.com', '2025-06-28 10:13:00', '2025-06-28 10:13:00'),
-(5, 5, 'biometric', TRUE, TRUE, TRUE, 'fingerprint_data_5', '2025-06-28 10:14:00', '2025-06-28 10:14:00');
+INSERT INTO public.user_file_access (user_id, file_id) VALUES
+(1, 2),
+(2, 1),
+(4, 1);
 
-INSERT INTO public.password_history (id, user_id, password_hash, changed_at) VALUES
-(1, 1, 'old_hashed_password_jan_1', '2025-05-10 08:00:00'),
-(2, 1, 'old_hashed_password_jan_2', '2025-06-10 08:00:00'),
-(3, 2, 'old_hashed_password_petr', '2025-06-20 10:00:00'),
-(4, 3, 'old_hashed_password_marie', '2025-06-15 14:00:00'),
-(5, 4, 'old_hashed_password_jiri', '2025-06-20 11:00:00');
+INSERT INTO public.user_webauthn_credential (user_id, credential_id, public_key, sign_count, attestation_type, credential_name) VALUES
+(1, E'\\x1234567890abcdef'::bytea, E'\\xabcdef1234567890'::bytea, 10, 'none', 'Johns Security Key'),
+(1, E'\\x9876543210fedcba'::bytea, E'\\xfedcba0123456789'::bytea, 5, 'fido-u2f', 'Johns Laptop Fingerprint'),
+(2, E'\\x1122334455667788'::bytea, E'\\x8877665544332211'::bytea, 1, 'packed', 'Alices Mobile Passkey');
 
-INSERT INTO public.oauth_account (id, user_id, oauth_provider, provider_user_id, access_token, refresh_token, token_expires_at, created_at, updated_at) VALUES
-(1, 1, 'google', 'google_jan', 'google_access_token_1', 'google_refresh_token_1', '2025-07-02 10:00:00', '2025-06-28 10:20:00', '2025-06-28 10:20:00'),
-(2, 3, 'github', 'github_marie', 'github_access_token_2', NULL, NULL, '2025-06-28 10:21:00', '2025-06-28 10:21:00'),
-(3, 4, 'facebook', 'facebook_jiri', 'facebook_access_token_3', 'facebook_refresh_token_3', '2025-07-03 09:15:00', '2025-06-28 10:22:00', '2025-06-28 10:22:00'),
-(4, 5, 'microsoft', 'microsoft_lenka', 'microsoft_access_token_4', NULL, NULL, '2025-06-28 10:23:00', '2025-06-28 10:23:00'),
-(5, 6, 'google', 'google_martin', 'google_access_token_5', 'google_refresh_token_5', '2025-07-04 12:00:00', '2025-06-28 10:24:00', '2025-06-28 10:24:00');
+INSERT INTO public.news (translation_group_id, language_id, title, body, file_id, status, published_at, author_user_id) VALUES
+('d1a9f0e6-9e6a-4b0c-9f6e-6a9b0c9f0e6a', 1, 'New Terms of Service', 'We have updated our terms of service, effective immediately.', 2, 'published', '2023-11-01 10:00:00+00', 3),
+('d1a9f0e6-9e6a-4b0c-9f6e-6a9b0c9f0e6a', 2, 'Nuevos Términos de Servicio', 'Hemos actualizado nuestros términos de servicio, con efecto inmediato.', 2, 'published', '2023-11-01 10:00:00+00', 3),
+('e2b861f7-9e6a-4b0c-9f6e-6a9b0c9f0e6a', 1, 'Holiday Hours', 'Our support hours will be adjusted during the holiday season.', NULL, 'scheduled', '2023-12-15 09:00:00+00', 3);
 
-INSERT INTO public.two_factor_auth_backup_code (id, user_id, code_hash, used_at, created_at, batch_id) VALUES
-(1, 1, 'hash_code1', '2025-06-25 14:32:00', '2025-06-25 14:32:00', 'batch1'),
-(2, 1, 'hash_code2', '2025-06-25 14:32:00', '2025-06-25 14:32:00', 'batch1'),
-(3, 3, 'hash_code3', '2025-06-25 14:32:00', '2025-06-25 14:32:00', 'batch2'),
-(4, 3, 'hash_code4', NULL, '2025-07-01 10:00:00', 'batch2'),
-(5, 5, 'hash_code5', NULL, '2025-07-01 10:01:00', 'batch3');
+INSERT INTO public.notification (language_id, audience_type, user_id, title, notification_message, notification_type) VALUES
+(1, 'user', 1, 'Welcome!', 'Thank you for joining our platform.', 'success'),
+(1, 'all', NULL, 'System Update', 'Maintenance will occur tonight.', 'system'),
+(1, 'user', 2, 'New Follower', 'Someone just followed you!', 'activity');
 
-INSERT INTO public.notification (id, user_id, creator_user_id, title, notification_message, notification_type, created_at) VALUES
-(1, 1, 1, 'Welcome to our platform!', 'Your account has been successfully created.', 'success', '2025-08-07 21:51:58'),
-(2, 2, 1, 'Verify your email address', 'Please click the link to verify your email.', 'warning', '2025-08-07 21:51:58'),
-(3, 3, 1, 'New message from Jan', 'Hello Marie, how are you?', 'activity', '2025-08-07 21:51:58'),
-(4, 4, 1, 'Report generated', 'Your monthly report is ready for download.', 'info', '2025-08-07 21:51:58'),
-(5, 5, 1, 'New promotion', 'Check out our latest offers!', 'promotion', '2025-08-07 21:51:58');
+INSERT INTO public.role (name, description) VALUES
+('Standard User', 'Basic platform access.'),
+('Moderator', 'Can review and moderate content/reports.'),
+('Administrator', 'Full system access.');
 
-INSERT INTO public.comment (id, uuid, parent_comment_id, user_id, manual_id, education_mode_id, comment_text, comment_on_type, rating, commented_at) VALUES
-(1, 'comment-1-uuid', NULL, 1, 1, NULL, 'Skvělý návod pro začátečníky!', 'manual', 5, '2025-08-07 21:52:44'),
-(2, 'comment-2-uuid', NULL, 3, NULL, 1, 'Výborné video, děkuji!', 'education_mode', 4, '2025-08-07 21:52:44'),
-(3, 'comment-3-uuid', 1, 4, 1, NULL, 'Souhlasím, je to velmi jasné.', 'manual', 5, '2025-08-07 21:52:44'),
-(4, 'comment-4-uuid', NULL, 5, NULL, 2, 'Máte v plánu další lekce?', 'education_mode', NULL, '2025-08-07 21:52:44'),
-(5, 'comment-5-uuid', 4, 1, NULL, 2, 'Taky bych ráda věděla.', 'education_mode', NULL, '2025-08-07 21:52:44');
+INSERT INTO public.permission (name, description) VALUES
+('read:self_profile', 'View own profile data.'),
+('write:post', 'Create or edit own content.'),
+('admin:full_access', 'All administration permissions.');
 
-INSERT INTO public.education_step (id, education_mode_id, description_cz, description_en, video_url, tool, step_order, created_at, updated_at) VALUES
-(1, 1, 'První oko', 'First stitch', 'https://video.example.com/step1', 'some tool', 1, '2025-06-05 08:00:00', '2025-06-05 08:00:00'),
-(2, 1, 'Hladce a obrace', 'Knit and purl', 'https://video.example.com/step2', 'some tool', 2, '2025-06-05 08:01:00', '2025-06-05 08:01:00'),
-(3, 1, 'Ukončení pleteniny', 'Binding off', 'https://video.example.com/step3', 'some tool', 3, '2025-06-05 08:02:00', '2025-06-05 08:02:00'),
-(4, 2, 'Kruhové háčkování', 'Crocheting in the round', 'https://video.example.com/step4', 'some tool', 1, '2025-06-06 09:00:00', '2025-06-06 09:00:00'),
-(5, 2, 'Změna barvy', 'Changing color', 'https://video.example.com/step5', 'some tool', 2, '2025-06-06 09:01:00', '2025-06-06 09:01:00');
+INSERT INTO public.role_permission (role_id, permission_id) VALUES
+(1, 1),
+(1, 2),
+(2, 1),
+(2, 2),
+(3, 1),
+(3, 2),
+(3, 3);
 
---------------------------------------------------------------------------------
+INSERT INTO public.user_role (user_id, role_id, changed_by_user_id) VALUES
+(1, 1, 3),
+(2, 1, 3),
+(5, 2, 3),
+(3, 3, 3);
 
-INSERT INTO public.user_file (id, user_id, file_id, generated_or_uploaded_at) VALUES
-(1, 1, 1, '2025-07-01 09:01:00'),
-(2, 2, 2, '2025-07-01 09:06:00'),
-(3, 3, 3, '2025-06-25 14:01:00'),
-(4, 4, 4, '2025-07-01 09:11:00'),
-(5, 5, 5, '2025-06-30 17:56:00'),
-(6, 1, 6, '2025-07-01 09:02:00');
+INSERT INTO public.forum (id, forum_uuid, name, description, author_user_id, created_at, updated_at) VALUES
+(1, 'ff111111-2222-3333-4444-555555555555', 'General Chat', 'Discussions about everything.', 1, '2025-07-01 12:00:00+02', '2025-07-01 12:00:00+02'),
+(2, 'ee222222-3333-4444-5555-666666666666', 'Troubleshooting', 'Get help with your projects.', 4, '2025-07-01 12:05:00+02', '2025-07-01 12:05:00+02'),
+(3, 'dd333333-4444-5555-6666-777777777777', 'Pattern Releases', 'Showcase and announcements.', 1, '2025-07-01 12:10:00+02', '2025-07-01 12:10:00+02');
 
-INSERT INTO public.user_role (id, user_id, role_id) VALUES
-(1, 1, 1),
-(2, 1, 2),
-(3, 2, 2),
-(4, 3, 3),
-(5, 4, 4),
-(6, 5, 5);
+INSERT INTO public.thread (id, thread_uuid, forum_id, author_user_id, title, body, created_at, updated_at) VALUES
+(1, '11111111-aaaa-bbbb-cccc-dddddddddddd', 1, 3, 'Hello world!', 'Just started using the app.', '2025-07-01 12:30:00+02', '2025-07-01 12:30:00+02'),
+(2, '22222222-aaaa-bbbb-cccc-dddddddddddd', 2, 4, 'Need help with tension', 'My yarn keeps getting loose.', '2025-07-01 12:35:00+02', '2025-07-01 12:35:00+02'),
+(3, '33333333-aaaa-bbbb-cccc-dddddddddddd', 3, 1, 'Official Release: New Blanket', 'Check out the new manual.', '2025-07-01 12:40:00+02', '2025-07-01 12:40:00+02');
 
-INSERT INTO public.follower (id, follower_id, followed_id, followed_at, is_active) VALUES
-(1, 1, 3, '2025-08-07 21:57:13', TRUE),
-(2, 1, 4, '2025-08-07 21:57:13', TRUE),
-(3, 3, 1, '2025-08-07 21:57:13', TRUE),
-(4, 4, 5, '2025-08-07 21:57:13', TRUE),
-(5, 5, 1, '2025-08-07 21:57:13', TRUE);
+INSERT INTO public.support_ticket (id, ticket_uuid, user_id, session_id, title, description, status, priority, assigned_to_user_id, created_at, updated_at) VALUES
+(1, '11111111-aaaa-bbbb-cccc-dddddddddddd', 3, NULL, 'Cannot access premium manual', 'The advanced amigurumi manual link is broken.', 'open', 'high', 2, '2025-07-01 13:50:00+02', '2025-07-01 13:50:00+02'),
+(2, '22222222-aaaa-bbbb-cccc-dddddddddddd', 4, NULL, 'Question about points', 'My point balance seems wrong.', 'closed', 'medium', 2, '2025-07-01 13:55:00+02', '2025-07-01 14:00:00+02'),
+(3, '33333333-aaaa-bbbb-cccc-dddddddddddd', NULL, 2, 'Guest checkout error', 'I cannot complete my purchase.', 'awaiting_reply', 'critical', NULL, '2025-07-01 13:58:00+02', '2025-07-01 13:58:00+02');
 
-INSERT INTO public.user_badge (id, badge_id, user_id, awarded_at, visible_on_profile) VALUES
-(1, 1, 1, '2025-07-01 09:00:00', TRUE),
-(2, 2, 1, '2025-07-01 09:05:00', TRUE),
-(3, 3, 3, '2025-07-01 09:10:00', TRUE),
-(4, 4, 4, '2025-07-01 09:15:00', TRUE),
-(5, 5, 5, '2025-07-01 09:20:00', TRUE);
+INSERT INTO public.tool (id, translation_group_id, language_id, creator_user_id, title, description, status, created_at, updated_at) VALUES
+(1, '77777777-8888-9999-aaaa-bbbbbbbbbbbb', 1, 1, 'Yarn Calculator', 'Calculates yardage based on project size.', 'published', '2025-07-01 11:00:00+02', '2025-07-01 11:00:00+02'),
+(2, '88888888-9999-aaaa-bbbb-cccccccccccc', 1, 4, 'Color Picker', 'Suggests complementary colors.', 'published', '2025-07-01 11:05:00+02', '2025-07-01 11:05:00+02'),
+(3, '99999999-aaaa-bbbb-cccc-dddddddddddd', 2, 1, 'Medidor de Ganchos', 'Convierte tamaños de ganchos.', 'draft', '2025-07-01 11:10:00+02', '2025-07-01 11:10:00+02');
 
-INSERT INTO public.news_delivery (id, news_id, user_id, device_id, news_delivery_language, sent_as_push, delivered_as_in_app, read_at, created_at) VALUES
-(1, 1, 1, 1, 'en', TRUE, TRUE, '2025-07-01 08:05:00', '2025-07-01 08:05:00'),
-(2, 1, 3, 3, 'cz', FALSE, TRUE, NULL, '2025-07-01 08:05:00'),
-(3, 2, 4, 4, 'en', TRUE, TRUE, '2025-06-30 09:05:00', '2025-06-30 09:05:00'),
-(4, 2, 5, 5, 'cz', FALSE, FALSE, NULL, '2025-06-30 09:05:00'),
-(5, 3, 1, 1, 'cz', TRUE, TRUE, '2025-06-25 10:05:00', '2025-06-25 10:05:00');
+INSERT INTO public.dictionary (id, translation_group_id, language_id, creator_user_id, title, abbreviation, status, image_file_id, created_at, updated_at) VALUES
+(1, '00000000-1111-2222-3333-444444444444', 1, 4, 'Crochet Terms', 'CT', 'published', 1, '2025-07-01 11:15:00+02', '2025-07-01 11:15:00+02'),
+(2, '55555555-6666-7777-8888-999999999999', 1, 1, 'Knitting Stitches', 'KS', 'published', NULL, '2025-07-01 11:20:00+02', '2025-07-01 11:20:00+02'),
+(3, 'aaaaaaa0-bbbb-cccc-dddd-eeeeeeeeeeee', 2, 4, 'Términos Básicos', 'TB', 'draft', NULL, '2025-07-01 11:25:00+02', '2025-07-01 11:25:00+02');
 
-INSERT INTO public.manual_progress (id, user_id, manual_id, current_step_id, total_time_seconds, started_at, last_updated_at, is_finished) VALUES
-(1, 1, 1, 2, 3600, '2025-06-20 08:00:00', '2025-06-21 09:00:00', FALSE),
-(2, 3, 3, NULL, 7200, '2025-06-21 10:00:00', '2025-06-21 12:00:00', TRUE),
-(3, 4, 5, 1, 1800, '2025-06-22 13:00:00', '2025-06-22 13:30:00', FALSE),
-(4, 5, 1, 1, 600, '2025-06-23 14:00:00', '2025-06-23 14:10:00', FALSE),
-(5, 6, 3, NULL, 1200, '2025-06-24 15:00:00', '2025-06-24 15:20:00', FALSE);
+INSERT INTO public.education_mode (id, translation_group_id, language_id, creator_user_id, title, description, tool, status, points, created_at, updated_at) VALUES
+(1, '01010101-1111-2222-3333-444444444444', 1, 4, 'First Crochet Stitches', 'Learn the basics.', 'Hook', 'published', 50, '2025-07-01 11:30:00+02', '2025-07-01 11:30:00+02'),
+(2, '02020202-1111-2222-3333-444444444444', 1, 4, 'Advanced Tool Use', 'How to use the calculator.', 'Calculator', 'published', 100, '2025-07-01 11:35:00+02', '2025-07-01 11:35:00+02'),
+(3, '03030303-1111-2222-3333-444444444444', 2, 1, 'Modo de Aprendizaje', 'Aprendizaje en español', 'Any', 'draft', 0, '2025-07-01 11:40:00+02', '2025-07-01 11:40:00+02');
 
-INSERT INTO public.manual_purchase (id, user_id, manual_id, purchase_date, price_paid, currency, transaction_id, payment_status, created_at, updated_at) VALUES
-(1, 1, 2, '2025-06-28 10:00:00', 99.00, 'czk', 'txn_001', 'completed', '2025-06-28 10:00:00', '2025-06-28 10:00:00'),
-(2, 3, 2, '2025-06-29 11:00:00', 99.00, 'czk', 'txn_002', 'completed', '2025-06-29 11:00:00', '2025-06-29 11:00:00'),
-(3, 4, 4, '2025-06-30 12:00:00', 199.00, 'czk', 'txn_003', 'completed', '2025-06-30 12:00:00', '2025-06-30 12:00:00'),
-(4, 5, 2, '2025-07-01 13:00:00', 99.00, 'czk', 'txn_004', 'pending', '2025-07-01 13:00:00', '2025-07-01 13:00:00'),
-(5, 6, 4, '2025-07-02 14:00:00', 199.00, 'czk', 'txn_005', 'failed', '2025-07-02 14:00:00', '2025-07-02 14:00:00');
+INSERT INTO public.education_step (id, translation_group_id, language_id, education_mode_id, description, video_url, image_file_id, tool, step_order, created_at, updated_at) VALUES
+(1, '11121314-1111-2222-3333-444444444444', 1, 1, 'Watch video on Chain Stitch.', 'https://video.com/chain_stitch', NULL, 'Hook', 1, '2025-07-01 11:45:00+02', '2025-07-01 11:45:00+02'),
+(2, '21222324-1111-2222-3333-444444444444', 1, 1, 'Practice Single Crochet.', 'https://video.com/single_crochet', 2, 'Hook', 2, '2025-07-01 11:50:00+02', '2025-07-01 11:50:00+02'),
+(3, '31323334-1111-2222-3333-444444444444', 2, 1, 'Paso final de práctica.', 'https://video.com/final_step_es', NULL, 'Hook', 3, '2025-07-01 11:55:00+02', '2025-07-01 11:55:00+02');
 
-INSERT INTO public.user_manual_interaction (id, user_id, manual_id, user_manual_interaction_type, created_at) VALUES
-(1, 1, 1, 'view', '2025-07-01 10:00:00'),
-(2, 1, 1, 'like', '2025-06-29 11:00:00'),
-(3, 3, 2, 'view', '2025-06-25 14:30:00'),
-(4, 4, 4, 'view', '2025-07-01 09:15:00'),
-(5, 5, 5, 'share', '2025-06-30 18:00:00');
+INSERT INTO public.manual (id, translation_group_id, language_id, creator_user_id, title, manual_difficulty, price, manual_form, manual_type, status, created_at, updated_at) VALUES
+(1, '11111111-2222-3333-4444-555555555555', 1, 4, 'Easy Beanie Tutorial', 'easy', 0, 'write', 'how_to', 'public', '2025-07-01 12:00:00+02', '2025-07-01 12:00:00+02'),
+(2, '22222222-3333-4444-5555-666666666666', 1, 4, 'Advanced Amigurumi', 'hard', 15, 'draw', 'assembly', 'premium', '2025-07-01 12:05:00+02', '2025-07-01 12:05:00+02');
 
-INSERT INTO public.session (id, user_id, device_id, session_token, login_time, last_active, expires_at, is_active, user_agent, ip_address, country, region, city, latitude, longitude, cookie_consent, system_version, public_key) VALUES
-(1, 1, 1, 'session_token_1', '2025-07-01 10:00:00', '2025-07-01 10:15:00', '2025-07-02 10:00:00', TRUE, 'Mozilla/5.0 (iPhone)', '192.168.1.1', 'Czechia', 'Prague', 'Prague', 50.0755, 14.4378, TRUE, '1.0.0', 'public_key_1'),
-(2, 2, 2, 'session_token_2', '2025-06-29 11:00:00', '2025-06-29 11:10:00', '2025-06-30 11:00:00', FALSE, 'Mozilla/5.0 (Android)', '10.0.0.1', 'Czechia', 'South Moravian Region', 'Brno', 49.1951, 16.6068, FALSE, '1.0.1', 'public_key_2'),
-(3, 3, 3, 'session_token_3', '2025-06-25 14:30:00', '2025-07-01 11:00:00', '2025-07-02 14:30:00', TRUE, 'Mozilla/5.0 (Windows)', '172.16.0.1', 'Czechia', 'Moravian-Silesian Region', 'Ostrava', 49.8209, 18.2625, TRUE, '1.0.2', 'public_key_3'),
-(4, 4, 4, 'session_token_4', '2025-07-01 09:15:00', '2025-07-01 09:30:00', '2025-07-02 09:15:00', TRUE, 'Mozilla/5.0 (iPad)', '203.0.113.1', 'Czechia', 'Plzeň Region', 'Pilsen', 49.7479, 13.3776, TRUE, '1.0.3', 'public_key_4'),
-(5, 5, 5, 'session_token_5', '2025-06-30 18:00:00', '2025-06-30 18:05:00', '2025-07-01 18:00:00', TRUE, 'Mozilla/5.0 (X11)', '2001:db8::1', 'Czechia', 'Liberec Region', 'Liberec', 50.7671, 15.0562, TRUE, '1.0.4', 'public_key_5');
+INSERT INTO public.manual_step (id, translation_group_id, language_id, manual_id, title, description, image_file_id, step_order, created_at, updated_at) VALUES
+(1, 'f0e1d2c3-1111-2222-3333-a1b2c3d4e5f6', 1, 1, 'The Magic Ring Start', 'Create a slip knot and chain 3. Join with a slip stitch to form the magic ring.', NULL, 1, '2025-07-01 09:15:00+02', '2025-07-01 09:15:00+02'),
+(2, 'f0e1d2c3-1111-2222-3333-a1b2c3d4e5f6', 1, 1, 'Increase Rounds', 'Single crochet 6 stitches into the ring. For the next round, increase in every stitch. (Video: https://video.com/beanie_inc)', NULL, 2, '2025-07-01 09:16:00+02', '2025-07-01 09:16:00+02'),
+(3, 'f0e1d2c3-1111-2222-3333-a1b2c3d4e5f6', 1, 1, 'Straight Body', 'Continue single crocheting without increasing until the desired length is reached (about 8 inches).', NULL, 3, '2025-07-01 09:17:00+02', '2025-07-01 09:17:00+02'),
+(4, 'e1d2c3b4-4444-5555-6666-b2c3d4e5f6a1', 1, 2, 'Foundation and Wire Frame', 'Assemble the internal wire structure as detailed in the attached PDF. This provides stability.', 3, 1, '2025-07-01 09:20:00+02', '2025-07-01 09:20:00+02'),
+(5, 'e1d2c3b4-4444-5555-6666-b2c3d4e5f6a1', 1, 2, 'Creating the Texture', 'Use the loop stitch technique to achieve a fuzzy texture on the body sections. (Video: https://video.com/amigurumi_texture)', 1, 2, '2025-07-01 09:21:00+02', '2025-07-01 09:21:00+02');
 
-INSERT INTO public.role_permission (id, role_id, permission_id) VALUES
-(1, 1, 1),
-(2, 1, 2),
-(3, 1, 3),
-(4, 1, 4),
-(5, 1, 5),
-(6, 2, 1);
+INSERT INTO public.product_type (id, translation_group_id, language_id, name, created_at, updated_at) VALUES
+(1, '1a2b3c4d-1234-5678-90ab-cdef01234567', 1, 'Yarn', '2025-07-01 12:10:00+02', '2025-07-01 12:10:00+02');
+
+INSERT INTO public.product (id, translation_group_id, language_id, title, description, price, product_type_id, created_at, updated_at) VALUES
+(1, '33333333-4444-5555-6666-777777777777', 1, 'Wool Blend Yarn', 'Soft yarn.', 9.99, 1, '2025-07-01 12:15:00+02', '2025-07-01 12:15:00+02'),
+(2, '44444444-5555-6666-7777-888888888888', 1, 'Ergonomic Crochet Hook Set', 'Set of 5 hooks.', 19.50, 1, '2025-07-01 12:20:00+02', '2025-07-01 12:20:00+02'),
+(3, '55555555-6666-7777-8888-999999999999', 1, 'Beginner Scarf Pattern', 'Digital pattern.', 4.99, 1, '2025-07-01 12:25:00+02', '2025-07-01 12:25:00+02');
+
+INSERT INTO public.comment (id, comment_uuid, parent_comment_id, thread_id, manual_id, education_mode_id, product_id, author_user_id, body, created_at, updated_at) VALUES
+(1, 'c0000001-1111-2222-3333-444444444444', NULL, 1, NULL, NULL, NULL, 1, 'Welcome to the community!', '2025-07-01 13:00:00+02', '2025-07-01 13:00:00+02'),
+(2, 'c0000002-1111-2222-3333-444444444444', NULL, NULL, 1, NULL, NULL, 3, 'Very easy to follow!', '2025-07-01 13:05:00+02', '2025-07-01 13:05:00+02'),
+(3, 'c0000003-1111-2222-3333-444444444444', NULL, NULL, NULL, 1, NULL, 4, 'Great introductory lesson.', '2025-07-01 13:10:00+02', '2025-07-01 13:10:00+02'),
+(4, 'c0000004-1111-2222-3333-444444444444', NULL, NULL, NULL, NULL, 1, 3, 'Softest yarn ever.', '2025-07-01 13:15:00+02', '2025-07-01 13:15:00+02'),
+(5, 'c0000005-1111-2222-3333-444444444444', 1, 1, NULL, NULL, NULL, 3, 'Thanks for the welcome!', '2025-07-01 13:20:00+02', '2025-07-01 13:20:00+02');
+
+INSERT INTO public.status_history (id, support_ticket_id, news_id, user_id, old_status, new_status, changed_by_user_id, change_reason, created_at) VALUES
+(1, 1, NULL, NULL, 'open', 'in_progress', 2, 'Assigned to self', '2025-07-01 14:00:00+02'),
+(2, NULL, 1, NULL, 'draft', 'published', 1, NULL, '2025-07-01 14:05:00+02'),
+(3, NULL, NULL, 3, 'active', 'active', 1, NULL, '2025-07-01 14:10:00+02');
+
+INSERT INTO public.rating (id, user_id, manual_id, education_mode_id, product_id, rating_value, created_at, updated_at) VALUES
+(1, 3, 1, NULL, NULL, 5, '2025-07-01 13:20:00+02', '2025-07-01 13:20:00+02'),
+(2, 1, NULL, 1, NULL, 4, '2025-07-01 13:25:00+02', '2025-07-01 13:25:00+02'),
+(3, 3, NULL, NULL, 1, 5, '2025-07-01 13:30:00+02', '2025-07-01 13:30:00+02');
+
+INSERT INTO public.entity_file (id, file_id, user_report_id, tool_id, product_id, author_user_id, created_at, updated_at) VALUES
+(1, 3, 1, NULL, NULL, 3, '2025-07-01 13:40:00+02', '2025-07-01 13:40:00+02'),
+(2, 1, NULL, 1, NULL, 1, '2025-07-01 11:00:00+02', '2025-07-01 11:00:00+02'),
+(3, 1, NULL, NULL, 1, 1, '2025-07-01 12:15:00+02', '2025-07-01 12:15:00+02');
+
+INSERT INTO public.reaction (id, user_id, comment_id, reaction_type, created_at) VALUES
+(1, 3, 1, 'like', '2025-07-01 13:25:00+02'),
+(2, 4, 1, 'love', '2025-07-01 13:30:00+02'),
+(3, 1, 3, 'like', '2025-07-01 13:35:00+02');
+
+INSERT INTO public.progress_tracking (id, user_id, manual_id, education_mode_id, current_step_order, is_finished, started_at, last_updated_at) VALUES
+(1, 3, 1, NULL, 2, FALSE, '2025-07-01 11:00:00+02', '2025-07-01 11:05:00+02'),
+(2, 1, NULL, 1, 3, TRUE, '2025-07-01 10:00:00+02', '2025-07-01 10:10:00+02'),
+(3, 4, NULL, 1, 1, FALSE, '2025-07-01 09:10:00+02', '2025-07-01 09:10:00+02');
+
+INSERT INTO public.user_manual_interaction (id, user_id, manual_id, interaction_type, created_at) VALUES
+(1, 3, 1, 'view', '2025-07-01 11:00:00+02'),
+(2, 3, 1, 'save', '2025-07-01 11:05:00+02'),
+(3, 4, 1, 'like', '2025-07-01 11:10:00+02');
+
+INSERT INTO public.theme (id, translation_group_id, language_id, name) VALUES
+(1, 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff', 1, 'Modern'),
+(2, '1a1b1c1d-1e1f-1a1b-1c1d-1e1f1a1b1c1d', 1, 'Rustic'),
+(3, '2a2b2c2d-2e2f-2a2b-2c2d-2e2f2a2b2c2d', 2, 'Clásico');
+
+INSERT INTO public.category (id, translation_group_id, language_id, name) VALUES
+(1, '3a3b3c3d-3e3f-3a3b-3c3d-3e3f3a3b3c3d', 1, 'Crochet'),
+(2, '4a4b4c4d-4e4f-4a4b-4c4d-4e4f4a4b4c4d', 1, 'Knitting'),
+(3, '5a5b5c5d-5e5f-5a5b-5c5d-5e5f5a5b5c5d', 1, 'Home Repair');
+
+INSERT INTO public.manual_product_theme (manual_id, product_id, theme_id) VALUES
+(1, NULL, 1),
+(2, NULL, 2),
+(NULL, 1, 2);
+
+INSERT INTO public.manual_product_category (manual_id, product_id, category_id) VALUES
+(1, NULL, 1),
+(2, NULL, 1),
+(NULL, 1, 2);
+
+INSERT INTO public.inventory (id, product_id, charge_type, quantity_change, reason, changed_at) VALUES
+(1, 1, 'initial_stock', 500, 'Initial load', '2025-07-01 00:00:00+02'),
+(2, 1, 'sale', -5, 'Order #123', '2025-07-01 16:00:00+02'),
+(3, 2, 'restock', 100, 'Monthly delivery', '2025-07-01 00:00:00+02');
+
+INSERT INTO public.cart (id, cart_uuid, user_id, created_at, updated_at) VALUES
+(1, 'cc111111-2222-3333-4444-555555555555', 3, '2025-07-01 17:00:00+02', '2025-07-01 17:00:00+02'),
+(2, 'cc222222-3333-4444-5555-666666666666', 4, '2025-07-01 17:05:00+02', '2025-07-01 17:05:00+02'),
+(3, 'cc333333-4444-5555-6666-777777777777', 1, '2025-07-01 17:10:00+02', '2025-07-01 17:10:00+02');
+
+INSERT INTO public.cart_item (id, cart_id, product_id, quantity, created_at) VALUES
+(1, 1, 1, 2, '2025-07-01 17:00:00+02'),
+(2, 1, 2, 1, '2025-07-01 17:01:00+02'),
+(3, 2, 1, 5, '2025-07-01 17:05:00+02');
+
+INSERT INTO public.saved_cart (user_id, name, created_at) VALUES
+(3, 'Weekend Project Cart', '2025-07-01 17:30:00+02'),
+(4, 'Yarn Stockup', '2025-07-01 17:35:00+02'),
+(3, 'Gift Ideas', '2025-07-01 17:40:00+02');
+
+INSERT INTO public.wishlist (user_id, product_id) VALUES
+(3, 3),
+(4, 1),
+(4, 2);
+
+INSERT INTO public.order (id, order_uuid, user_id, cart_id, total_price, order_status, order_number, guest_email, created_at, updated_at) VALUES
+(1, 'cc111111-2222-3333-4444-555555555555', 3, 1, 29.48, 'shipped', 'ORD-2025-001', NULL, '2025-07-01 19:00:00+02', '2025-07-01 19:00:00+02'),
+(2, 'cc222222-3333-4444-5555-666666666666', 4, 2, 49.95, 'processing', 'ORD-2025-002', NULL, '2025-07-01 19:05:00+02', '2025-07-01 19:05:00+02'),
+(3, 'cc333333-4444-5555-6666-777777777777', NULL, NULL, 15.00, 'pending', 'ORD-2025-003', 'guest@checkout.com', '2025-07-01 19:10:00+02', '2025-07-01 19:10:00+02');
+
+INSERT INTO public.order_item (id, order_id, product_id, quantity, unit_price, total_price, created_at) VALUES
+(1, 1, 1, 2, 9.99, 19.98, '2025-07-01 19:00:00+02'),
+(2, 1, 2, 1, 9.50, 9.50, '2025-07-01 19:00:00+02'),
+(3, 2, 1, 5, 9.99, 49.95, '2025-07-01 19:05:00+02');
+
+INSERT INTO public.payment (id, payment_uuid, payment_method, payment_status, amount_paid, created_at, transaction_id, order_id) VALUES
+(1, 'cc111111-2222-3333-4444-555555555555', 'Credit Card', 'completed', 29.48, '2025-07-01 19:01:00+02', 'TXN-001', 1),
+(2, 'cc222222-3333-4444-5555-666666666666', 'PayPal', 'pending', 49.95, '2025-07-01 19:06:00+02', 'TXN-002', 2),
+(3, 'cc333333-4444-5555-6666-777777777777', 'Bitcoin', 'failed', 15.00, '2025-07-01 19:11:00+02', 'TXN-003', 3);
+
+INSERT INTO public.discount_code (id, code, discount_type, discount_value, max_uses, valid_from, valid_until) VALUES
+(1, 'WELCOME10', 'percentage', 10.00, 100, '2025-06-01 00:00:00+02', '2026-07-01 00:00:00+02'),
+(2, 'FREESHIP', 'fixed', 5.00, NULL, '2024-07-01 00:00:00+02', NULL),
+(3, 'SALE50', 'percentage', 50.00, 1, '2025-07-01 20:00:00+02', '2025-07-02 20:00:00+02');
+
+INSERT INTO public.order_discount (id, discount_applied, discount_id, order_id) VALUES
+(1, 2.95, 1, 1),
+(2, 5.00, 2, 1),
+(3, 24.98, 3, 2);
+
+INSERT INTO public.refund (id, reason, refund_status, order_id) VALUES
+(1, 'Product out of stock', 'completed', 1),
+(2, 'Customer changed mind', 'pending', 2),
+(3, 'Shipping damage', 'failed', 3);

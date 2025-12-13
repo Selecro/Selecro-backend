@@ -1,156 +1,194 @@
-import {
-  bind,
-  BindingScope,
-  inject,
-  injectable
-} from '@loopback/core';
-import {
-  EmailPayload,
-  EmailService,
-  InAppNotificationService,
-  InAppPayload,
-  PushNotificationService,
-  PushPayload
-} from '.';
-import {
-  NotificationType
-} from '../models';
+import {bind, BindingScope, injectable} from '@loopback/core';
+import {repository} from '@loopback/repository';
+import * as admin from 'firebase-admin';
+import {Notification, NotificationType} from '../models';
+import {DeviceRepository, NotificationRepository, UserRepository} from '../repositories';
 
-export enum UserNotification {
-  Welcome = 'welcome',
-  VerifyEmail = 'verify_email',
-  SetPassword = 'set_password',
-  ExploreFeatures = 'explore_features',
-  ResetPassword = 'reset_password',
-  LoginCode = 'login_code',
-  NewLoginDetected = 'new_login_detected',
-  AccountLocked = 'account_locked',
-  OrderConfirmed = 'order_confirmed',
-  PaymentReceived = 'payment_received',
-  OrderShipped = 'order_shipped',
-  InvoiceReady = 'invoice_ready',
-  SubscriptionActivated = 'subscription_activated',
-  ProfileUpdated = 'profile_updated',
-  EmailChanged = 'email_changed',
-  SubscriptionPlanChanged = 'subscription_plan_changed',
-  SubscriptionRenewal = 'subscription_renewal',
-  UsageSummary = 'usage_summary',
-  DataDownloadReady = 'data_download_ready',
-  TrialEnding = 'trial_ending',
-  ReEngagement = 're_engagement',
-  MilestoneReached = 'milestone_reached',
-  KycReceived = 'kyc_received',
-  VerificationComplete = 'verification_complete',
-  PrivacyRequestConfirmed = 'privacy_request_confirmed',
-  ApprovalNeeded = 'approval_needed',
-  RequestRejected = 'request_rejected',
-  TaskAssigned = 'task_assigned',
-  ProjectUpdated = 'project_updated',
-  EventRegistrationConfirmed = 'event_registration_confirmed',
-  TicketsReady = 'tickets_ready',
-  EventReminder = 'event_reminder',
-  BookingCancelled = 'booking_cancelled',
-  WaitlistSpotOpened = 'waitlist_spot_opened',
-  NewMessage = 'new_message',
-  PostReply = 'post_reply',
-  Mention = 'mention',
-  NewFollower = 'new_follower',
-  ModerationAction = 'moderation_action',
-  PriceDrop = 'price_drop',
-  BackInStock = 'back_in_stock',
-  RefundProcessed = 'refund_processed',
-  ReviewRequest = 'review_request',
-  PaymentFailed = 'payment_failed',
-  Other = 'other'
+export interface NotificationPayload {
+  title: string;
+  notification_message: string;
+  notification_type: NotificationType;
+  image_url?: string;
+  action_url?: string;
+  extra_data?: string;
 }
 
-export enum GroupNotification {
-  ScheduledMaintenance = 'scheduled_maintenance',
-  ServiceDowntime = 'service_downtime',
-  TermsUpdated = 'terms_updated',
-  NewFeature = 'new_feature',
-  ComplianceUpdate = 'compliance_update',
-  EventReminderGroup = 'event_reminder_group',
-  LowInventory = 'low_inventory',
-  SystemHealthSummary = 'system_health_summary',
-  Other = 'other'
+export interface NotificationOptions {
+  silent?: boolean;
+  topic?: string;
+  creatorUserId?: number;
+  audienceType?: 'user' | 'group' | 'broadcast';
 }
 
-export enum BroadcastNotification {
-  NewFeaturePublic = 'new_feature_public',
-  Promotion = 'promotion',
-  BigEvent = 'big_event',
-  PublicDowntime = 'public_downtime',
-  Other = 'other'
-}
-
-@injectable({
-  scope: BindingScope.SINGLETON
-})
-@bind({
-  tags: 'notification.service'
-})
+@injectable({scope: BindingScope.SINGLETON})
+@bind({tags: 'notification.service'})
 export class NotificationService {
+  private readonly firebaseAdmin = admin;
+
   constructor(
-    @inject('in-app-notification.service') private inAppNotificationService: InAppNotificationService,
-    @inject('push-notification.service') private pushNotificationService: PushNotificationService,
-    @inject('email.service') private emailService: EmailService,
+    @repository(DeviceRepository) private deviceRepository: DeviceRepository,
+    @repository(NotificationRepository) private notificationRepository: NotificationRepository,
+    @repository(UserRepository) private userRepository: UserRepository,
   ) { }
 
-  public async sendToUser(notificationType: UserNotification, userId: number, creatorUserId: number): Promise<void> {
-    const emailPayload: EmailPayload = {
-      subject: `Notification: ${notificationType}`,
-      templateName: notificationType,
-    };
+  public async sendNotification(
+    users: number[] | undefined,
+    devices: string[] | undefined,
+    payload: NotificationPayload,
+    options: NotificationOptions = {},
+  ): Promise<void> {
+    if (users?.length) {
+      await Promise.all(
+        users.map(userId =>
+          this.notificationRepository.create(
+            new Notification({
+              ...payload,
+              user_id: userId,
+              creator_user_id: options.creatorUserId,
+              audience_type: options.audienceType ?? 'user',
+            }),
+          ),
+        ),
+      );
+    } else {
+      await this.notificationRepository.create(
+        new Notification({
+          ...payload,
+          creator_user_id: options.creatorUserId,
+          audience_type: options.audienceType ?? (options.topic ? 'broadcast' : 'group'),
+        }),
+      );
+    }
 
-    const inAppPayload: InAppPayload = {
-      title: `New message from Selecro`,
-      notification_message: `You have a new notification of type: ${notificationType}`,
-      notification_type: NotificationType.Info,
-    };
+    let deviceTokens: string[] = devices || [];
 
-    const pushPayload: PushPayload = {
-      title: inAppPayload.title,
-      notification_message: inAppPayload.notification_message,
-      notification_type: inAppPayload.notification_type,
-    };
+    if (users?.length) {
+      const userDevices = await this.deviceRepository.find({
+        where: {user_id: {inq: users}},
+        fields: ['device_token'],
+      });
+      deviceTokens.push(
+        ...userDevices.map(d => d.device_token).filter((t): t is string => !!t),
+      );
+    }
 
-    await this.emailService.sendToUser(userId, emailPayload);
-    await this.inAppNotificationService.sendForUser(userId, creatorUserId, inAppPayload);
-    await this.pushNotificationService.sendToUser(userId, pushPayload);
+    if (options.topic) {
+      await this._sendToTopic(payload, options);
+    }
+
+    if (deviceTokens.length > 0) {
+      await this._sendToDevices(deviceTokens, payload, options);
+    }
   }
 
-  public async sendToAllRegisteredUsers(notificationType: GroupNotification, creatorUserId: number): Promise<void> {
-    const emailPayload: EmailPayload = {
-      subject: `Group Notification: ${notificationType}`,
-      templateName: notificationType,
+  private async _sendToDevices(
+    tokens: string[],
+    payload: NotificationPayload,
+    options: NotificationOptions,
+  ) {
+    const message: admin.messaging.MulticastMessage = {
+      notification: options.silent
+        ? undefined
+        : {
+          title: payload.title,
+          body: payload.notification_message,
+          imageUrl: payload.image_url,
+        },
+      data: {
+        notificationType: String(payload.notification_type),
+        actionUrl: payload.action_url ?? '',
+        extraData: payload.extra_data ?? '',
+      },
+      tokens,
     };
 
-    const inAppPayload: InAppPayload = {
-      title: `Group Update: ${notificationType}`,
-      notification_message: `A new group notification is available.`,
-      notification_type: NotificationType.Info,
-    };
+    if (options.silent) {
+      message.android = {priority: 'high'};
+      message.apns = {
+        headers: {'apns-priority': '5'},
+        payload: {aps: {'content-available': 1}},
+      };
+    }
 
-    const pushPayload: PushPayload = {
-      title: inAppPayload.title,
-      notification_message: inAppPayload.notification_message,
-      notification_type: inAppPayload.notification_type,
-    };
-
-    await this.emailService.sendToAllRegisteredUsers(emailPayload);
-    await this.inAppNotificationService.sendForAllRegisteredUsers(creatorUserId, inAppPayload);
-    await this.pushNotificationService.sendToAllRegisteredUsers(pushPayload);
+    const response = await this.firebaseAdmin.messaging().sendEachForMulticast(message);
+    const failedTokens = response.responses
+      .map((r, i) => (!r.success ? tokens[i] : null))
+      .filter((t): t is string => !!t);
+    if (failedTokens.length > 0) console.warn('Failed tokens:', failedTokens);
   }
 
-  public async sendBroadcast(notificationType: BroadcastNotification): Promise<void> {
-    const topicName = 'broadcast';
-    const pushPayload: PushPayload = {
-      title: `Broadcast Alert: ${notificationType}`,
-      notification_message: `A new public announcement has been made.`,
-      notification_type: NotificationType.Promotion,
+  private async _sendToTopic(
+    payload: NotificationPayload,
+    options: NotificationOptions,
+  ) {
+    const message: admin.messaging.Message = {
+      topic: options.topic!,
+      notification: options.silent
+        ? undefined
+        : {
+          title: payload.title,
+          body: payload.notification_message,
+          imageUrl: payload.image_url,
+        },
+      data: {
+        notificationType: String(payload.notification_type),
+        actionUrl: payload.action_url ?? '',
+        extraData: payload.extra_data ?? '',
+      },
     };
 
-    await this.pushNotificationService.sendBroadcast(topicName, pushPayload);
+    if (options.silent) {
+      message.android = {priority: 'high'};
+      message.apns = {
+        headers: {'apns-priority': '5'},
+        payload: {aps: {'content-available': 1}},
+      };
+    }
+
+    await this.firebaseAdmin.messaging().send(message);
+  }
+
+  public async sendToAllRegisteredUsers(
+    payload: NotificationPayload,
+    options: NotificationOptions = {},
+  ) {
+    await this.notificationRepository.create(
+      new Notification({
+        ...payload,
+        creator_user_id: options.creatorUserId,
+        audience_type: 'group',
+      }),
+    );
+
+    const devices = await this.deviceRepository.find({fields: ['device_token']});
+    const deviceTokens = devices
+      .map(d => d.device_token)
+      .filter((t): t is string => !!t);
+
+    if (deviceTokens.length > 0) {
+      await this._sendToDevices(deviceTokens, payload, options);
+    }
+  }
+
+  public async sendToAllDevices(
+    payload: NotificationPayload,
+    options: NotificationOptions = {},
+  ) {
+    await this.notificationRepository.create(
+      new Notification({
+        ...payload,
+        creator_user_id: options.creatorUserId,
+        audience_type: 'broadcast',
+      }),
+    );
+
+    const devices = await this.deviceRepository.find({fields: ['device_token']});
+    const deviceTokens = devices
+      .map(d => d.device_token)
+      .filter((t): t is string => !!t);
+
+    if (deviceTokens.length > 0) {
+      await this._sendToDevices(deviceTokens, payload, options);
+    }
   }
 }

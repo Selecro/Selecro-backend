@@ -11,10 +11,10 @@ export class CorsMiddlewareProvider implements Provider<Middleware> {
   constructor(
     @inject(CORS_OPTIONS, {optional: true})
     private options: CorsOptions = {
-      origin: false,
+      origin: true,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-Request-ID', 'X-CSRF-Token'],
     },
   ) {
     this.corsHandler = cors(this.options);

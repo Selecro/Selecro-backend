@@ -2,76 +2,88 @@ import {Application} from '@loopback/core';
 import cron from 'node-cron';
 import {RemoteConfigService} from '../providers';
 import {
-  BadgeRepository,
   CommentRepository,
-  DictionaryRepository,
-  EducationModeRepository,
-  EducationStepRepository,
+  EntityFileRepository,
+  EventRepository,
   FileRepository,
-  ManualProgressRepository,
-  ManualPurchaseRepository,
-  ManualRepository,
-  ManualStepRepository,
+  GlobalReviewRepository,
   NewsRepository,
-  NotificationRepository,
-  PermissionRepository,
-  RoleRepository,
-  ToolRepository,
-  UserManualInteractionRepository,
+  RatingRepository,
+  ReactionRepository,
+  SupportTicketRepository,
+  User2FaLoginLogRepository,
+  UserActivityLogRepository,
+  UserLoginHistoryRepository,
+  UserReportRepository
 } from '../repositories';
+
+type SoftDeleteRepository =
+  CommentRepository | EntityFileRepository | EventRepository | FileRepository |
+  GlobalReviewRepository | NewsRepository | RatingRepository | ReactionRepository |
+  SupportTicketRepository | UserActivityLogRepository | UserLoginHistoryRepository |
+  User2FaLoginLogRepository | UserReportRepository;
+
 
 export function startHardDeleteJob(app: Application) {
   cron.schedule('0 2 * * *', async () => {
+    console.log('Starting hard-delete job...');
     const remoteConfigService = await app.get<RemoteConfigService>('services.RemoteConfigService');
-    const config = await remoteConfigService.getConfigValues();
-    const RETENTION_PERIOD_DAYS = config.retention_period_days;
+
+    let config: {retention_period_days: number};
+    try {
+      config = await remoteConfigService.getConfigValues();
+    } catch (e) {
+      console.error('Failed to retrieve remote config for hard-delete job:', e);
+      return;
+    }
+
+    const RETENTION_PERIOD_DAYS = config.retention_period_days || 30;
 
     const now = new Date();
     const hardDeleteThreshold = new Date(now.getTime() - RETENTION_PERIOD_DAYS * 24 * 60 * 60 * 1000);
 
+    console.log(`Hard delete threshold: ${hardDeleteThreshold.toISOString()}`);
+    console.log(`Retention period: ${RETENTION_PERIOD_DAYS} days.`);
+
     try {
       const fileRepo = await app.get<FileRepository>('repositories.FileRepository');
-      const roleRepo = await app.get<RoleRepository>('repositories.RoleRepository');
-      const permissionRepo = await app.get<PermissionRepository>('repositories.PermissionRepository');
-      const badgeRepo = await app.get<BadgeRepository>('repositories.BadgeRepository');
-      const notificationRepo = await app.get<NotificationRepository>('repositories.NotificationRepository');
       const newsRepo = await app.get<NewsRepository>('repositories.NewsRepository');
-      const educationModeRepo = await app.get<EducationModeRepository>('repositories.EducationModeRepository');
-      const toolRepo = await app.get<ToolRepository>('repositories.ToolRepository');
-      const educationStepRepo = await app.get<EducationStepRepository>('repositories.EducationStepRepository');
-      const dictionaryRepo = await app.get<DictionaryRepository>('repositories.DictionaryRepository');
-      const manualRepo = await app.get<ManualRepository>('repositories.ManualRepository');
-      const manualStepRepo = await app.get<ManualStepRepository>('repositories.ManualStepRepository');
-      const manualProgressRepo = await app.get<ManualProgressRepository>('repositories.ManualProgressRepository');
-      const manualPurchaseRepo = await app.get<ManualPurchaseRepository>('repositories.ManualPurchaseRepository');
-      const userManualInteractionRepo = await app.get<UserManualInteractionRepository>('repositories.UserManualInteractionRepository');
+      const supportTicketRepo = await app.get<SupportTicketRepository>('repositories.SupportTicketRepository');
       const commentRepo = await app.get<CommentRepository>('repositories.CommentRepository');
+      const ratingRepo = await app.get<RatingRepository>('repositories.RatingRepository');
+      const entityFileRepo = await app.get<EntityFileRepository>('repositories.EntityFileRepository');
+      const reactionRepo = await app.get<ReactionRepository>('repositories.ReactionRepository');
+      const globalReviewRepo = await app.get<GlobalReviewRepository>('repositories.GlobalReviewRepository');
+      const eventRepo = await app.get<EventRepository>('repositories.EventRepository');
+      const userActivityLogRepo = await app.get<UserActivityLogRepository>('repositories.UserActivityLogRepository');
+      const userLoginHistoryRepo = await app.get<UserLoginHistoryRepository>('repositories.UserLoginHistoryRepository');
+      const user2FaLoginLogRepo = await app.get<User2FaLoginLogRepository>('repositories.User2FaLoginLogRepository');
+      const userReportRepo = await app.get<UserReportRepository>('repositories.UserReportRepository');
 
-      const repositories = [
+      const repositories: SoftDeleteRepository[] = [
         fileRepo,
-        roleRepo,
-        permissionRepo,
-        badgeRepo,
-        notificationRepo,
         newsRepo,
-        educationModeRepo,
-        toolRepo,
-        educationStepRepo,
-        dictionaryRepo,
-        manualRepo,
-        manualStepRepo,
-        manualProgressRepo,
-        manualPurchaseRepo,
-        userManualInteractionRepo,
+        supportTicketRepo,
         commentRepo,
+        ratingRepo,
+        entityFileRepo,
+        reactionRepo,
+        globalReviewRepo,
+        eventRepo,
+        userActivityLogRepo,
+        userLoginHistoryRepo,
+        user2FaLoginLogRepo,
+        userReportRepo,
       ];
 
       for (const repo of repositories) {
+        console.log(`Processing hard-delete for: ${repo.constructor.name}`);
         await repo.deleteAll({
-          deleted: true,
-          deletedAt: {lt: hardDeleteThreshold},
+          is_deleted: true,
+          deleted_at: {lt: hardDeleteThreshold},
         });
       }
+      console.log('Hard-delete job completed successfully.');
 
     } catch (error) {
       console.error('Error during hard-delete job:', error);

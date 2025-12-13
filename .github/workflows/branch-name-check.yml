@@ -24,8 +24,9 @@ jobs:
 
           if [[ ! "$GITHUB_HEAD_REF" =~ ^(feature|fix)/[a-z0-9._-]+$ \
              && ! "$GITHUB_HEAD_REF" =~ ^dependabot/.+$ \
-             && ! "$GITHUB_HEAD_REF" =~ ^snyk-upgrade-[a-z0-9]+$ ]]; then
-            echo "❌ Invalid branch name. Use 'feature/*', 'fix/*', 'dependabot/*', or 'snyk-upgrade-*'."
+             && ! "$GITHUB_HEAD_REF" =~ ^snyk-upgrade-[a-z0-9]+$ \
+             && ! "$GITHUB_HEAD_REF" =~ ^snyk-fix-.*$ ]]; then
+            echo "❌ Invalid branch name. Use 'feature/*', 'fix/*', 'dependabot/*', 'snyk-upgrade-*', or 'snyk-fix-*'."
             exit 1
           fi
 
