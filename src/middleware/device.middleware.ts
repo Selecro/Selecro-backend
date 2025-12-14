@@ -1,9 +1,15 @@
 import {inject, Provider} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import {Middleware, Request, Response, RestBindings} from '@loopback/rest';
-import {createHash} from 'crypto';
-import {DeviceLanguagePreference} from '../models';
-import {DeviceRepository} from '../repositories';
+import {createHash, randomUUID} from 'crypto';
+import {DeviceRepository, LanguageRepository} from '../repositories';
+
+export const LanguageCodes = {
+  ENGLISH: 'en',
+  CZECH: 'cz',
+} as const;
+
+export type LanguageCode = typeof LanguageCodes[keyof typeof LanguageCodes];
 
 declare module '@loopback/rest' {
   interface Request {
@@ -38,12 +44,13 @@ function parseUserAgent(userAgent: string): {os: string, version: string} {
   return osInfo;
 }
 
-function parseLanguagePreference(acceptLanguage: string): DeviceLanguagePreference {
+function parseLanguagePreference(acceptLanguage: string): LanguageCode {
   const preferredLanguage = acceptLanguage.split(',')[0].toLowerCase();
-  if (preferredLanguage.startsWith(DeviceLanguagePreference.EN)) {
-    return DeviceLanguagePreference.EN;
+
+  if (preferredLanguage.startsWith(LanguageCodes.ENGLISH)) {
+    return LanguageCodes.ENGLISH;
   }
-  return DeviceLanguagePreference.CZ;
+  return LanguageCodes.CZECH;
 }
 
 export class DeviceMiddlewareProvider implements Provider<Middleware> {
@@ -52,67 +59,65 @@ export class DeviceMiddlewareProvider implements Provider<Middleware> {
     @inject(RestBindings.Http.RESPONSE) private response: Response,
     @repository(DeviceRepository)
     private deviceRepository: DeviceRepository,
+    @repository(LanguageRepository)
+    private languageRepository: LanguageRepository,
   ) { }
 
   value(): Middleware {
     return async (ctx, next) => {
       const clientIp = this.request.headers['x-forwarded-for'] as string || this.request.ip;
       const userAgent = this.request.headers['user-agent'] ?? 'Unknown';
-
       const {os, version} = parseUserAgent(userAgent);
-      const languagePreference = this.request.headers['accept-language'] ?
+      const languageCode = this.request.headers['accept-language'] ?
         parseLanguagePreference(this.request.headers['accept-language'] as string) :
-        DeviceLanguagePreference.CZ;
-
+        LanguageCodes.CZECH;
       const deviceToken = this.request.headers['x-device-token'] as string;
-
       const deviceFingerprint = createHash('sha256')
         .update(`${userAgent}-${clientIp}`)
         .digest('hex');
-
+      let languageId: number | undefined;
       let existingDevice;
-      try {
-        existingDevice = await this.deviceRepository.findOne({where: {device_fingerprint: deviceFingerprint}});
-      } catch (error) {
-        console.error('Failed to query device by fingerprint:', error);
+
+      if (deviceFingerprint && deviceFingerprint.length > 0) {
+        try {
+          existingDevice = await this.deviceRepository.findOne({where: {deviceFingerprint: deviceFingerprint}});
+        } catch (error) {
+          console.error('Failed to query device by fingerprint:', error);
+        }
       }
 
+      const now = new Date().toISOString();
+
       if (existingDevice) {
-        try {
-          await this.deviceRepository.updateById(existingDevice.id, {
-            last_used_at: new Date().toISOString(),
-            last_known_ip: clientIp ?? '0.0.0.0',
-            device_name: userAgent,
-            device_token: deviceToken,
-            device_language_preference: languagePreference,
-            device_os: os,
-            device_version: version,
-            updated_at: new Date().toISOString(),
-          });
-        } catch (error) {
-          console.error('Failed to update device record:', error);
-        }
+
       } else {
         try {
+          const uniqueId = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 10000);
+
           const newDevice = await this.deviceRepository.create({
-            device_fingerprint: deviceFingerprint,
-            device_name: userAgent,
-            last_used_at: new Date().toISOString(),
-            last_known_ip: clientIp ?? '0.0.0.0',
-            device_token: deviceToken,
-            device_language_preference: languagePreference,
-            device_os: os,
-            device_version: version,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            id: uniqueId,
+            deviceUuid: randomUUID(),
+            deviceName: userAgent,
+            lastUsedAt: now,
+            isTrusted: false,
+            biometricEnabled: false,
+            deviceFingerprint: deviceFingerprint,
+            lastKnownIp: clientIp ?? '0.0.0.0',
+            deviceToken: deviceToken,
+            languageId: languageId,
+            deviceOs: os,
+            deviceVersion: version,
+            createdAt: now,
+            updatedAt: now,
           });
           existingDevice = newDevice;
         } catch (error) {
           console.error('Failed to create new device record:', error);
+
         }
       }
 
-      (ctx.request as any).deviceId = existingDevice ? existingDevice.id : undefined;
+      (ctx.request as any).id = existingDevice ? existingDevice.id : undefined;
 
       await next();
     };

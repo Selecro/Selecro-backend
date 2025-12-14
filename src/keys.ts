@@ -10,7 +10,7 @@ import {RemoteConfigParameters} from './providers';
 import {
   EmailService,
   FirebaseAdminService,
-  NotificationService
+  NotificationService,
 } from './services';
 import {FirebaseOauthStrategy} from './strategies';
 

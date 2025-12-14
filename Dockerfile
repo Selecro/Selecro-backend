@@ -6,8 +6,8 @@ FROM node:22.20.0-alpine
 
 # Update and upgrade Alpine packages
 RUN apk update && \
-    apk upgrade && \
-    rm -rf /var/cache/apk/*
+  apk upgrade && \
+  rm -rf /var/cache/apk/*
 
 # Create app directory and set ownership to non-root `node` user
 RUN mkdir -p /home/node/app && chown node:node /home/node/app

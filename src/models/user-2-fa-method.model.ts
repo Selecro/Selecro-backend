@@ -3,7 +3,7 @@ import {Entity, model, property} from '@loopback/repository';
 @model({
   settings: {idInjection: false, postgresql: {schema: 'public', table: 'user_2fa_method'}}
 })
-export class User_2faMethod extends Entity {
+export class User2FaMethod extends Entity {
   @property({
     type: 'number',
     required: true,
@@ -111,13 +111,13 @@ export class User_2faMethod extends Entity {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [prop: string]: any;
 
-  constructor(data?: Partial<User_2faMethod>) {
+  constructor(data?: Partial<User2FaMethod>) {
     super(data);
   }
 }
 
-export interface User_2faMethodRelations {
+export interface User2FaMethodRelations {
   // describe navigational properties here
 }
 
-export type User_2faMethodWithRelations = User_2faMethod & User_2faMethodRelations;
+export type User2FaMethodWithRelations = User2FaMethod & User2FaMethodRelations;

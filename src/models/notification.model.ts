@@ -1,5 +1,12 @@
 import {Entity, model, property} from '@loopback/repository';
 
+export enum NotificationType {
+  Info = 'info',
+  Warning = 'warning',
+  Alert = 'alert',
+  Promotion = 'promotion',
+}
+
 @model({
   settings: {idInjection: false, postgresql: {schema: 'public', table: 'notification'}}
 })

@@ -6,7 +6,7 @@ import {Entity, model, property} from '@loopback/repository';
     postgresql: {schema: 'public', table: 'user_2fa_login_log'}
   }
 })
-export class User_2faLoginLog extends Entity {
+export class User2FaLoginLog extends Entity {
   @property({
     type: 'number',
     required: true,
@@ -114,13 +114,13 @@ export class User_2faLoginLog extends Entity {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [prop: string]: any;
 
-  constructor(data?: Partial<User_2faLoginLog>) {
+  constructor(data?: Partial<User2FaLoginLog>) {
     super(data);
   }
 }
 
-export interface User_2faLoginLogRelations {
+export interface User2FaLoginLogRelations {
   // describe navigational properties here
 }
 
-export type User_2faLoginLogWithRelations = User_2faLoginLog & User_2faLoginLogRelations;
+export type User2FaLoginLogWithRelations = User2FaLoginLog & User2FaLoginLogRelations;

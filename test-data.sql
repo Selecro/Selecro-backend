@@ -33,10 +33,10 @@ INSERT INTO public.user_setting (user_id, theme, language_id, timezone, email_ve
 (3, 'light', 2, 'America/New_York', TRUE),
 (4, 'light', 1, 'Asia/Tokyo', TRUE);
 
-INSERT INTO public.user_consent (user_id, terms_of_service_accepted_at, privacy_policy_accepted_at, marketing_consent_given_at, data_processing_consent_given_at, third_party_data_sharing_consent_given_at) VALUES
-(1, '2024-07-01 09:00:00+02', '2024-07-01 09:00:00+02', '2025-01-01 09:00:00+02', '2024-07-01 09:00:00+02', '2024-07-01 09:00:00+02'),
-(3, '2025-04-01 09:00:00+02', '2025-04-01 09:00:00+02', NULL, '2025-04-01 09:00:00+02', NULL),
-(4, '2025-06-30 09:00:00+02', '2025-06-30 09:00:00+02', '2025-07-01 09:00:00+02', '2025-06-30 09:00:00+02', '2025-07-01 09:00:00+02');
+INSERT INTO public.user_consent (user_id, terms_of_service_accepted_at, tos_version, privacy_policy_accepted_at, pp_version, marketing_consent_given_at) VALUES
+(1, '2023-01-15 10:05:00+00', '1.2', '2023-01-15 10:05:00+00', '1.1', '2023-01-15 10:05:00+00'),
+(2, '2023-03-20 14:35:00+00', '1.3', '2023-03-20 14:35:00+00', '1.2', NULL),
+(3, '2022-11-01 08:05:00+00', '1.2', '2022-11-01 08:05:00+00', '1.1', '2022-11-01 08:05:00+00');
 
 INSERT INTO public.user_notification_preference (user_id, email_new_follower, email_post_likes, email_mentions, email_promotional, push_new_follower, push_post_likes, push_mentions, push_promotional) VALUES
 (1, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),

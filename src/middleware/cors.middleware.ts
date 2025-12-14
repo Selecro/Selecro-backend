@@ -14,7 +14,7 @@ export class CorsMiddlewareProvider implements Provider<Middleware> {
       origin: true,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-Request-ID', 'X-CSRF-Token'],
     },
   ) {
     this.corsHandler = cors(this.options);
