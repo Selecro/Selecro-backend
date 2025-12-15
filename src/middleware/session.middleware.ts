@@ -26,12 +26,14 @@ export class SessionMiddlewareProvider implements Provider<Middleware> {
       const deviceId: string | undefined = this.request.deviceId;
 
       let existingSession;
-      if (sessionToken) {
-        existingSession = await this.sessionRepository.findOne({where: {session_token: sessionToken}});
-        if (!existingSession) {
-          sessionToken = undefined;
+
+      /*if (sessionToken && sessionToken.length > 0) {
+        try {
+          existingSession = await this.sessionRepository.findOne({where: {sessionToken: sessionToken}});
+        } catch (error) {
+          console.error('SessionMiddleware: Failed to query existing session by token:', error);
         }
-      }
+      }*/
 
       if (!sessionToken) {
         sessionToken = uuidv4();
@@ -40,16 +42,22 @@ export class SessionMiddlewareProvider implements Provider<Middleware> {
 
         const clientIp = this.request.headers['x-forwarded-for'] as string || this.request.ip;
 
+        const uniqueId = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 10000);
+
         const newSessionData: any = {
-          session_token: sessionToken,
-          expires_at: expiresAt.toISOString(),
-          is_active: true,
-          user_agent: this.request.headers['user-agent'] ?? 'Unknown',
-          ip_address: clientIp ?? '0.0.0.0',
+          id: uniqueId,
+          sessionToken: sessionToken,
+          expiresAt: expiresAt.toISOString(),
+          isActive: true,
+          userAgent: this.request.headers['user-agent'] ?? 'Unknown',
+          ipAddress: clientIp ?? '0.0.0.0',
+          loginAt: new Date().toISOString(),
+          lastActive: new Date().toISOString(),
+          cookieConsent: false,
         };
 
         if (deviceId) {
-          newSessionData.device_id = deviceId;
+          newSessionData.deviceId = deviceId;
         }
 
         try {
@@ -67,9 +75,9 @@ export class SessionMiddlewareProvider implements Provider<Middleware> {
         }
       } else {
         if (existingSession) {
-          await this.sessionRepository.updateById(existingSession.id, {
+          /*await this.sessionRepository.updateById(existingSession.id, {
             last_active: new Date().toISOString(),
-          });
+          });*/
         }
       }
 

@@ -4,16 +4,14 @@ import {inject} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
-import {User} from '../models'; // Assuming User model is still needed for UserProfile conversion
-import {UserRepository, UserSecurityRepository} from '../repositories'; // Import UserSecurityRepository
+import {User} from '../models';
+import {UserRepository} from '../repositories';
 import {BcryptHasher} from './hash.password';
 
 export class MyUserService implements UserService<User, Credentials> {
   constructor(
     @repository(UserRepository)
     public userRepository: UserRepository,
-    @repository(UserSecurityRepository) // Inject UserSecurityRepository
-    public userSecurityRepository: UserSecurityRepository,
     @inject('services.hasher')
     public hasher: BcryptHasher,
   ) { }
@@ -21,39 +19,23 @@ export class MyUserService implements UserService<User, Credentials> {
   async verifyCredentials(credentials: Credentials): Promise<User> {
     let foundUser: User | null;
 
-    // Determine if the credential is an email or username
-    if (credentials.email.includes('@')) {
-      foundUser = await this.userRepository.findOne({
-        where: {
-          email: credentials.email,
-        },
-      });
-    } else {
-      foundUser = await this.userRepository.findOne({
-        where: {
-          username: credentials.email, // Assuming username is used for non-email logins
-        },
-      });
-    }
+    const query = credentials.email.includes('@')
+      ? {email: credentials.email}
+      : {username: credentials.email};
+
+    foundUser = await this.userRepository.findOne({where: query});
 
     if (!foundUser) {
       throw new HttpErrors.NotFound(`User not found`);
     }
 
-    // Fetch the UserSecurity record for the found user
-    const userSecurity = await this.userSecurityRepository.findOne({
-      where: {
-        userId: foundUser.id, // Assuming pgId is the foreign key in UserSecurity for userId
-      },
-    });
-
-    if (!userSecurity || !userSecurity.passwordHash) {
-      throw new HttpErrors.Unauthorized('User security information or password hash not found');
+    if (!foundUser.passwordHash) {
+      throw new HttpErrors.Unauthorized('User password hash not found');
     }
 
     const passwordMatched = await this.hasher.comparePassword(
       credentials.password,
-      userSecurity.passwordHash,
+      foundUser.passwordHash,
     );
 
     if (!passwordMatched) {
@@ -65,9 +47,9 @@ export class MyUserService implements UserService<User, Credentials> {
 
   convertToUserProfile(user: User): UserProfile {
     return {
-      [securityId]: user.id?.toString() || '', // Use the uuid as the securityId
+      [securityId]: user.id?.toString() || '',
       username: user.username,
-      id: user.id, // Keep the uuid as 'id' in the profile
+      id: user.id,
       email: user.email,
     };
   }
