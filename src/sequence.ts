@@ -45,9 +45,10 @@ export class MySequence implements SequenceHandler {
 
   async handle(context: RequestContext) {
     const {request, response} = context;
+    const isProduction = process.env.NODE_ENV === 'production';
 
     const chain = [
-      ...(process.env.NODE_ENV === 'production' ? [this.staticApiKeyMiddleware] : []),
+      ...(isProduction ? [this.staticApiKeyMiddleware] : []),
       this.apiVersioningMiddleware,
       this.maintenanceMiddleware,
       this.rateLimitMiddleware,
@@ -61,7 +62,7 @@ export class MySequence implements SequenceHandler {
       this.sessionMiddleware,
       this.sessionGeoipUpdaterMiddleware,
       this.jwtAuthMiddleware,
-      ...(process.env.NODE_ENV === 'production' ? [this.hmacMiddleware] : []),
+      ...(isProduction ? [this.hmacMiddleware] : []),
       this.csrfMiddleware,
       this.tenantMiddleware,
       this.auditTrailMiddleware,
@@ -77,8 +78,8 @@ export class MySequence implements SequenceHandler {
       const result = await this.invoke(route, args);
       this.send(response, result);
     } catch (error) {
-      const correlationId = context.getSync('middleware.correlationId');
-      console.error(`[${correlationId || 'N/A'}] Request error:`, error);
+      const correlationId = context.getSync('request.correlationId');
+      console.error(`[${correlationId || 'N/A'}] Request POST /signup error:`, error);
       this.reject(context, error);
     }
   }

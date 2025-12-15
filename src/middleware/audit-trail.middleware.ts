@@ -3,7 +3,6 @@ import {Middleware, MiddlewareContext} from '@loopback/rest';
 import {Producer} from 'kafkajs';
 import {v4 as uuidv4} from 'uuid';
 import {KafkaDataSource} from '../datasources';
-import {CorrelationIdBindings} from '../keys';
 
 interface AuditLogEntry {
   id: string;
@@ -50,12 +49,12 @@ export class AuditTrailMiddlewareProvider implements Provider<Middleware>, LifeC
       }
 
       const {request} = ctx;
-      const correlationId = ctx.getSync(CorrelationIdBindings.CORRELATION_ID) || uuidv4();
+      //const correlationId = ctx.getSync(CorrelationIdBindings.CORRELATION_ID) || uuidv4();
 
       const auditLog: Partial<AuditLogEntry> = {
         id: uuidv4(),
         timestamp: new Date().toISOString(),
-        correlationId: correlationId,
+        //correlationId: correlationId,
         method: request.method,
         resource: request.path,
         ipAddress: request.ip,
