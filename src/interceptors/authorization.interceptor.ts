@@ -7,10 +7,10 @@ import {
   Provider,
 } from '@loopback/core';
 import {HttpErrors} from '@loopback/rest';
-import {AUTHORIZE_METADATA_KEY} from '../decorators/authorize.decorator';
+import {AUTHORIZE_METADATA_KEY} from '../decorators';
 import {MyAuthBindings} from '../keys';
 import {User} from '../models';
-import {PermissionService} from '../services/permission.service';
+import {PermissionService} from '../services';
 
 type NextFunction = () => Promise<InvocationResult>;
 
