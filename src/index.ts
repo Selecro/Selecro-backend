@@ -334,6 +334,8 @@ if (require.main === module) {
           'Origin',
           'X-Requested-With',
           'Accept',
+          'X-CSRF-Token',
+          'X-Request-ID',
         ],
         exposedHeaders: [
           'Authorization',
@@ -341,6 +343,8 @@ if (require.main === module) {
           'Origin',
           'X-Requested-With',
           'Accept',
+          'X-CSRF-Token',
+          'X-Request-ID',
         ],
         maxAge: 60,
       },
