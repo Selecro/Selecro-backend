@@ -1,6 +1,4 @@
-import {
-  AuthenticationStrategy
-} from '@loopback/authentication';
+import {AuthenticationStrategy} from '@loopback/authentication';
 import {BindingScope, inject, injectable} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import {HttpErrors, Request} from '@loopback/rest';
@@ -8,7 +6,7 @@ import {securityId, UserProfile} from '@loopback/security';
 import admin from 'firebase-admin';
 import {FirebaseBindings} from '../keys';
 import {User} from '../models';
-import {OauthAccountRepository, UserRepository} from '../repositories';
+import {UserOauthAccountRepository, UserRepository} from '../repositories';
 import {FirebaseAdminService} from '../services';
 
 @injectable({scope: BindingScope.TRANSIENT})
@@ -19,7 +17,7 @@ export class FirebaseOauthStrategy implements AuthenticationStrategy {
     @inject(FirebaseBindings.ADMIN_SERVICE)
     private firebaseAdminService: FirebaseAdminService,
     @repository(UserRepository) private userRepository: UserRepository,
-    @repository(OauthAccountRepository) private oauthAccountRepository: OauthAccountRepository,
+    @repository(UserOauthAccountRepository) private userOauthAccountRepository: UserOauthAccountRepository,
   ) { }
 
   async authenticate(request: Request): Promise<UserProfile> {
@@ -54,7 +52,6 @@ export class FirebaseOauthStrategy implements AuthenticationStrategy {
     }
   }
 
-
   private async findOrCreateUser(decodedToken: admin.auth.DecodedIdToken, firebaseUser: admin.auth.UserRecord): Promise<User> {
     const provider = decodedToken.firebase.sign_in_provider;
     if (!provider) {
@@ -62,7 +59,7 @@ export class FirebaseOauthStrategy implements AuthenticationStrategy {
     }
     const providerUserId = decodedToken.uid;
 
-    const existingOauthAccount = await this.oauthAccountRepository.findOne({
+    const existingOauthAccount = await this.userOauthAccountRepository.findOne({
       where: {provider: provider, provider_user_id: providerUserId},
     });
 
@@ -76,7 +73,7 @@ export class FirebaseOauthStrategy implements AuthenticationStrategy {
         updated_at: new Date().toISOString(),
       });
 
-      const newOauthAccount = await this.oauthAccountRepository.create({
+      await this.userOauthAccountRepository.create({
         user_id: newUser.id,
         provider,
         provider_user_id: providerUserId,

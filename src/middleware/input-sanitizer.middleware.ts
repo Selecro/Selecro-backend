@@ -10,7 +10,6 @@ export class InputSanitizerMiddlewareProvider implements Provider<Middleware> {
     return async (ctx: MiddlewareContext, next) => {
       const requestContext = ctx as RequestContext;
       const {request} = requestContext;
-      const correlationId = requestContext.getSync('request.correlationId');
 
       if (request.body && typeof request.body === 'object') {
         request.body = this.deepSanitize(request.body);
