@@ -78,7 +78,7 @@
     "lodash": "^4.17.21",
     "loopback-connector-kafkajs": "^2.0.0",
     "loopback-connector-kv-redis": "^4.0.0",
-    "loopback-connector-postgresql": "^8.0.3",
+    "loopback-connector-postgresql": "^8.0.5",
     "loopback-connector-rest": "^6.0.1",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.12",
