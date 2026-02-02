@@ -91,7 +91,7 @@
   "devDependencies": {
     "@loopback/build": "^12.0.8",
     "@loopback/eslint-config": "^16.0.1",
-    "@loopback/testlab": "^8.0.6",
+    "@loopback/testlab": "^8.0.8",
     "@types/cookie-parser": "^1.4.10",
     "@types/csurf": "^1.11.5",
     "@types/geoip-lite": "^1.4.4",
