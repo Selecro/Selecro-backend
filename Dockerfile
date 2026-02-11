@@ -1,10 +1,7 @@
-# Check out https://hub.docker.com/_/node to select a new base image
+# Released 2026-01-13 by @marco-ippolito
+FROM node:24.13.0-alpine
 
-# UPDATED BASE IMAGE: Using 'node:22-bookworm-slim' which is built on Debian Bookworm (slim)
-# and contains more recent security fixes to address reported vulnerabilities.
-FROM node:22.20.0-alpine
-
-# Update and upgrade Alpine packages
+# Update and upgrade Alpine packages to ensure OS-level security
 RUN apk update && \
   apk upgrade && \
   rm -rf /var/cache/apk/*
@@ -14,14 +11,11 @@ RUN mkdir -p /home/node/app && chown node:node /home/node/app
 
 WORKDIR /home/node/app
 
-# Switch to the non-root built-in user `node` for installing dependencies and running the app
+# Switch to the non-root built-in user `node`
 USER node
 
 # Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-# where available (npm@5+)
 COPY --chown=node package*.json ./
-
 RUN npm install
 
 # Bundle app source code
@@ -29,10 +23,9 @@ COPY --chown=node . .
 
 RUN npm run build
 
-# Expose the application port. This will be dynamically set by Docker Compose.
+# Expose the application port
 ARG APP_DEFAULT_PORT=3000
 EXPOSE ${APP_DEFAULT_PORT}
 
-# Command to run the application. Assuming your LoopBack app's entry point
-# is 'dist/index.js' after the build.
+# Entry point
 CMD [ "node", "dist/index.js" ]
