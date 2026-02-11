@@ -19,7 +19,7 @@ export class CookieParserMiddlewareProvider implements Provider<Middleware> {
       console.warn('Please bind `cookieParser.secret` in application.ts with a strong, unique secret.');
     }
 
-    this.cookieParserHandler = cookieParser(this.secret, this.options);
+    //sthis.cookieParserHandler = cookieParser(this.secret, this.options);
   }
 
   value(): Middleware {

@@ -22,7 +22,7 @@ export class IpFilterMiddlewareProvider implements Provider<Middleware> {
       ...DEFAULT_IP_FILTER_OPTIONS,
       ...this.injectedOptions,
     };
-    this.ipFilterHandler = IpFilter(this.ipList, finalOptions);
+    //this.ipFilterHandler = IpFilter(this.ipList, finalOptions);
   }
 
   value(): Middleware {
