@@ -21,12 +21,9 @@ export class VaultService {
 
   private async checkAndUnsealIfNeeded(): Promise<void> {
     try {
-      const response = await fetch(
-        `${this.vaultEndpoint}/v1/sys/seal-status`,
-        {
-          method: 'GET',
-        },
-      );
+      const response = await fetch(`${this.vaultEndpoint}/v1/sys/seal-status`, {
+        method: 'GET',
+      });
       if (!response.ok) {
         console.error(
           String('Status check error: ' + JSON.stringify(response, null, 2)),

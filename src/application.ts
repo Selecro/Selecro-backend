@@ -1,7 +1,5 @@
 import {AuthenticationComponent} from '@loopback/authentication';
-import {
-  JWTAuthenticationComponent
-} from '@loopback/authentication-jwt';
+import {JWTAuthenticationComponent} from '@loopback/authentication-jwt';
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig, createBindingFromClass} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
@@ -15,10 +13,25 @@ import * as dotenv from 'dotenv';
 import helmet from 'helmet';
 import path from 'path';
 import {PingController} from './controllers';
-import {KafkaDataSource, KmsDataSource, PostgresqlDataSource, RedisCacheDataSource, RedisContentDataSource, RedisLeaderboardDataSource, RedisQueueDataSource, RedisSecurityDataSource, RedisSessionDataSource} from './datasources';
+import {
+  KafkaDataSource,
+  KmsDataSource,
+  PostgresqlDataSource,
+  RedisCacheDataSource,
+  RedisContentDataSource,
+  RedisLeaderboardDataSource,
+  RedisQueueDataSource,
+  RedisSecurityDataSource,
+  RedisSessionDataSource,
+} from './datasources';
 import {AuthorizationInterceptor, EncryptionInterceptor} from './interceptors';
 import {startHardDeleteJob} from './jobs';
-import {COOKIE_PARSER_OPTIONS, CorrelationIdBindings, FirebaseBindings, IpFilterBindings} from './keys';
+import {
+  COOKIE_PARSER_OPTIONS,
+  CorrelationIdBindings,
+  FirebaseBindings,
+  IpFilterBindings,
+} from './keys';
 import {
   ApiVersioningMiddlewareProvider,
   AuditTrailMiddlewareProvider,
@@ -37,11 +50,75 @@ import {
   SessionGeoipUpdaterMiddlewareProvider,
   SessionMiddlewareProvider,
   StaticApiKeyMiddlewareProvider,
-  TenantResolverMiddlewareProvider
+  TenantResolverMiddlewareProvider,
 } from './middleware';
 import {RemoteConfigObserver} from './observers';
 import {FirebaseAdminProvider, RemoteConfigService} from './providers';
-import {CartItemRepository, CartRepository, CategoryRepository, CommentRepository, DeviceRepository, DictionaryRepository, DiscountCodeRepository, EducationModeRepository, EducationStepRepository, EntityFileRepository, FileRepository, FollowerRepository, ForumRepository, InventoryRepository, LanguageRepository, ManualProductCategoryRepository, ManualProductThemeRepository, ManualRepository, ManualStepRepository, NewsRepository, NotificationRepository, OauthProviderRepository, OrderDiscountRepository, OrderItemRepository, OrderRepository, PasswordHistoryRepository, PermissionRepository, PointTransactionRepository, ProductRepository, ProductTypeRepository, ProgressTrackingRepository, RatingRepository, ReactionRepository, RefundRepository, RolePermissionRepository, RoleRepository, SavedCartRepository, SessionRepository, StatusHistoryRepository, SupportTicketRepository, ThemeRepository, ThreadRepository, ToolRepository, User2FaBackupCodeRepository, User2FaLoginLogRepository, User2FaMethodRepository, UserActivityLogRepository, UserAuthRepository, UserConsentRepository, UserFileAccessRepository, UserLoginHistoryRepository, UserManualInteractionRepository, UserMetadataRepository, UserNotificationPreferenceRepository, UserOauthAccountRepository, UserPointRepository, UserProfileRepository, UserReportRepository, UserRepository, UserRoleRepository, UserSettingRepository, UserWebauthnCredentialRepository, WishlistRepository} from './repositories';
+import {
+  CartItemRepository,
+  CartRepository,
+  CategoryRepository,
+  CommentRepository,
+  DeviceRepository,
+  DictionaryRepository,
+  DiscountCodeRepository,
+  EducationModeRepository,
+  EducationStepRepository,
+  EntityFileRepository,
+  FileRepository,
+  FollowerRepository,
+  ForumRepository,
+  InventoryRepository,
+  LanguageRepository,
+  ManualProductCategoryRepository,
+  ManualProductThemeRepository,
+  ManualRepository,
+  ManualStepRepository,
+  NewsRepository,
+  NotificationRepository,
+  OauthProviderRepository,
+  OrderDiscountRepository,
+  OrderItemRepository,
+  OrderRepository,
+  PasswordHistoryRepository,
+  PermissionRepository,
+  PointTransactionRepository,
+  ProductRepository,
+  ProductTypeRepository,
+  ProgressTrackingRepository,
+  RatingRepository,
+  ReactionRepository,
+  RefundRepository,
+  RolePermissionRepository,
+  RoleRepository,
+  SavedCartRepository,
+  SessionRepository,
+  StatusHistoryRepository,
+  SupportTicketRepository,
+  ThemeRepository,
+  ThreadRepository,
+  ToolRepository,
+  User2FaBackupCodeRepository,
+  User2FaLoginLogRepository,
+  User2FaMethodRepository,
+  UserActivityLogRepository,
+  UserAuthRepository,
+  UserConsentRepository,
+  UserFileAccessRepository,
+  UserLoginHistoryRepository,
+  UserManualInteractionRepository,
+  UserMetadataRepository,
+  UserNotificationPreferenceRepository,
+  UserOauthAccountRepository,
+  UserPointRepository,
+  UserProfileRepository,
+  UserReportRepository,
+  UserRepository,
+  UserRoleRepository,
+  UserSettingRepository,
+  UserWebauthnCredentialRepository,
+  WishlistRepository,
+} from './repositories';
 import {MySequence} from './sequence';
 import {
   BcryptPasswordHasherService,
@@ -50,7 +127,7 @@ import {
   NotificationService,
   PermissionService,
   TenantService,
-  UserNotificationService
+  UserNotificationService,
 } from './services';
 
 dotenv.config();
@@ -89,7 +166,8 @@ export class SelecroBackendApplication extends BootMixin(
       openapi: '3.0.0',
       info: {
         title: 'Selecro Backend API',
-        description: 'The official API for the Selecro platform, handling user, session, and data management.',
+        description:
+          'The official API for the Selecro platform, handling user, session, and data management.',
         version: '0.0.1',
         termsOfService: 'https://selecro.cz/terms',
         contact: {
@@ -108,7 +186,10 @@ export class SelecroBackendApplication extends BootMixin(
       },
       paths: {},
       tags: [
-        {name: 'UserController', description: 'Operations related to user accounts and profiles.'},
+        {
+          name: 'UserController',
+          description: 'Operations related to user accounts and profiles.',
+        },
       ],
       components: {
         securitySchemes: {
@@ -116,13 +197,15 @@ export class SelecroBackendApplication extends BootMixin(
             type: 'apiKey',
             in: 'header',
             name: 'X-CSRF-Token',
-            description: 'Required for all non-GET requests to prevent CSRF attacks.',
+            description:
+              'Required for all non-GET requests to prevent CSRF attacks.',
           },
           jwt: {
             type: 'http',
             scheme: 'bearer',
             bearerFormat: 'JWT',
-            description: 'JSON Web Token (JWT) provided after successful login.',
+            description:
+              'JSON Web Token (JWT) provided after successful login.',
           },
         },
       },
@@ -152,25 +235,43 @@ export class SelecroBackendApplication extends BootMixin(
   }
 
   private setupMiddleware(): void {
-    this.bind('middleware.maintenance').toProvider(MaintenanceMiddlewareProvider);
+    this.bind('middleware.maintenance').toProvider(
+      MaintenanceMiddlewareProvider,
+    );
     this.bind('middleware.rateLimit').toProvider(RateLimitMiddlewareProvider);
     this.bind('middleware.ipFilter').toProvider(IpFilterMiddlewareProvider);
-    this.bind('middleware.correlationId').toProvider(CorrelationIdMiddlewareProvider);
-    this.bind('middleware.inputSanitizer').toProvider(InputSanitizerMiddlewareProvider);
-    this.bind('middleware.cookieParser').toProvider(CookieParserMiddlewareProvider);
+    this.bind('middleware.correlationId').toProvider(
+      CorrelationIdMiddlewareProvider,
+    );
+    this.bind('middleware.inputSanitizer').toProvider(
+      InputSanitizerMiddlewareProvider,
+    );
+    this.bind('middleware.cookieParser').toProvider(
+      CookieParserMiddlewareProvider,
+    );
     this.bind('middleware.csrf').toProvider(CsrfMiddlewareProvider);
     this.bind('middleware.tenant').toProvider(TenantResolverMiddlewareProvider);
     this.bind('middleware.hmac').toProvider(HmacMiddlewareProvider);
-    this.bind('middleware.apiVersioning').toProvider(ApiVersioningMiddlewareProvider);
-    this.bind('middleware.featureFlags').toProvider(FeatureFlagMiddlewareProvider);
+    this.bind('middleware.apiVersioning').toProvider(
+      ApiVersioningMiddlewareProvider,
+    );
+    this.bind('middleware.featureFlags').toProvider(
+      FeatureFlagMiddlewareProvider,
+    );
     this.bind('middleware.geoip').toProvider(GeoipMiddlewareProvider);
     this.bind('middleware.auditTrail').toProvider(AuditTrailMiddlewareProvider);
     this.bind('middleware.session').toProvider(SessionMiddlewareProvider);
     this.bind('middleware.device').toProvider(DeviceMiddlewareProvider);
-    this.bind('middleware.sessionGeoipUpdater').toProvider(SessionGeoipUpdaterMiddlewareProvider);
-    this.bind('middleware.staticApiKey').toProvider(StaticApiKeyMiddlewareProvider);
+    this.bind('middleware.sessionGeoipUpdater').toProvider(
+      SessionGeoipUpdaterMiddlewareProvider,
+    );
+    this.bind('middleware.staticApiKey').toProvider(
+      StaticApiKeyMiddlewareProvider,
+    );
 
-    this.bind(IpFilterBindings.IP_LIST).to(process.env.DENIED_IPS?.split(',').map(s => s.trim()) || []);
+    this.bind(IpFilterBindings.IP_LIST).to(
+      process.env.DENIED_IPS?.split(',').map(s => s.trim()) ?? [],
+    );
     this.bind(IpFilterBindings.OPTIONS).to({
       mode: 'deny',
       log: true,
@@ -179,9 +280,16 @@ export class SelecroBackendApplication extends BootMixin(
 
     this.bind(CorrelationIdBindings.HEADER_NAME).to('X-Request-ID');
 
-    const cookieParserSecret = process.env.COOKIE_PARSER_SECRET || 'your-super-secret-key-please-change-this';
-    if (cookieParserSecret === 'your-super-secret-key-please-change-this' && process.env.NODE_ENV === 'production') {
-      console.warn('WARNING: COOKIE_PARSER_SECRET is not set in production. Please set a strong, unique secret!');
+    const cookieParserSecret =
+      process.env.COOKIE_PARSER_SECRET ??
+      'your-super-secret-key-please-change-this';
+    if (
+      cookieParserSecret === 'your-super-secret-key-please-change-this' &&
+      process.env.NODE_ENV === 'production'
+    ) {
+      console.warn(
+        'WARNING: COOKIE_PARSER_SECRET is not set in production. Please set a strong, unique secret!',
+      );
     }
     this.bind('cookieParser.secret').to(cookieParserSecret);
     this.bind(COOKIE_PARSER_OPTIONS).to({
@@ -194,11 +302,11 @@ export class SelecroBackendApplication extends BootMixin(
       },
     });
 
-    const supportedVersions = (process.env.API_SUPPORTED_VERSIONS || 'v1,v2')
+    const supportedVersions = (process.env.API_SUPPORTED_VERSIONS ?? 'v1,v2')
       .split(',')
       .map(s => s.trim())
       .filter(Boolean);
-    const versionHeader = process.env.API_VERSION_HEADER || 'x-api-version';
+    const versionHeader = process.env.API_VERSION_HEADER ?? 'x-api-version';
 
     this.bind('versioning.options').to({
       supportedVersions: ['', ...supportedVersions].map(s => s.toLowerCase()),

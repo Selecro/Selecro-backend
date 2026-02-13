@@ -1,6 +1,10 @@
 import {injectable} from '@loopback/core';
 import {repository} from '@loopback/repository';
-import {PermissionRepository, RolePermissionRepository, UserRoleRepository} from '../repositories';
+import {
+  PermissionRepository,
+  RolePermissionRepository,
+  UserRoleRepository,
+} from '../repositories';
 
 @injectable()
 export class PermissionService {
@@ -11,16 +15,21 @@ export class PermissionService {
     public rolePermissionRepository: RolePermissionRepository,
     @repository(PermissionRepository)
     public permissionRepository: PermissionRepository,
-  ) { }
+  ) {}
 
-  async checkPermissions(userId: number, requiredPermissions: string[]): Promise<boolean> {
+  async checkPermissions(
+    userId: number,
+    requiredPermissions: string[],
+  ): Promise<boolean> {
     const userRoles = await this.userRoleRepository.find({where: {userId}});
     if (userRoles.length === 0) {
       return false;
     }
 
     const roleIds = userRoles.map(ur => ur.roleId);
-    const rolePermissions = await this.rolePermissionRepository.find({where: {roleId: {inq: roleIds}}});
+    const rolePermissions = await this.rolePermissionRepository.find({
+      where: {roleId: {inq: roleIds}},
+    });
     const permissionIds = rolePermissions.map(rp => rp.permissionId);
 
     if (permissionIds.length === 0) {
@@ -29,7 +38,7 @@ export class PermissionService {
 
     const parsedPermissions = requiredPermissions.map(perm => {
       const [resourceType, actionType] = perm.split('.');
-      return {resource_type: resourceType, action_type: actionType};
+      return {resourceType: resourceType, actionType: actionType};
     });
 
     const permissions = await this.permissionRepository.find({

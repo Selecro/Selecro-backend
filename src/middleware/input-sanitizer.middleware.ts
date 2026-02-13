@@ -4,7 +4,7 @@ import xss from 'xss';
 
 @injectable({scope: BindingScope.TRANSIENT})
 export class InputSanitizerMiddlewareProvider implements Provider<Middleware> {
-  constructor() { }
+  constructor() {}
 
   value(): Middleware {
     return async (ctx: MiddlewareContext, next) => {

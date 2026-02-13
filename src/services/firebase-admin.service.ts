@@ -6,15 +6,15 @@ import {FirebaseBindings} from '../keys';
 export class FirebaseAdminService {
   private readonly firebaseAdmin: typeof admin;
 
-  constructor(
-    @inject(FirebaseBindings.ADMIN) firebaseAdmin: typeof admin
-  ) {
+  constructor(@inject(FirebaseBindings.ADMIN) firebaseAdmin: typeof admin) {
     this.firebaseAdmin = firebaseAdmin;
   }
 
   async verifyIdToken(idToken: string): Promise<admin.auth.DecodedIdToken> {
     try {
-      const decodedToken = await this.firebaseAdmin.auth().verifyIdToken(idToken);
+      const decodedToken = await this.firebaseAdmin
+        .auth()
+        .verifyIdToken(idToken);
       return decodedToken;
     } catch (error) {
       console.error('Error verifying Firebase ID token:', error);

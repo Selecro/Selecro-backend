@@ -3,7 +3,11 @@ import {Middleware, Request, Response} from '@loopback/rest';
 import csurf from 'csurf';
 import {CSRF_OPTIONS, CsrfMiddlewareOptions} from '../keys';
 
-type CsrfHandler = (req: Request, res: Response, next: (err?: any) => any) => void;
+type CsrfHandler = (
+  req: Request,
+  res: Response,
+  next: (err?: any) => any,
+) => void;
 
 export class CsrfMiddlewareProvider implements Provider<Middleware> {
   private csrfHandler: CsrfHandler;
@@ -22,7 +26,7 @@ export class CsrfMiddlewareProvider implements Provider<Middleware> {
 
     const mergedCookieOptions = {
       ...defaultCookieOptions,
-      ...(this.options.cookie || {}),
+      ...(this.options.cookie ?? {}),
     };
 
     const csurfOptions = {

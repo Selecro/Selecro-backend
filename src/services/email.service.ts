@@ -1,23 +1,12 @@
-import {
-  bind,
-  BindingScope,
-  injectable
-} from '@loopback/core';
-import {
-  repository
-} from '@loopback/repository';
+import {bind, BindingScope, injectable} from '@loopback/core';
+import {repository} from '@loopback/repository';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs/promises';
 import * as nodemailer from 'nodemailer';
 import Mail from 'nodemailer/lib/mailer';
 import * as path from 'path';
-import {
-  User
-} from '../models';
-import {
-  UserRepository,
-  UserSettingRepository
-} from '../repositories';
+import {User} from '../models';
+import {UserRepository, UserSettingRepository} from '../repositories';
 
 dotenv.config();
 
@@ -34,16 +23,16 @@ export interface EmailPayload {
   subject: string;
   templateName: string;
   replacements?: {
-    [key: string]: string
+    [key: string]: string;
   };
   attachments?: Mail.Attachment[];
 }
 
 @injectable({
-  scope: BindingScope.SINGLETON
+  scope: BindingScope.SINGLETON,
 })
 @bind({
-  tags: 'email.service'
+  tags: 'email.service',
 })
 export class EmailService {
   private transporter: nodemailer.Transporter;
@@ -53,8 +42,14 @@ export class EmailService {
     public userSettingRepository: UserSettingRepository,
     @repository(UserRepository) private userRepository: UserRepository,
   ) {
-    if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-      throw new Error('Required email environment variables are not configured.');
+    if (
+      !process.env.EMAIL_HOST ||
+      !process.env.EMAIL_USER ||
+      !process.env.EMAIL_PASSWORD
+    ) {
+      throw new Error(
+        'Required email environment variables are not configured.',
+      );
     }
 
     const config = {
@@ -73,19 +68,27 @@ export class EmailService {
     if (templateCache.has(templateName)) {
       return templateCache.get(templateName)!;
     }
-    const templatePath = path.join(__dirname, `../templates/${templateName}.html`);
+    const templatePath = path.join(
+      __dirname,
+      `../templates/${templateName}.html`,
+    );
     try {
       const template = await fs.readFile(templatePath, 'utf-8');
       templateCache.set(templateName, template);
       return template;
     } catch (error) {
-      throw new TemplateNotFoundError(`Template file not found for: ${templateName}`);
+      throw new TemplateNotFoundError(
+        `Template file not found for: ${templateName}`,
+      );
     }
   }
 
-  private async getHtmlBody(templateName: string, replacements: {
-    [key: string]: string
-  }): Promise<string> {
+  private async getHtmlBody(
+    templateName: string,
+    replacements: {
+      [key: string]: string;
+    },
+  ): Promise<string> {
     const template = await this.loadTemplate(templateName);
     let html = template;
     for (const key in replacements) {
@@ -96,7 +99,10 @@ export class EmailService {
   }
 
   private async sendMail(to: string, payload: EmailPayload): Promise<void> {
-    const htmlBody = await this.getHtmlBody(payload.templateName, payload.replacements || {});
+    const htmlBody = await this.getHtmlBody(
+      payload.templateName,
+      payload.replacements ?? {},
+    );
     const options: Mail.Options = {
       from: process.env.EMAIL_USER,
       to,
@@ -113,10 +119,13 @@ export class EmailService {
     }
   }
 
-  public async sendToUser(userId: number, payload: EmailPayload): Promise<void> {
+  public async sendToUser(
+    userId: number,
+    payload: EmailPayload,
+  ): Promise<void> {
     const user: User = await this.userRepository.findById(userId);
 
-    if (!user || !user.email) {
+    if (!user?.email) {
       console.warn(`User with ID ${userId} not found or has no email.`);
       return;
     }

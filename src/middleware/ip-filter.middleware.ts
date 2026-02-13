@@ -1,6 +1,6 @@
 import {inject, Provider} from '@loopback/core';
 import {Middleware, Request, Response} from '@loopback/rest';
-import {IpFilter, IpFilterOptions, IpList} from 'express-ipfilter';
+import {IpFilterOptions, IpList} from 'express-ipfilter';
 import {IpFilterBindings} from '../keys';
 
 type IpFilterHandler = (req: Request, res: Response, next: (err?: any) => any) => void;

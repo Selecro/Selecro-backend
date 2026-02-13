@@ -12,7 +12,7 @@ import {
 } from 'winston';
 
 // You would typically define log levels in your environment variables.
-const logLevel = process.env.LOG_LEVEL || 'info';
+const logLevel = process.env.LOG_LEVEL ?? 'info';
 
 @injectable({
   scope: BindingScope.SINGLETON

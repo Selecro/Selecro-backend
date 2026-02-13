@@ -12,7 +12,9 @@ export async function migrate(args: string[]) {
   const app = new SelecroBackendApplication();
   await app.boot();
 
-  const dataSource = await app.get<PostgresqlDataSource>('datasources.postgresql');
+  const dataSource = await app.get<PostgresqlDataSource>(
+    'datasources.postgresql',
+  );
 
   if (rebuild) {
     console.log('Dropping schema "public" with CASCADE...');
@@ -38,7 +40,7 @@ export async function migrate(args: string[]) {
     'UserSetting',
     'UserConsent',
     'UserNotificationPreference',
-    "UserAuth",
+    'UserAuth',
     'UserPoint',
     'UserMetadata',
     'PointTransaction',
@@ -129,7 +131,7 @@ export async function migrate(args: string[]) {
       ALTER TABLE public.file ADD CONSTRAINT check_file_category
       CHECK (file_category IN ('profile_picture', 'user_document', 'system_document', 'other', 'contract'));
     `,
-    User_2faMethod: `
+    User2FaMethod: `
       ALTER TABLE public.user_2fa_method ADD CONSTRAINT valid_2fa_method
       CHECK (method IN ('authenticator', 'sms', 'email', 'security_key'));
     `,
@@ -223,7 +225,9 @@ export async function migrate(args: string[]) {
         console.log(`✅ CHECK constraints for ${model} added successfully.`);
       } catch (err) {
         if (err.message.includes('already exists')) {
-          console.warn(`⚠️ CHECK constraint for ${model} already exists. Skipping.`);
+          console.warn(
+            `⚠️ CHECK constraint for ${model} already exists. Skipping.`,
+          );
         } else {
           console.error(`Error adding CHECK constraints for ${model}:`, err);
         }
@@ -240,14 +244,17 @@ export async function migrate(args: string[]) {
   if (fs.existsSync(testDataPath)) {
     console.log(`Seeding database with test data from ${seedFileName}...`);
     const sqlFile = fs.readFileSync(testDataPath, 'utf8');
-    const sqlStatements = sqlFile.split(';').filter((s) => s.trim().length > 0);
+    const sqlStatements = sqlFile.split(';').filter(s => s.trim().length > 0);
     for (const sqlStatement of sqlStatements) {
       await dataSource.execute(sqlStatement);
     }
     console.log('Database seeding completed.');
 
     const underscoreModels = modelsInOrder.map(name =>
-      name.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '')
+      name
+        .replace(/([A-Z])/g, '_$1')
+        .toLowerCase()
+        .replace(/^_/, ''),
     );
 
     const nonAutoIncrementTables = [
@@ -271,7 +278,9 @@ export async function migrate(args: string[]) {
 
     for (const model of underscoreModels) {
       if (nonAutoIncrementTables.includes(model)) {
-        console.log(`ℹ️ Skipping sequence reset for "${model}" as it does not have an auto-incrementing 'id'.`);
+        console.log(
+          `ℹ️ Skipping sequence reset for "${model}" as it does not have an auto-incrementing 'id'.`,
+        );
         continue;
       }
 
@@ -279,12 +288,19 @@ export async function migrate(args: string[]) {
       console.log(sql);
       try {
         await dataSource.execute(sql);
-        console.log(`✅ Sequence for "${model}" set to auto-generated successfully.`);
+        console.log(
+          `✅ Sequence for "${model}" set to auto-generated successfully.`,
+        );
       } catch (err) {
         if (err.message.includes('already an identity column')) {
-          console.warn(`⚠️ Column 'id' for "${model}" is already an identity column. Skipping.`);
+          console.warn(
+            `⚠️ Column 'id' for "${model}" is already an identity column. Skipping.`,
+          );
         } else {
-          console.error(`❌ Error setting 'id' column for "${model}" as auto-generated:`, err);
+          console.error(
+            `❌ Error setting 'id' column for "${model}" as auto-generated:`,
+            err,
+          );
         }
       }
 
@@ -294,7 +310,10 @@ export async function migrate(args: string[]) {
         await dataSource.execute(resetSql);
         console.log(`✅ Sequence counter for "${model}" reset successfully.`);
       } catch (err) {
-        console.warn(`⚠️ Failed to reset sequence for "${model}". This might be expected if the table is empty.`, err.message);
+        console.warn(
+          `⚠️ Failed to reset sequence for "${model}". This might be expected if the table is empty.`,
+          err.message,
+        );
       }
     }
   } else {

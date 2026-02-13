@@ -4,12 +4,12 @@ import {juggler} from '@loopback/repository';
 const config = {
   name: 'RedisContent',
   connector: 'kv-redis',
-  url: process.env.REDIS_URL || undefined,
-  host: process.env.REDIS_HOST || 'localhost',
+  url: process.env.REDIS_URL ?? undefined,
+  host: process.env.REDIS_HOST ?? 'localhost',
   port: process.env.REDIS_PORT_INTERNAL
     ? Number(process.env.REDIS_PORT_INTERNAL)
     : 6379,
-  password: process.env.REDIS_PASSWORD || undefined,
+  password: process.env.REDIS_PASSWORD ?? undefined,
   db: process.env.REDIS_CONTENT_DB ? Number(process.env.REDIS_CONTENT_DB) : 0,
 };
 

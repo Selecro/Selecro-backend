@@ -40,7 +40,7 @@ export class MyAuthorizerProvider implements Provider<Authorizer> {
   ): Promise<AuthorizationDecision> {
     const client = authorizationCtx.principals[0]; // The authenticated user profile
 
-    if (!client || !client[securityId]) {
+    if (!client?.[securityId]) {
       return AuthorizationDecision.DENY; // No authenticated user
     }
 

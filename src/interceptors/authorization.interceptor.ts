@@ -36,7 +36,7 @@ export class AuthorizationInterceptor implements Provider<Interceptor> {
     const requiredPermissions = MetadataInspector.getMethodMetadata<string[]>(
       AUTHORIZE_METADATA_KEY,
       invocationCtx.target,
-      invocationCtx.methodName) || [];
+      invocationCtx.methodName) ?? [];
 
     if (!requiredPermissions || requiredPermissions.length === 0) {
       return next();

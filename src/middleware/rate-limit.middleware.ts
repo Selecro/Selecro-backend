@@ -1,6 +1,5 @@
 import {inject, Provider} from '@loopback/core';
 import {Middleware, Request, Response} from '@loopback/rest';
-import rateLimit from 'express-rate-limit';
 import {RATE_LIMIT_OPTIONS, RateLimitConfig} from '../keys';
 import {RemoteConfigParameters, RemoteConfigService} from '../providers';
 

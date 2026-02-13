@@ -13,7 +13,8 @@ export class GeoipMiddlewareProvider implements Provider<Middleware> {
     return async (ctx: MiddlewareContext, next: Next) => {
       const req = ctx.request as Request;
 
-      const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress) as string;
+      const ip = (req.headers['x-forwarded-for'] ??
+        req.socket.remoteAddress) as string;
 
       if (ip) {
         const geo = geoip.lookup(ip);

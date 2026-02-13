@@ -137,7 +137,7 @@ export async function main(options: ApplicationConfig = {}) {
       ALTER TABLE public.file ADD CONSTRAINT check_file_category
       CHECK (file_category IN ('profile_picture', 'user_document', 'system_document', 'other', 'contract'));
     `,
-          User_2faMethod: `
+          User2faMethod: `
       ALTER TABLE public.user_2fa_method ADD CONSTRAINT valid_2fa_method
       CHECK (method IN ('authenticator', 'sms', 'email', 'security_key'));
     `,

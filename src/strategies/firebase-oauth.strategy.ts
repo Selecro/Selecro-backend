@@ -17,8 +17,9 @@ export class FirebaseOauthStrategy implements AuthenticationStrategy {
     @inject(FirebaseBindings.ADMIN_SERVICE)
     private firebaseAdminService: FirebaseAdminService,
     @repository(UserRepository) private userRepository: UserRepository,
-    @repository(UserOauthAccountRepository) private userOauthAccountRepository: UserOauthAccountRepository,
-  ) { }
+    @repository(UserOauthAccountRepository)
+    private userOauthAccountRepository: UserOauthAccountRepository,
+  ) {}
 
   async authenticate(request: Request): Promise<UserProfile> {
     const authHeader = request.headers.authorization;
@@ -33,8 +34,11 @@ export class FirebaseOauthStrategy implements AuthenticationStrategy {
     const idToken = parts[1];
 
     try {
-      const decodedToken = await this.firebaseAdminService.verifyIdToken(idToken);
-      const firebaseUser = await this.firebaseAdminService.getUserByUid(decodedToken.uid);
+      const decodedToken =
+        await this.firebaseAdminService.verifyIdToken(idToken);
+      const firebaseUser = await this.firebaseAdminService.getUserByUid(
+        decodedToken.uid,
+      );
       const user = await this.findOrCreateUser(decodedToken, firebaseUser);
 
       const userProfile: UserProfile = {
@@ -45,14 +49,18 @@ export class FirebaseOauthStrategy implements AuthenticationStrategy {
       };
 
       return userProfile;
-
     } catch (error) {
       console.error('Authentication failed:', error);
-      throw new HttpErrors.Unauthorized('Authentication failed. Invalid token or user data.');
+      throw new HttpErrors.Unauthorized(
+        'Authentication failed. Invalid token or user data.',
+      );
     }
   }
 
-  private async findOrCreateUser(decodedToken: admin.auth.DecodedIdToken, firebaseUser: admin.auth.UserRecord): Promise<User> {
+  private async findOrCreateUser(
+    decodedToken: admin.auth.DecodedIdToken,
+    firebaseUser: admin.auth.UserRecord,
+  ): Promise<User> {
     const provider = decodedToken.firebase.sign_in_provider;
     if (!provider) {
       throw new Error('Sign-in provider not found in Firebase token.');
@@ -60,7 +68,7 @@ export class FirebaseOauthStrategy implements AuthenticationStrategy {
     const providerUserId = decodedToken.uid;
 
     const existingOauthAccount = await this.userOauthAccountRepository.findOne({
-      where: {provider: provider, provider_user_id: providerUserId},
+      where: {provider: provider, providerUserId: providerUserId},
     });
 
     if (existingOauthAccount) {
@@ -69,16 +77,17 @@ export class FirebaseOauthStrategy implements AuthenticationStrategy {
       const newUser = await this.userRepository.create({
         email: firebaseUser.email,
         username: firebaseUser.displayName,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
 
       await this.userOauthAccountRepository.create({
-        user_id: newUser.id,
+        userId: newUser.id,
         provider,
-        provider_user_id: providerUserId,
-        access_token: decodedToken.sub, created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        providerUserId: providerUserId,
+        accessToken: decodedToken.sub,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
 
       return newUser;

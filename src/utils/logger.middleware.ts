@@ -21,7 +21,7 @@ export const loggerMiddleware: Middleware = async (ctx, next) => {
     logErrorToCrashlytics(err, {
       method: request.method,
       url: request.url,
-      ip: request.headers['x-forwarded-for']?.toString().split(',')[0].trim() || request.socket.remoteAddress,
+      ip: request.headers['x-forwarded-for']?.toString().split(',')[0].trim() ?? request.socket.remoteAddress,
     });
     console.error(`Error handling ${request.method} ${request.url}:`, err);
     throw err; // Re-throw the error so it can be handled by LoopBack's error handler

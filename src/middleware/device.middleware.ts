@@ -9,7 +9,7 @@ export const LanguageCodes = {
   CZECH: 'cz',
 } as const;
 
-export type LanguageCode = typeof LanguageCodes[keyof typeof LanguageCodes];
+export type LanguageCode = (typeof LanguageCodes)[keyof typeof LanguageCodes];
 
 declare module '@loopback/rest' {
   interface Request {
@@ -17,7 +17,7 @@ declare module '@loopback/rest' {
   }
 }
 
-function parseUserAgent(userAgent: string): {os: string, version: string} {
+function parseUserAgent(userAgent: string): {os: string; version: string} {
   const osInfo = {os: 'Unknown', version: 'Unknown'};
 
   if (userAgent.includes('Windows NT 10.0')) {
@@ -33,7 +33,7 @@ function parseUserAgent(userAgent: string): {os: string, version: string} {
     osInfo.os = 'Android';
     const match = userAgent.match(/Android (\d+(\.\d+)*)/);
     osInfo.version = match ? match[1] : 'Unknown';
-  } else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
+  } else if (userAgent.includes('iPhone') ?? userAgent.includes('iPad')) {
     osInfo.os = 'iOS';
     const match = userAgent.match(/(iPhone|iPad) OS (\d+_\d+)/);
     osInfo.version = match ? match[2].replace(/_/g, '.') : 'Unknown';
@@ -61,16 +61,19 @@ export class DeviceMiddlewareProvider implements Provider<Middleware> {
     private deviceRepository: DeviceRepository,
     @repository(LanguageRepository)
     private languageRepository: LanguageRepository,
-  ) { }
+  ) {}
 
   value(): Middleware {
     return async (ctx, next) => {
-      const clientIp = this.request.headers['x-forwarded-for'] as string || this.request.ip;
+      const clientIp =
+        (this.request.headers['x-forwarded-for'] as string) ?? this.request.ip;
       const userAgent = this.request.headers['user-agent'] ?? 'Unknown';
       const {os, version} = parseUserAgent(userAgent);
-      const languageCode = this.request.headers['accept-language'] ?
-        parseLanguagePreference(this.request.headers['accept-language'] as string) :
-        LanguageCodes.CZECH;
+      const languageCode = this.request.headers['accept-language']
+        ? parseLanguagePreference(
+            this.request.headers['accept-language'] as string,
+          )
+        : LanguageCodes.CZECH;
       const deviceToken = this.request.headers['x-device-token'] as string;
       const deviceFingerprint = createHash('sha256')
         .update(`${userAgent}-${clientIp}`)
@@ -80,7 +83,9 @@ export class DeviceMiddlewareProvider implements Provider<Middleware> {
 
       if (deviceFingerprint && deviceFingerprint.length > 0) {
         try {
-          existingDevice = await this.deviceRepository.findOne({where: {deviceFingerprint: deviceFingerprint}});
+          existingDevice = await this.deviceRepository.findOne({
+            where: {deviceFingerprint: deviceFingerprint},
+          });
         } catch (error) {
           console.error('Failed to query device by fingerprint:', error);
         }
@@ -89,10 +94,10 @@ export class DeviceMiddlewareProvider implements Provider<Middleware> {
       const now = new Date().toISOString();
 
       if (existingDevice) {
-
       } else {
         try {
-          const uniqueId = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 10000);
+          const uniqueId =
+            Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 10000);
 
           const newDevice = await this.deviceRepository.create({
             id: uniqueId,
@@ -113,7 +118,6 @@ export class DeviceMiddlewareProvider implements Provider<Middleware> {
           existingDevice = newDevice;
         } catch (error) {
           console.error('Failed to create new device record:', error);
-
         }
       }
 

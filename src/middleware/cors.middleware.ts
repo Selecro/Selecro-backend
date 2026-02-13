@@ -1,20 +1,25 @@
 import {inject, Provider} from '@loopback/core';
-import {Middleware, Request, Response} from '@loopback/rest';
+import {Middleware} from '@loopback/rest';
 import cors, {CorsOptions} from 'cors';
 import {CORS_OPTIONS} from '../keys';
 
-type CorsHandler = (req: Request, res: Response, next: (err?: any) => any) => void;
+const getOrigin = () => {
+  const origin = process.env.CORS_ORIGIN;
+  if (!origin) return false;
+  if (origin === '*') return '*';
+  return origin.split(',');
+};
 
 export class CorsMiddlewareProvider implements Provider<Middleware> {
-  private corsHandler: CorsHandler;
+  private corsHandler: any;
 
   constructor(
     @inject(CORS_OPTIONS, {optional: true})
     private options: CorsOptions = {
-      origin: true,
+      origin: getOrigin(),
       credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-Request-ID', 'X-CSRF-Token'],
+      methods: process.env.CORS_METHODS?.split(',') ?? ['GET', 'POST'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
     },
   ) {
     this.corsHandler = cors(this.options);
@@ -23,11 +28,8 @@ export class CorsMiddlewareProvider implements Provider<Middleware> {
   value(): Middleware {
     return async (ctx, next) => {
       await new Promise<void>((resolve, reject) => {
-        this.corsHandler(ctx.request, ctx.response, err => {
-          if (err) {
-            console.error('CORS middleware error:', err.message);
-            return reject(err);
-          }
+        this.corsHandler(ctx.request, ctx.response, (err: any) => {
+          if (err) return reject(err);
           resolve();
         });
       });

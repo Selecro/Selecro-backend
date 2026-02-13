@@ -14,7 +14,7 @@ export class SessionGeoipUpdaterMiddlewareProvider implements Provider<Middlewar
   constructor(
     @repository(SessionRepository)
     private sessionRepository: SessionRepository,
-  ) { }
+  ) {}
 
   value(): Middleware {
     return async (ctx: MiddlewareContext, next: Next) => {
@@ -25,7 +25,9 @@ export class SessionGeoipUpdaterMiddlewareProvider implements Provider<Middlewar
 
       if (sessionToken && geoData) {
         try {
-          const session = await this.sessionRepository.findOne({where: {session_token: sessionToken}});
+          const session = await this.sessionRepository.findOne({
+            where: {sessionToken: sessionToken},
+          });
           if (session) {
             await this.sessionRepository.updateById(session.id, {
               country: geoData.country,

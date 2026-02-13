@@ -1,13 +1,15 @@
 import {Middleware} from '@loopback/rest';
 import * as crypto from 'crypto';
 
-const rsaPrivateKey = process.env.RSA_PRIVATE_KEY || '';
+const rsaPrivateKey = process.env.RSA_PRIVATE_KEY ?? '';
 if (!rsaPrivateKey) {
-  console.warn('RSA_PRIVATE_KEY is not set. Encryption middleware will not function correctly.');
+  console.warn(
+    'RSA_PRIVATE_KEY is not set. Encryption middleware will not function correctly.',
+  );
 }
 
 export const encryptionMiddleware: Middleware = async (context, next) => {
-  const {request, response} = context;
+  const {request} = context;
 
   if (
     process.env.NODE_ENV === 'production' &&
@@ -20,7 +22,9 @@ export const encryptionMiddleware: Middleware = async (context, next) => {
       const {encryptedAesKey, encryptedData, iv} = encryptedPayload;
 
       if (!encryptedAesKey || !encryptedData || !iv) {
-        throw new Error('Missing encrypted payload components (encryptedAesKey, encryptedData, or iv).');
+        throw new Error(
+          'Missing encrypted payload components (encryptedAesKey, encryptedData, or iv).',
+        );
       }
 
       const encryptedAesKeyBuffer = Buffer.from(encryptedAesKey, 'base64');
@@ -36,12 +40,15 @@ export const encryptionMiddleware: Middleware = async (context, next) => {
         encryptedAesKeyBuffer,
       );
 
-      const decipher = crypto.createDecipheriv('aes-256-cbc', decryptedAesKey, ivBuffer);
+      const decipher = crypto.createDecipheriv(
+        'aes-256-cbc',
+        decryptedAesKey,
+        ivBuffer,
+      );
       let decryptedData = decipher.update(encryptedDataBuffer);
       decryptedData = Buffer.concat([decryptedData, decipher.final()]);
 
       request.body = JSON.parse(decryptedData.toString('utf8'));
-
     } catch (error) {
       console.error('EncryptionMiddleware: Decryption failed:', error);
     }

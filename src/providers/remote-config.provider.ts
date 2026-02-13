@@ -3,13 +3,13 @@ import * as admin from 'firebase-admin';
 import {FirebaseBindings} from '../keys';
 
 export interface RemoteConfigParameters {
-  maintenance_mode: boolean;
-  maintenance_message: string;
-  redis_cache_expiry_seconds: number;
-  api_rate_limit_per_second: number;
-  max_file_upload_size_mb: number;
-  api_request_window_minutes: number;
-  retention_period_days: number;
+  maintenanceMode: boolean;
+  maintenanceMessage: string;
+  redisCacheExpirySeconds: number;
+  apiRateLimitPerSecond: number;
+  maxFileUploadSizeMb: number;
+  apiRequestWindowMinutes: number;
+  retentionPeriodDays: number;
 }
 
 let cachedConfig: RemoteConfigParameters | null = null;
@@ -21,15 +21,13 @@ let lastFetchTime = 0;
 export class RemoteConfigService {
   private readonly firebaseAdmin: typeof admin;
 
-  constructor(
-    @inject(FirebaseBindings.ADMIN) firebaseAdmin: typeof admin
-  ) {
+  constructor(@inject(FirebaseBindings.ADMIN) firebaseAdmin: typeof admin) {
     this.firebaseAdmin = firebaseAdmin;
   }
 
   public async getConfigValues(): Promise<RemoteConfigParameters> {
     const now = Date.now();
-    if (cachedConfig && (now - lastFetchTime) < CACHE_EXPIRY_MS) {
+    if (cachedConfig && now - lastFetchTime < CACHE_EXPIRY_MS) {
       return cachedConfig;
     }
 
@@ -42,13 +40,13 @@ export class RemoteConfigService {
       const config = template.evaluate();
 
       const values: RemoteConfigParameters = {
-        maintenance_mode: config.getBoolean('maintenance_mode'),
-        maintenance_message: config.getString('maintenance_message'),
-        redis_cache_expiry_seconds: config.getNumber('redis_cache_expiry_seconds'),
-        api_rate_limit_per_second: config.getNumber('api_rate_limit_per_second'),
-        max_file_upload_size_mb: config.getNumber('max_file_upload_size_mb'),
-        api_request_window_minutes: config.getNumber('api_request_window_minutes'),
-        retention_period_days: config.getNumber('retention_period_days'),
+        maintenanceMode: config.getBoolean('maintenance_mode'),
+        maintenanceMessage: config.getString('maintenance_message'),
+        redisCacheExpirySeconds: config.getNumber('redis_cache_expiry_seconds'),
+        apiRateLimitPerSecond: config.getNumber('api_rate_limit_per_second'),
+        maxFileUploadSizeMb: config.getNumber('max_file_upload_size_mb'),
+        apiRequestWindowMinutes: config.getNumber('api_request_window_minutes'),
+        retentionPeriodDays: config.getNumber('retention_period_days'),
       };
 
       cachedConfig = values;
@@ -63,13 +61,13 @@ export class RemoteConfigService {
   public getSafeDefaults(): RemoteConfigParameters {
     console.warn('Using default fallback Remote Config values.');
     return {
-      maintenance_mode: false,
-      maintenance_message: '',
-      redis_cache_expiry_seconds: 60,
-      api_rate_limit_per_second: 10,
-      max_file_upload_size_mb: 10,
-      api_request_window_minutes: 1,
-      retention_period_days: 30
+      maintenanceMode: false,
+      maintenanceMessage: '',
+      redisCacheExpirySeconds: 60,
+      apiRateLimitPerSecond: 10,
+      maxFileUploadSizeMb: 10,
+      apiRequestWindowMinutes: 1,
+      retentionPeriodDays: 30,
     };
   }
 }

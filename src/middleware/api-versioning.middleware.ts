@@ -10,10 +10,10 @@ export class ApiVersioningMiddlewareProvider implements Provider<Middleware> {
   constructor(
     @inject('versioning.options', {optional: true})
     private opts: ApiVersioningOptions = {headerName: 'X-API-Version'},
-  ) { }
+  ) {}
 
   value(): Middleware {
-    const supported = (this.opts.supportedVersions || [])
+    const supported = (this.opts.supportedVersions ?? [])
       .map(s => s.toLowerCase())
       .filter(Boolean);
 
@@ -31,7 +31,9 @@ export class ApiVersioningMiddlewareProvider implements Provider<Middleware> {
     const versionPrefixRe = /^\/(v\d+)(\/.*|$)/i;
 
     const mergeUrl = (newPath: string, origUrl: string) => {
-      const q = origUrl && origUrl.includes('?') ? origUrl.slice(origUrl.indexOf('?')) : '';
+      const q = origUrl?.includes('?')
+        ? origUrl.slice(origUrl.indexOf('?'))
+        : '';
       return newPath + q;
     };
 
@@ -40,8 +42,8 @@ export class ApiVersioningMiddlewareProvider implements Provider<Middleware> {
         await next();
         return true;
       } catch (err) {
-        const status = (err && (err.status || err.statusCode)) || undefined;
-        if (status === 404 || (err && err.name === 'NotFoundError')) {
+        const status = (err && (err.status ?? err.statusCode)) ?? undefined;
+        if (status === 404 ?? (err && err.name === 'NotFoundError')) {
           return false;
         }
         throw err;
@@ -50,8 +52,8 @@ export class ApiVersioningMiddlewareProvider implements Provider<Middleware> {
 
     return async (ctx: MiddlewareContext, next: Next) => {
       const req = ctx.request;
-      const origUrl = req.url || '/';
-      const origPath = req.path || '/';
+      const origUrl = req.url ?? '/';
+      const origPath = req.path ?? '/';
 
       const urlMatch = origPath.match(versionPrefixRe);
       if (urlMatch) {
@@ -59,7 +61,9 @@ export class ApiVersioningMiddlewareProvider implements Provider<Middleware> {
         if (supported.includes(versionInPath)) {
           return next();
         } else {
-          const error = new Error(`Unsupported API version in URL: ${versionInPath}`);
+          const error = new Error(
+            `Unsupported API version in URL: ${versionInPath}`,
+          );
           (error as any).statusCode = 400;
           throw error;
         }
@@ -72,7 +76,7 @@ export class ApiVersioningMiddlewareProvider implements Provider<Middleware> {
           (error as any).statusCode = 404;
           throw error;
         }
-        const rest = latestAliasMatch[1] || '';
+        const rest = latestAliasMatch[1] ?? '';
         const newPath = `/${latestVersion}${rest}`;
         req.url = mergeUrl(newPath, origUrl);
         return next();
@@ -86,11 +90,15 @@ export class ApiVersioningMiddlewareProvider implements Provider<Middleware> {
       let versionToUse: string | undefined;
 
       if (this.opts.headerName) {
-        const versionFromHeader = req.headers[this.opts.headerName.toLowerCase()] as string;
+        const versionFromHeader = req.headers[
+          this.opts.headerName.toLowerCase()
+        ] as string;
         if (versionFromHeader) {
           versionToUse = versionFromHeader.toLowerCase();
           if (!supported.includes(versionToUse)) {
-            const error = new Error(`Unsupported API version in header: ${versionToUse}`);
+            const error = new Error(
+              `Unsupported API version in header: ${versionToUse}`,
+            );
             (error as any).statusCode = 400;
             throw error;
           }

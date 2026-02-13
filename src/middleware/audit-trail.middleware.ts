@@ -49,7 +49,7 @@ export class AuditTrailMiddlewareProvider implements Provider<Middleware>, LifeC
       }
 
       const {request} = ctx;
-      //const correlationId = ctx.getSync(CorrelationIdBindings.CORRELATION_ID) || uuidv4();
+      //const correlationId = ctx.getSync(CorrelationIdBindings.CORRELATION_ID) ?? uuidv4();
 
       const auditLog: Partial<AuditLogEntry> = {
         id: uuidv4(),

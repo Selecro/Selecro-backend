@@ -14,16 +14,14 @@ export class MyUserService implements UserService<User, Credentials> {
     public userRepository: UserRepository,
     @inject('services.hasher')
     public hasher: BcryptHasher,
-  ) { }
+  ) {}
 
   async verifyCredentials(credentials: Credentials): Promise<User> {
-    let foundUser: User | null;
-
     const query = credentials.email.includes('@')
       ? {email: credentials.email}
       : {username: credentials.email};
 
-    foundUser = await this.userRepository.findOne({where: query});
+    const foundUser = await this.userRepository.findOne({where: query});
 
     if (!foundUser) {
       throw new HttpErrors.NotFound(`User not found`);

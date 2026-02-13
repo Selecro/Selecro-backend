@@ -20,7 +20,7 @@ export enum UserNotification {
   TrialEnding = 'trial_ending',
   ReEngagement = 're_engagement',
   MilestoneReached = 'milestone_reached',
-  Other = 'other'
+  Other = 'other',
 }
 
 export enum GroupNotification {
@@ -31,7 +31,7 @@ export enum GroupNotification {
   ComplianceUpdate = 'compliance_update',
   EventReminderGroup = 'event_reminder_group',
   SystemHealthSummary = 'system_health_summary',
-  Other = 'other'
+  Other = 'other',
 }
 
 export enum BroadcastNotification {
@@ -39,16 +39,17 @@ export enum BroadcastNotification {
   Promotion = 'promotion',
   BigEvent = 'big_event',
   PublicDowntime = 'public_downtime',
-  Other = 'other'
+  Other = 'other',
 }
 
 @injectable({scope: BindingScope.SINGLETON})
 @bind({tags: 'user-notification.service'})
 export class UserNotificationService {
   constructor(
-    @inject('notification.service') private notificationService: NotificationService,
+    @inject('notification.service')
+    private notificationService: NotificationService,
     @inject('email.service') private emailService: EmailService,
-  ) { }
+  ) {}
 
   public async sendToUser(
     notificationType: UserNotification,
@@ -62,8 +63,8 @@ export class UserNotificationService {
 
     const payload: NotificationPayload = {
       title: `New message from Selecro`,
-      notification_message: `You have a new notification of type: ${notificationType}`,
-      notification_type: NotificationType.Info,
+      notificationMessage: `You have a new notification of type: ${notificationType}`,
+      notificationType: NotificationType.Info,
     };
 
     await this.emailService.sendToUser(userId, emailPayload);
@@ -86,19 +87,23 @@ export class UserNotificationService {
 
     const payload: NotificationPayload = {
       title: `Group Update: ${notificationType}`,
-      notification_message: `A new group notification is available.`,
-      notification_type: NotificationType.Info,
+      notificationMessage: `A new group notification is available.`,
+      notificationType: NotificationType.Info,
     };
 
     await this.emailService.sendToAllRegisteredUsers(emailPayload);
-    await this.notificationService.sendToAllRegisteredUsers(payload, {creatorUserId});
+    await this.notificationService.sendToAllRegisteredUsers(payload, {
+      creatorUserId,
+    });
   }
 
-  public async sendBroadcast(notificationType: BroadcastNotification): Promise<void> {
+  public async sendBroadcast(
+    notificationType: BroadcastNotification,
+  ): Promise<void> {
     const payload: NotificationPayload = {
       title: `Broadcast Alert: ${notificationType}`,
-      notification_message: `A new public announcement has been made.`,
-      notification_type: NotificationType.Promotion,
+      notificationMessage: `A new public announcement has been made.`,
+      notificationType: NotificationType.Promotion,
     };
 
     await this.notificationService.sendNotification(
@@ -109,13 +114,20 @@ export class UserNotificationService {
     );
   }
 
-  public async sendToDevice(deviceToken: string, notificationType: UserNotification): Promise<void> {
+  public async sendToDevice(
+    deviceToken: string,
+    notificationType: UserNotification,
+  ): Promise<void> {
     const payload: NotificationPayload = {
       title: `Direct Device Notification`,
-      notification_message: `Notification of type: ${notificationType}`,
-      notification_type: NotificationType.Info,
+      notificationMessage: `Notification of type: ${notificationType}`,
+      notificationType: NotificationType.Info,
     };
 
-    await this.notificationService.sendNotification(undefined, [deviceToken], payload);
+    await this.notificationService.sendNotification(
+      undefined,
+      [deviceToken],
+      payload,
+    );
   }
 }

@@ -1,10 +1,18 @@
-import {inject, Interceptor, InvocationContext, Next, Provider} from '@loopback/core';
+import {
+  inject,
+  Interceptor,
+  InvocationContext,
+  Next,
+  Provider,
+} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import {HttpErrors, Request, RestBindings} from '@loopback/rest';
 import * as crypto from 'crypto';
 import {SessionRepository} from '../repositories';
 
-const BACKEND_PRIVATE_KEY = process.env.BACKEND_PRIVATE_KEY || `-----BEGIN RSA PRIVATE KEY-----
+const BACKEND_PRIVATE_KEY =
+  process.env.BACKEND_PRIVATE_KEY ??
+  `-----BEGIN RSA PRIVATE KEY-----
 ... your private key here ...
 -----END RSA PRIVATE KEY-----`;
 
@@ -13,27 +21,26 @@ export class EncryptionInterceptor implements Provider<Interceptor> {
     @repository(SessionRepository)
     private sessionRepository: SessionRepository,
     @inject(RestBindings.Http.REQUEST) private request: Request,
-  ) { }
+  ) {}
 
   value(): Interceptor {
     return this.intercept.bind(this);
   }
 
-  async intercept(
-    invocationCtx: InvocationContext,
-    next: Next,
-  ) {
+  async intercept(invocationCtx: InvocationContext, next: Next) {
     const sessionToken = this.request.cookies['session_token'];
 
     if (!sessionToken) {
       return next();
     }
 
-    const session = await this.sessionRepository.findOne({where: {session_token: sessionToken}});
+    const session = await this.sessionRepository.findOne({
+      where: {sessionToken: sessionToken},
+    });
 
     if (this.request.body && typeof this.request.body === 'object') {
-      const {encrypted_key, iv, data} = this.request.body;
-      if (encrypted_key && iv && data) {
+      const {encryptedKey, iv, data} = this.request.body;
+      if (encryptedKey && iv && data) {
         try {
           const aesKey = crypto.privateDecrypt(
             {
@@ -41,7 +48,7 @@ export class EncryptionInterceptor implements Provider<Interceptor> {
               passphrase: '',
               padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
             },
-            Buffer.from(encrypted_key, 'base64'),
+            Buffer.from(encryptedKey, 'base64'),
           );
 
           const decipher = crypto.createDecipheriv(
@@ -63,7 +70,9 @@ export class EncryptionInterceptor implements Provider<Interceptor> {
     const result = await next();
 
     if (!session || !session.public_key) {
-      console.log('Sending unencrypted response: Session or public key not found.');
+      console.log(
+        'Sending unencrypted response: Session or public key not found.',
+      );
       return result;
     }
 
@@ -77,22 +86,33 @@ export class EncryptionInterceptor implements Provider<Interceptor> {
         responseAesKey,
         responseIv,
       );
-      let encryptedData = cipher.update(JSON.stringify(result), 'utf8', 'base64');
+      let encryptedData = cipher.update(
+        JSON.stringify(result),
+        'utf8',
+        'base64',
+      );
       encryptedData += cipher.final('base64');
 
-      const encryptedAesKey = crypto.publicEncrypt(
-        {key: clientPublicKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING},
-        responseAesKey,
-      ).toString('base64');
+      const encryptedAesKey = crypto
+        .publicEncrypt(
+          {
+            key: clientPublicKey,
+            padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+          },
+          responseAesKey,
+        )
+        .toString('base64');
 
       return {
-        encrypted_key: encryptedAesKey,
+        encryptedKey: encryptedAesKey,
         iv: responseIv.toString('base64'),
         data: encryptedData,
       };
     } catch (err) {
       console.error('Encryption failed for response:', err);
-      throw new HttpErrors.InternalServerError('Encryption failed for response.');
+      throw new HttpErrors.InternalServerError(
+        'Encryption failed for response.',
+      );
     }
   }
 }

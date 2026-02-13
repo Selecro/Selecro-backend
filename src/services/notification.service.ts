@@ -2,15 +2,19 @@ import {bind, BindingScope, injectable} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import * as admin from 'firebase-admin';
 import {Notification, NotificationType} from '../models';
-import {DeviceRepository, NotificationRepository, UserRepository} from '../repositories';
+import {
+  DeviceRepository,
+  NotificationRepository,
+  UserRepository,
+} from '../repositories';
 
 export interface NotificationPayload {
   title: string;
-  notification_message: string;
-  notification_type: NotificationType;
-  image_url?: string;
-  action_url?: string;
-  extra_data?: string;
+  notificationMessage: string;
+  notificationType: NotificationType;
+  imageUrl?: string;
+  actionUrl?: string;
+  extraData?: string;
 }
 
 export interface NotificationOptions {
@@ -27,9 +31,10 @@ export class NotificationService {
 
   constructor(
     @repository(DeviceRepository) private deviceRepository: DeviceRepository,
-    @repository(NotificationRepository) private notificationRepository: NotificationRepository,
+    @repository(NotificationRepository)
+    private notificationRepository: NotificationRepository,
     @repository(UserRepository) private userRepository: UserRepository,
-  ) { }
+  ) {}
 
   public async sendNotification(
     users: number[] | undefined,
@@ -43,9 +48,9 @@ export class NotificationService {
           this.notificationRepository.create(
             new Notification({
               ...payload,
-              user_id: userId,
-              creator_user_id: options.creatorUserId,
-              audience_type: options.audienceType ?? 'user',
+              userId: userId,
+              creatorUserId: options.creatorUserId,
+              audienceType: options.audienceType ?? 'user',
             }),
           ),
         ),
@@ -54,17 +59,18 @@ export class NotificationService {
       await this.notificationRepository.create(
         new Notification({
           ...payload,
-          creator_user_id: options.creatorUserId,
-          audience_type: options.audienceType ?? (options.topic ? 'broadcast' : 'group'),
+          creatorUserId: options.creatorUserId,
+          audienceType:
+            options.audienceType ?? (options.topic ? 'broadcast' : 'group'),
         }),
       );
     }
 
-    let deviceTokens: string[] = devices || [];
+    const deviceTokens: string[] = devices ?? [];
 
     if (users?.length) {
       const userDevices = await this.deviceRepository.find({
-        where: {user_id: {inq: users}},
+        where: {userId: {inq: users}},
         fields: ['device_token'],
       });
       deviceTokens.push(
@@ -90,14 +96,14 @@ export class NotificationService {
       notification: options.silent
         ? undefined
         : {
-          title: payload.title,
-          body: payload.notification_message,
-          imageUrl: payload.image_url,
-        },
+            title: payload.title,
+            body: payload.notificationMessage,
+            imageUrl: payload.imageUrl,
+          },
       data: {
-        notificationType: String(payload.notification_type),
-        actionUrl: payload.action_url ?? '',
-        extraData: payload.extra_data ?? '',
+        notificationType: String(payload.notificationType),
+        actionUrl: payload.actionUrl ?? '',
+        extraData: payload.extraData ?? '',
       },
       tokens,
     };
@@ -110,7 +116,9 @@ export class NotificationService {
       };
     }
 
-    const response = await this.firebaseAdmin.messaging().sendEachForMulticast(message);
+    const response = await this.firebaseAdmin
+      .messaging()
+      .sendEachForMulticast(message);
     const failedTokens = response.responses
       .map((r, i) => (!r.success ? tokens[i] : null))
       .filter((t): t is string => !!t);
@@ -126,14 +134,14 @@ export class NotificationService {
       notification: options.silent
         ? undefined
         : {
-          title: payload.title,
-          body: payload.notification_message,
-          imageUrl: payload.image_url,
-        },
+            title: payload.title,
+            body: payload.notificationMessage,
+            imageUrl: payload.imageUrl,
+          },
       data: {
-        notificationType: String(payload.notification_type),
-        actionUrl: payload.action_url ?? '',
-        extraData: payload.extra_data ?? '',
+        notificationType: String(payload.notificationType),
+        actionUrl: payload.actionUrl ?? '',
+        extraData: payload.extraData ?? '',
       },
     };
 
@@ -155,12 +163,14 @@ export class NotificationService {
     await this.notificationRepository.create(
       new Notification({
         ...payload,
-        creator_user_id: options.creatorUserId,
-        audience_type: 'group',
+        creatorUserId: options.creatorUserId,
+        audienceType: 'group',
       }),
     );
 
-    const devices = await this.deviceRepository.find({fields: ['device_token']});
+    const devices = await this.deviceRepository.find({
+      fields: ['device_token'],
+    });
     const deviceTokens = devices
       .map(d => d.device_token)
       .filter((t): t is string => !!t);
@@ -177,12 +187,14 @@ export class NotificationService {
     await this.notificationRepository.create(
       new Notification({
         ...payload,
-        creator_user_id: options.creatorUserId,
-        audience_type: 'broadcast',
+        creatorUserId: options.creatorUserId,
+        audienceType: 'broadcast',
       }),
     );
 
-    const devices = await this.deviceRepository.find({fields: ['device_token']});
+    const devices = await this.deviceRepository.find({
+      fields: ['device_token'],
+    });
     const deviceTokens = devices
       .map(d => d.device_token)
       .filter((t): t is string => !!t);

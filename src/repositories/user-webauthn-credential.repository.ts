@@ -1,7 +1,10 @@
 import {inject} from '@loopback/core';
 import {DefaultCrudRepository} from '@loopback/repository';
 import {PostgresqlDataSource} from '../datasources';
-import {UserWebauthnCredential, UserWebauthnCredentialRelations} from '../models';
+import {
+  UserWebauthnCredential,
+  UserWebauthnCredentialRelations,
+} from '../models';
 
 export class UserWebauthnCredentialRepository extends DefaultCrudRepository<
   UserWebauthnCredential,
