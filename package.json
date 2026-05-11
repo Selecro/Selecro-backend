@@ -68,7 +68,7 @@
     "express-ipfilter": "^1.4.0",
     "express-rate-limit": "^8.3.1",
     "firebase-admin": "^13.8.0",
-    "geoip-lite": "^2.0.1",
+    "geoip-lite": "^2.0.2",
     "helmet": "^8.1.0",
     "isemail": "^3.2.0",
     "jsonwebtoken": "^9.0.3",
