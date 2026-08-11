@@ -67,7 +67,7 @@
     "dotenv": "^17.4.2",
     "express-ipfilter": "^1.4.0",
     "express-rate-limit": "^8.6.2",
-    "firebase-admin": "^14.1.0",
+    "firebase-admin": "^14.2.0",
     "geoip-lite": "^2.0.3",
     "helmet": "^8.3.0",
     "isemail": "^3.2.0",
