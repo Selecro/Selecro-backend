@@ -79,7 +79,7 @@
     "loopback-connector-kafkajs": "^2.0.0",
     "loopback-connector-kv-redis": "^4.0.0",
     "loopback-connector-postgresql": "^9.0.1",
-    "loopback-connector-rest": "^6.0.7",
+    "loopback-connector-rest": "^7.0.2",
     "node-cron": "^4.6.0",
     "nodemailer": "^9.0.1",
     "pdfkit": "^0.19.1",
