@@ -50,14 +50,14 @@
   ],
   "dependencies": {
     "@loopback/authentication": "^12.0.16",
-    "@loopback/authentication-jwt": "^0.16.16",
+    "@loopback/authentication-jwt": "^0.16.17",
     "@loopback/authorization": "^0.16.15",
     "@loopback/boot": "^8.0.14",
     "@loopback/core": "^7.0.14",
     "@loopback/repository": "^8.0.15",
-    "@loopback/rest": "^15.0.13",
-    "@loopback/rest-explorer": "^8.0.14",
-    "@loopback/security": "^0.12.14",
+    "@loopback/rest": "^15.0.16",
+    "@loopback/rest-explorer": "^8.0.16",
+    "@loopback/security": "^0.12.16",
     "@loopback/service-proxy": "^8.0.13",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
@@ -67,7 +67,7 @@
     "dotenv": "^17.4.2",
     "express-ipfilter": "^1.4.0",
     "express-rate-limit": "^8.6.2",
-    "firebase-admin": "^14.2.0",
+    "firebase-admin": "^14.3.0",
     "geoip-lite": "^2.0.3",
     "helmet": "^8.3.0",
     "isemail": "^3.2.0",
@@ -104,8 +104,8 @@
     "source-map-support": "^0.5.21"
   },
   "allowScripts": {
-    "@firebase/util@1.15.1": true,
-    "@scarf/scarf@1.4.0": true,
-    "protobufjs@7.6.5": true
+    "@firebase/util": true,
+    "@scarf/scarf": true,
+    "protobufjs": true
   }
 }
