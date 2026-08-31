@@ -104,8 +104,8 @@
     "source-map-support": "^0.5.21"
   },
   "allowScripts": {
-    "@firebase/util@1.15.1": true,
-    "@scarf/scarf@1.4.0": true,
-    "protobufjs@7.6.5": true
+    "@firebase/util": true,
+    "@scarf/scarf": true,
+    "protobufjs": true
   }
 }
