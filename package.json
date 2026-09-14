@@ -58,7 +58,7 @@
     "@loopback/rest": "^15.0.16",
     "@loopback/rest-explorer": "^8.0.16",
     "@loopback/security": "^0.12.16",
-    "@loopback/service-proxy": "^8.0.13",
+    "@loopback/service-proxy": "^8.0.15",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
