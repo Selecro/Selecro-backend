@@ -100,7 +100,7 @@
     "@types/node": "^26.6.5",
     "@types/nodemailer": "^8.0.0",
     "@types/pdfkit": "^0.17.6",
-    "eslint": "^8.57.1",
+    "eslint": "^10.13.0",
     "source-map-support": "^0.5.21"
   },
   "allowScripts": {
