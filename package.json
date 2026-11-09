@@ -55,7 +55,7 @@
     "@loopback/boot": "^9.0.0",
     "@loopback/core": "^7.0.15",
     "@loopback/repository": "^9.0.0",
-    "@loopback/rest": "^16.0.0",
+    "@loopback/rest": "^15.0.0",
     "@loopback/rest-explorer": "^9.0.0",
     "@loopback/security": "^0.13.0",
     "@loopback/service-proxy": "^9.0.0",
