@@ -57,7 +57,7 @@
     "@loopback/repository": "^9.0.0",
     "@loopback/rest": "^16.0.0",
     "@loopback/rest-explorer": "^9.0.0",
-    "@loopback/security": "^0.12.16",
+    "@loopback/security": "^0.13.0",
     "@loopback/service-proxy": "^9.0.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
